@@ -1,6 +1,6 @@
 (async()=>{
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=12`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=13`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
     const code=(await Promise.all(responses.map(response=>response.text()))).join('');
@@ -22,7 +22,7 @@
     if(!hardeningResponse.ok)throw new Error('Qualitäts-Härtung fehlt');
     eval(await hardeningResponse.text());
 
-    const adaptiveResponse=await fetch('./ukrainischkurs-adaptive-alphabet.js?v=1',{cache:'no-store'});
+    const adaptiveResponse=await fetch('./ukrainischkurs-adaptive-alphabet.js?v=2',{cache:'no-store'});
     if(!adaptiveResponse.ok)throw new Error('Adaptive Alphabet-Mastery fehlt');
     eval(await adaptiveResponse.text());
 
