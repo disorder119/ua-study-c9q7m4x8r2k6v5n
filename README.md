@@ -48,7 +48,7 @@ Das Ziel ist ein belastbarer Anfängerkurs, nicht eine künstliche Abschlussquot
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim Start wichtige Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft unter anderem Syntax, Loader, Offline-Cache, Alphabet, Audioquellen, Mastery-Gates, Lese-Brücke, Lese-Transfer, adaptives SRS und den erweiterten Grundkurs.
+`ukrainischkurs-selftest.js` prüft beim Start wichtige Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft Syntax, Loader, Offline-Cache, Alphabet, Audioquellen, Mastery-Gates, Lese-Brücke, Lese-Transfer, adaptives SRS und den erweiterten Grundkurs. Erst ein grüner Lauf auf dem aktuellen `main` gilt als technisch freigegebener Stand.
 
 Aktuelle Kernmodule:
 
