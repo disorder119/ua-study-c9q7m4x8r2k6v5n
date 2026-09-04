@@ -1,0 +1,80 @@
+    let baseItems=[...pool].sort(()=>Math.random()-.5).slice(0,Math.min(config.limit||(kind==='final'?18:kind==='weekly'?10:5),pool.length));
+    quiz={items:baseItems,baseItems,baseTotal:baseItems.length,at:0,score:0,answered:false,results:{},modes:{},lesson,originDay,kind,forceMode:config.forceMode||''};
+    if(!baseItems.length){toast('Für diesen Test sind noch keine Karten verfügbar.');show('learn');return}
+    show('quiz');ask();
+  };
+
+  function startAlphabetSpecial(){
+    const di=s.day;
+    const config=di===11?{items:contrastItems(),limit:12,kind:'contrast'}:di===12?{items:alphabetItems(),limit:18,kind:'automation'}:{items:alphabetItems(),limit:33,kind:'checkpoint'};
+    start(config.items,{lesson:false,originDay:di,limit:config.limit,kind:config.kind});
+    quiz.specialDay=di;
+  }
+
+  const baseNextQuiz=nextQuiz;
+  nextQuiz = function(){
+    const special=Number.isInteger(quiz.specialDay)?quiz.specialDay:null;
+    const origin=quiz.originDay;
+    const intro=quiz.lesson&&origin<INTRO_DAYS;
+    baseNextQuiz();
+    if(quiz.at<quiz.items.length)return;
+    if(intro){
+      const passed=quiz.score===quiz.baseTotal,p=lessonState(origin);p.testPassed=passed;p.reviewDone=priorDue(origin).length===0;p.score=quiz.score;p.total=quiz.baseTotal;p.testDate=date();syncLesson(origin);save();updateDaily();
+      $('answers').innerHTML='<div class="tip">'+(passed?'Alle heutigen Buchstaben waren beim ersten Versuch richtig. '+(p.spoken?(p.reviewDone?'Der Kurstag ist abgeschlossen.':'Erledige noch fällige Wiederholungen.'):'Sprich die Laute noch einmal laut nach.'):'Für einen Einführungstag müssen alle drei Zeichen beim ersten Versuch stimmen. Fehler wurden sofort repariert; starte den kurzen Test später noch einmal.')+'</div><button class="primary" id="back">Zur Lektion</button>';$('back').onclick=()=>show('learn');
+    }
+    if(special!==null){
+      const ratio=quiz.baseTotal?quiz.score/quiz.baseTotal:0,required=special===13?.90:.85,passed=ratio>=required,p=lessonState(special);p.testPassed=passed;p.reviewDone=priorDue(special).length===0;p.score=quiz.score;p.total=quiz.baseTotal;p.testDate=date();
+      if(special===11)s.alphabetPhase.contrastPassed=passed;if(special===12)s.alphabetPhase.automationPassed=passed;if(special===13)s.alphabetPhase.checkpointPassed=passed&&alphabetVerifiedCount()===33;
+      syncLesson(special);save();updateDaily();
+      const pct=Math.round(ratio*100),name=special===11?'Kontrasttraining':special===12?'Automatisierung':'Alphabet-Checkpoint';
+      $('quizMeta').textContent=name+' abgeschlossen';$('question').innerHTML=pct+' % beim ersten Versuch';$('answers').innerHTML='<div class="tip">'+(passed?(special===13?'Checkpoint bestanden. Nach Abschluss der übrigen Tagesaufgaben öffnet sich als Nächstes die Lesephase.':'Bestanden. Fällige Fehler bleiben trotzdem automatisch im Wiederholsystem.'):'Noch nicht bestanden. Das ist Lerninformation, kein Verlust: schwierige Zeichen sind jetzt früher fällig.')+'</div><button class="primary" id="back">Zur Lektion</button>';$('back').onclick=()=>show('learn');
+    }
+  };
+
+  calendar = function(){
+    let b=$('calendar'),nextOpen=Math.min(D.length-1,completedLessons());b.innerHTML='';
+    D.forEach((d,i)=>{let alphabetLock=i>=ALPHABET_DAYS&&!alphabetReady(),sequenceLock=i>nextOpen,dateLock=i<ALPHABET_DAYS&&!calendarAllows(i),locked=alphabetLock||sequenceLock||dateLock,e=document.createElement('button');e.className='day '+(i===s.day?'now ':'')+(s.done[i]?'done ':'')+(locked?'locked ':'');e.innerHTML='Tag '+(i+1)+'<small>'+(dateLock?'öffnet später':alphabetLock?'Alphabet zuerst':sequenceLock?'erst die Reihe':s.done[i]?'✓ fertig':i===nextOpen?'jetzt':'wiederholen')+'</small>';e.title=dateLock?'Dieser Alphabettag wird nach einem weiteren Kalendertag freigeschaltet.':alphabetLock?'Erst den Alphabet-Checkpoint bestehen':sequenceLock?'Schließe zuerst Tag '+(nextOpen+1)+' ab':d[0];e.onclick=()=>{if(dateLock){toast('Der geführte Alphabetkurs verteilt neue Inhalte bewusst auf echte Kalendertage. Zusatzübungen bleiben verfügbar.');return}if(alphabetLock){requireAlphabet();return}if(sequenceLock){toast('Lerne zuerst Tag '+(nextOpen+1)+' – die App führt dich Schritt für Schritt.');return}s.day=i;save();render();show('learn')};b.append(e)});
+  };
+  advanceLesson = function(){
+    if(!s.done[s.day]){let p=lessonState(s.day),missing=!p.testPassed?'Bestehe zuerst den heutigen Abruf-Test.':!p.spoken?'Sprich die heutigen Laute bzw. die Reihe noch laut nach.':'Erledige zuerst die fälligen Wiederholungen.';toast(missing);return}
+    let next=s.day===D.length-1?0:s.day+1;
+    if(next<ALPHABET_DAYS&&!calendarAllows(next)){toast('Der nächste Alphabettag öffnet sich am nächsten vorgesehenen Kalendertag. Freies Zusatztraining ist weiterhin möglich.');return}
+    if(next>=ALPHABET_DAYS&&!requireAlphabet())return;
+    if(next>completedLessons()){toast('Schließe zuerst den aktuellen Kurstag ab.');return}
+    s.day=next;save();render();study();
+  };
+
+  finalReport = function(){let percent=items=>{let total=items.length,correct=items.filter(item=>quiz.results[item.k]).length;return total?Math.round(correct/total*100):null},letters=quiz.baseItems.filter(item=>item.di<INTRO_DAYS),words=quiz.baseItems.filter(item=>item.di>=ALPHABET_DAYS&&!item.c[0].includes(' ')),sentences=quiz.baseItems.filter(item=>item.di>=ALPHABET_DAYS&&item.c[0].includes(' ')),hearing=quiz.baseItems.filter(item=>quiz.modes[item.k]==='audioChoice'),line=(label,value)=>'<div class="final-line"><span>'+label+'</span><b>'+(value===null?'–':value+' %')+'</b></div>';return '<div class="final-report"><h3>Dein Kursergebnis</h3>'+line('Alphabet',percent(letters))+line('Wortschatz',percent(words))+line('Hören',percent(hearing))+line('Sätze',percent(sentences))+line('Gesamt',Math.round(quiz.score/quiz.baseTotal*100))+'<p class="small">Schwierige Karten bleiben automatisch fällig.</p></div>'};
+
+  const baseRenderKeyboard=renderKeyboard;
+  renderKeyboard = function(){baseRenderKeyboard();if(!keyboardUnlocked()){let left=Math.max(0,17-completedLessons());$('keyboardUnlockText').textContent=left?`Noch ${left} geführte Kurstage bis zum Tastaturtrainer. Alphabet-Checkpoint und erste Lese-/Wortlektionen kommen vorher.`:'Der Tastaturtrainer öffnet sich nach der nächsten passenden Wortlektion.';}};
+  const baseRenderMaster=renderMaster;
+  renderMaster = function(){baseRenderMaster();if(!masterUnlocked())$('masterUnlockText').textContent='Die Satzwerkstatt öffnet sich erst nach bestandenem Alphabet-Checkpoint und den ersten Grundlagen nach dem Alphabet.';};
+  speakLesson = function(button){let pool=s.day<INTRO_DAYS?D[s.day][3].map(c=>c[0]):s.day<ALPHABET_DAYS?introducedAlphabetItems().slice(-8).map(x=>x.c[0]):D[s.day][3].map(c=>c[0]);if(pool.length){speak(pool.join('. '),button);markListened()}else toast('Heute steht aktiver Abruf statt neuer Hörkarten im Mittelpunkt.');};
+
+  resetProgress = function(){if(!confirm('Wirklich den gesamten Lernfortschritt auf diesem Gerät löschen?'))return;s=blank();s.courseSchema=SCHEMA;s.courseStartDate=date();s.alphabetPhase={contrastPassed:false,automationPassed:false,checkpointPassed:false};s.onboardingSeen=false;save();render();stats();renderAlphabet();toast('Alles ist zurückgesetzt. Du beginnst wieder bei Tag 1.');show('learn')};
+  restore = function(f){let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x||typeof x!=='object')throw 0;s=normal(x);if(!Number.isInteger(s.day)||s.day<0||s.day>=Math.max(D.length,30))s.day=0;migrateState();if(!Number.isInteger(s.day)||s.day<0||s.day>=D.length)s.day=0;syncLessons();save();render();stats();renderAlphabet();toast('Fortschritt wurde geladen und auf den aktuellen Kursstand migriert.')}catch{toast('Das ist keine gültige Sicherungsdatei.')}};r.readAsText(f)};
+
+  // Texte der bestehenden Oberfläche an die neue geführte Struktur anpassen.
+  const sub=document.querySelector('header .sub'); if(sub)sub.textContent='Dein geführter Lernweg: 14 Tage Alphabet, danach Lesen und alltagstaugliches Ukrainisch.';
+  const courseTab=[...document.querySelectorAll('.tab')].find(x=>x.dataset.view==='course'); if(courseTab)courseTab.textContent='Lernweg';
+  const courseTitle=document.querySelector('#course h2'); if(courseTitle)courseTitle.textContent='Dein geführter Lernweg';
+  const courseText=document.querySelector('#course .small'); if(courseText)courseText.textContent='Du kannst abgeschlossene Tage wiederholen. Neue Alphabettage werden bewusst über echte Kalendertage verteilt.';
+  const alphabetText=document.querySelector('#alphabet .top .small'); if(alphabetText)alphabetText.textContent='33 Buchstaben in echter ukrainischer Reihenfolge. Tage 1–11: höchstens drei neue Zeichen; Tage 12–14: Kontrast, Automatisierung, Checkpoint.';
+  const methodsTitle=document.querySelector('#methods h2'); if(methodsTitle)methodsTitle.textContent='Zusatzübungen – der Hauptkurs bleibt geführt';
+  const methodsIntro=document.querySelector('#methods .small'); if(methodsIntro)methodsIntro.textContent='Diese Übungen sind freiwillig. Sie verändern nicht die Reihenfolge der neuen Inhalte im geführten Hauptkurs.';
+  const keyboardTitle=document.querySelector('#keyboardLocked h2'); if(keyboardTitle)keyboardTitle.textContent='Das kommt nach dem Alphabet und den ersten Wörtern';
+  const keyboardInfo=document.querySelector('#keyboardLocked .small'); if(keyboardInfo)keyboardInfo.textContent='Zuerst werden die 33 Buchstaben über 14 Tage gefestigt. Danach folgt Lesen; die ukrainische Tastatur wird erst freigeschaltet, wenn sie didaktisch sinnvoll ist.';
+  const masterInfo=document.querySelector('#masterLocked .small'); if(masterInfo)masterInfo.textContent='Satztraining bleibt gesperrt, bis das Alphabet abgeschlossen ist und erste Wörter wirklich abrufbar sind.';
+
+  $('startQuiz').onclick=()=>s.day>=11&&s.day<ALPHABET_DAYS?startAlphabetSpecial():start();
+  $('methodQuiz').onclick=()=>s.day>=11&&s.day<ALPHABET_DAYS?startAlphabetSpecial():start();
+  $('methodListening').onclick=startListening;
+  $('methodSpeed').onclick=startSpeed;
+  $('continue').onclick=nextQuiz;
+  $('next').onclick=advanceLesson;
+  $('reset').onclick=resetProgress;
+  $('resetProgress').onclick=resetProgress;
+  $('import').onchange=e=>e.target.files[0]&&restore(e.target.files[0]);
+
+  // Falls ein alter Stand auf einen heute noch gesperrten Alphabettag zeigte, auf den aktuell sinnvollen Tag zurückführen.
