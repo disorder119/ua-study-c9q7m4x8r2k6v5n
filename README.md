@@ -44,6 +44,8 @@ Wichtige Grammatikpunkte werden nicht als große Tabellen präsentiert, sondern 
 
 Die App kombiniert kleine neue Blöcke, aktiven Abruf, verteilte Wiederholung, gemischten Abruf, Fehler-Reparatur, Mastery Learning und Transferaufgaben. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
 
+Die Architektur wird schrittweise weiter verbessert; ein grüner Validator bedeutet technische Konsistenz der geprüften Regeln, nicht automatisch empirisch bewiesene Lernwirkung. Die Lernwirkung muss langfristig zusätzlich mit echten Anfängern und verzögerten Retentionstests gemessen werden.
+
 ## Qualitätssicherung
 
 `ukrainischkurs-selftest.js` prüft beim Start wichtige Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft unter anderem Syntax, Loader, Offline-Cache, Alphabet, Audioquellen, Mastery-Gates, Lese-Brücke, Lese-Transfer, adaptives SRS und den erweiterten Grundkurs.
