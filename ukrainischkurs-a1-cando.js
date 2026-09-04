@@ -1,0 +1,33 @@
+/* Ukrainischkurs für Joel · A1 Can-do Check v1
+   Abschlussprüfung für konkrete Anfängerhandlungen statt bloßes Karten-Wiedererkennen. */
+(() => {
+  const VERSION=1;
+  const TASKS=[
+    {mode:'type',q:'Tippe: „Ich verstehe nicht.“',a:'Я не розумію',critical:true},
+    {mode:'type',q:'Tippe: „Wie viel kostet das?“',a:'Скільки це коштує',critical:true},
+    {mode:'type',q:'Tippe: „Wo ist die Haltestelle?“',a:'Де зупинка',critical:true},
+    {mode:'choice',q:'Du brauchst Hilfe. Was passt?',a:'Мені потрібна допомога',o:['Мені потрібна допомога','Я зараз вдома','Я беру це']},
+    {mode:'choice',q:'Jemand fragt „Як справи?“. Welche einfache Antwort passt?',a:'Все добре, дякую',o:['Все добре, дякую','Де зупинка?','Скільки це коштує?']},
+    {mode:'choice',q:'Du möchtest höflich um Wiederholung bitten.',a:'Повторіть, будь ласка',o:['Повторіть, будь ласка','До завтра','Я хочу каву']},
+    {mode:'choice',q:'Welche Aussage heißt „Das ist meine Familie“?',a:'Це моя сім’я',o:['Це моя сім’я','Це мій друг','Мені погано']},
+    {mode:'choice',q:'Du möchtest Kaffee. Welcher Satz passt?',a:'Я хочу каву',o:['Я хочу каву','Я не знаю','У мене болить']},
+    {mode:'choice',q:'Welches Fragewort brauchst du für „wer?“',a:'хто?',o:['хто?','що?','де?','коли?']},
+    {mode:'meaning',q:'Was bedeutet „Мені погано“?',a:'Mir geht es schlecht',o:['Mir geht es schlecht','Ich bin zu Hause','Ich habe Hunger']},
+    {mode:'audio',uk:'До завтра',q:'Höre zu. Was bedeutet der Ausdruck?',a:'Bis morgen',o:['Bis morgen','Gute Nacht','Vielen Dank']},
+    {mode:'audio',uk:'Я не знаю',q:'Höre zu. Was bedeutet der Satz?',a:'Ich weiß nicht',o:['Ich weiß nicht','Ich verstehe nicht','Ich möchte nicht']}
+  ];
+  let session=null;
+  const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+  const norm=x=>String(x||'').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  function ensure(){if(!s.a1CanDo||typeof s.a1CanDo!=='object')s.a1CanDo={version:VERSION,passed:false,best:0,attempts:0,date:'',criticalPassed:false};s.a1CanDo.version=VERSION;return s.a1CanDo}
+  function finalDay(){return s.day===D.length-1}
+  function start(){session={items:shuffle(TASKS),idx:0,correct:0,criticalMiss:false,misses:[],phase:'test'};renderCanDo()}
+  function current(){return session?.items?.[session.idx]}
+  function answer(value){const q=current(),good=norm(value)===norm(q.a);if(session.phase==='test'){if(good)session.correct++;else{session.misses.push(q);if(q.critical)session.criticalMiss=true}}if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist: '+q.a);return}toast(good?'Passt.':'Richtig ist: '+q.a);session.idx++;if(session.idx>=session.items.length){if(session.phase==='test'&&session.misses.length){session.items=[...session.misses];session.misses=[];session.idx=0;session.phase='repair';renderCanDo();return}finish();return}renderCanDo()}
+  function finish(){const st=ensure(),score=Math.round(session.correct/TASKS.length*100),passed=session.correct>=10&&!session.criticalMiss;st.best=Math.max(st.best||0,score);st.attempts=(st.attempts||0)+1;st.date=date();st.criticalPassed=!session.criticalMiss;st.passed=passed;save();session=null;toast(passed?'Can-do-Check bestanden.':'Can-do noch nicht stabil: Ziel 10/12 und alle drei kritischen Selbsthilfe-Aufgaben richtig.');render()}
+  function taskHtml(){const q=current(),repair=session.phase==='repair',head='<div class="label">'+(repair?'Reparatur':'Can-do · erster Versuch zählt')+'</div><div class="small">'+(session.idx+1)+' von '+session.items.length+'</div><div class="cd-q">'+q.q+'</div>';if(q.mode==='type')return head+'<input class="typing-input" id="cdInput" lang="uk" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ukrainisch tippen …"><div class="actions"><button class="primary" id="cdCheck">Prüfen</button></div>';const listen=q.mode==='audio'?'<button class="secondary" id="cdListen">🔊 anhören</button>':'';return head+listen+'<div class="cd-grid">'+shuffle(q.o).map(x=>'<button class="answer" data-cd="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div>'}
+  function renderCanDo(){let box=document.getElementById('a1CanDo');if(!finalDay()){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='a1CanDo';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=ensure();box.innerHTML='<div class="cd-head"><div><div class="label">Abschluss · handlungsorientiert</div><h2>Kannst du mit dem Gelernten etwas tun?</h2></div><div class="pill">'+(st.passed?'✓':'12')+'</div></div><p class="small">Hier zählt nicht, ob eine bekannte Karte vertraut aussieht. Du musst einfache Bedürfnisse ausdrücken, Fragen wählen, drei wichtige Sätze selbst tippen und kurze Aussagen verstehen.</p>'+(session?taskHtml():'<div class="tip">'+(st.passed?'✓ Can-do-Check bestanden.':'Bestehen: mindestens 10/12 im ersten Durchgang und alle kritischen Aufgaben zu Nichtverstehen, Preis und Haltestelle korrekt.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="cdStart">'+(st.passed?'noch einmal':'Can-do-Check starten')+'</button></div>');box.querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>answer(b.dataset.cd));const startBtn=document.getElementById('cdStart');if(startBtn)startBtn.onclick=start;const check=document.getElementById('cdCheck'),input=document.getElementById('cdInput');if(check&&input){check.onclick=()=>answer(input.value);input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answer(input.value)}}}const listen=document.getElementById('cdListen');if(listen&&current()?.uk)listen.onclick=()=>speak(current().uk,listen)}
+  const baseNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(finalDay()&&!ensure().passed){renderCanDo();document.getElementById('a1CanDo')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem Kursabschluss erst zeigen, dass du die Grundlagen anwenden kannst.');return}return baseNext?.call(this,e)};
+  const css=document.createElement('style');css.textContent='.cd-head{display:flex;justify-content:space-between;gap:12px}.cd-q{font-size:1.08rem;font-weight:800;margin:14px 0}.cd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.cd-grid .answer{text-align:center}@media(max-width:520px){.cd-grid{grid-template-columns:1fr}}';document.head.append(css);
+  const previousRender=render;render=function(){previousRender();renderCanDo()};ensure();renderCanDo();
+})();
