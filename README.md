@@ -33,7 +33,17 @@ Die Alphabetphase enthält deshalb einen verpflichtenden Aussprache-Coach mit:
 - zusätzlichem Aussprachetraining an den Tagen 12–14 mit Fokus auf schwierige bzw. zu wenig geübte Laute
 - Browser-Fallback, damit fehlende Aufnahme- oder Spracherkennungsfunktionen den Lernweg nicht blockieren
 
-Für eine endgültige 9,5/10-Abnahme bleiben professionell geprüfte muttersprachliche Referenzaufnahmen für die Ziellaute und Beispielwörter die bevorzugte Referenz. System-TTS bleibt nur Fallback, sobald solche Audiodateien vorhanden sind.
+Zusätzlich arbeitet eine adaptive **Laut-Festigung** über mehrere Kalendertage:
+
+- ab dem zweiten Einführungstag werden automatisch bis zu zwei schwache ältere Laute zurückgeholt
+- die Auswahl richtet sich nach bisheriger Trainingsabdeckung statt nur nach der Reihenfolge
+- ein Wiederholungslaut muss am Gehör korrekt erkannt und danach erneut aktiv produziert werden
+- Hören, aktive Produktion und korrekter Hör-Abruf werden getrennt gespeichert
+- pro Laut wird eine mehrtägige Festigung aufgebaut; häufiges Klicken am selben Tag ersetzt keine verteilte Übung
+- der angezeigte 0–100-Wert ist ausdrücklich eine Trainingsabdeckungs-Metrik und keine erfundene automatische Akzentnote
+- problematische Laute bleiben dadurch sichtbar und kehren automatisch wieder, statt nach ihrem Einführungstag zu verschwinden
+
+Für eine endgültige 9,5/10-Abnahme bleiben professionell geprüfte muttersprachliche Referenzaufnahmen für die Ziellaute und Beispielwörter die bevorzugte Referenz. Die App ist bereits so vorbereitet, dass native Referenzdateien später Vorrang vor System-TTS erhalten können; System-TTS bleibt dann nur Fallback.
 
 ## Dateien
 
@@ -42,6 +52,7 @@ Für eine endgültige 9,5/10-Abnahme bleiben professionell geprüfte muttersprac
 - `ukrainisch-lernen.html` – bestehende vollständige Basis-App
 - `ukrainischkurs-v2-loader.js` + `ukrainischkurs-v2.part1`–`part5` – aktuelle geführte 14-Tage-Alphabetlogik und State-Migration
 - `ukrainischkurs-pronunciation.js` – verpflichtender Aussprache-Coach mit Artikulationshinweisen, Aufnahme, A/B-Vergleich, Kontrasten und Verständlichkeitscheck
+- `ukrainischkurs-pronunciation-mastery.js` – adaptive mehrtägige Laut-Festigung mit Schwachstellen-Auswahl, Hör-Abruf und Produktionshistorie
 - `ukrainisch-lernen.webmanifest` – PWA-Installation
 - `ukrainisch-lernen-sw.js` – Offline-Modus und Cache-Migration
 - App-Icons – Home-Bildschirm und Favicon
