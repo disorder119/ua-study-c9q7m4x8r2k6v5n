@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v1 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v2 */
 (() => {
   function run(){
     const errors=[],warnings=[];
@@ -21,8 +21,10 @@
       assert(document.getElementById('markSpoken'),'Aussprache-Abschlussbutton fehlt.');
       assert(document.getElementById('cards'),'Lernkarten-Container fehlt.');
       assert(document.getElementById('daily'),'Tagesplan-Container fehlt.');
-      warn(Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO||{}).length>=15,'Weniger als 15 native Audio-Referenzen aktiv.');
-      Object.entries(window.UKRAINIAN_PRONUNCIATION_AUDIO||{}).forEach(([k,u])=>assert(/^https:\/\//.test(u),'Native Audio-URL für '+k+' ist nicht HTTPS.'));
+      const audio=window.UKRAINIAN_PRONUNCIATION_AUDIO||{},meta=window.UKRAINIAN_PRONUNCIATION_META||{};
+      assert(Object.keys(audio).length===33,'Es müssen 33 menschliche Audio-Referenzen aktiv sein.');
+      assert(Object.keys(meta).length===33,'Metadaten für alle 33 Audio-Referenzen fehlen.');
+      order.forEach(k=>{assert(!!audio[k],'Menschliche Audio-Referenz für '+k+' fehlt.');assert(/^https:\/\//.test(audio[k]||''),'Audio-URL für '+k+' ist nicht HTTPS.');assert(!!meta[k]?.source,'Quellenangabe für '+k+' fehlt.')});
       const keys=all().map(x=>x.k);assert(keys.length===new Set(keys).size,'Doppelte Lernobjekt-IDs gefunden.');
       warn(!document.body.textContent.includes('persönlicher 30-Tage-Kurs'),'Veralteter sichtbarer 30-Tage-Text vorhanden.');
     }catch(e){errors.push('Selbsttest abgebrochen: '+(e?.message||e))}
