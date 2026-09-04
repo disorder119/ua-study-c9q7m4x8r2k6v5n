@@ -1,12 +1,12 @@
 (async()=>{
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=10`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=11`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
     const code=(await Promise.all(responses.map(response=>response.text()))).join('');
     eval(code);
 
-    const nativeResponse=await fetch('./ukrainischkurs-native-audio.js?v=1',{cache:'no-store'});
+    const nativeResponse=await fetch('./ukrainischkurs-native-audio.js?v=2',{cache:'no-store'});
     if(!nativeResponse.ok)throw new Error('Native Audio-Referenzen fehlen');
     eval(await nativeResponse.text());
 
@@ -22,7 +22,7 @@
     if(!hardeningResponse.ok)throw new Error('Qualitäts-Härtung fehlt');
     eval(await hardeningResponse.text());
 
-    const testResponse=await fetch('./ukrainischkurs-selftest.js?v=1',{cache:'no-store'});
+    const testResponse=await fetch('./ukrainischkurs-selftest.js?v=2',{cache:'no-store'});
     if(!testResponse.ok)throw new Error('Selbsttest fehlt');
     eval(await testResponse.text());
   }catch(error){
