@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v3 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v4 */
 (() => {
   function run(){
     const errors=[],warnings=[];
@@ -21,6 +21,8 @@
       assert(typeof alphabetReady==='function','Alphabet-Freigabelogik fehlt.');
       assert(s.alphabetMastery&&typeof s.alphabetMastery==='object','Adaptive Alphabet-Mastery wurde nicht initialisiert.');
       assert(s.alphabetMastery?.visual&&s.alphabetMastery?.audio&&s.alphabetMastery?.contrast,'Mehrmodale Alphabet-Nachweise fehlen.');
+      assert(s.alphabetProof&&typeof s.alphabetProof==='object','Kleinbuchstaben-/Rückwärtsnachweis wurde nicht initialisiert.');
+      assert(s.alphabetProof?.caseReverse,'Kleinbuchstaben-/Rückwärtsstatus fehlt.');
       assert(s.readingBridge&&typeof s.readingBridge==='object','Lese-Brücke wurde nicht initialisiert.');
       assert(s.readingBridge?.stress&&s.readingBridge?.soft,'Betonungs- oder Weichheitsmodul fehlt.');
       assert(document.getElementById('markSpoken'),'Aussprache-Abschlussbutton fehlt.');
