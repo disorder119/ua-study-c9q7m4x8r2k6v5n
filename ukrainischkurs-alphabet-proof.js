@@ -24,11 +24,7 @@
     }
     return baseRequire();
   }
-  function options(letter){return shuffle([letter,...ORDER.filter(x=>x!==letter)]).slice(0,4).includes(letter)?shuffle([letter,...shuffle(ORDER.filter(x=>x!==letter)).slice(0,3)]):[letter]}
-  function build(){
-    const letters=shuffle(ORDER).slice(0,20);
-    return letters.map((letter,i)=>({letter,dir:i%2?'soundToLetter':'lowerToSound'}));
-  }
+  function build(){const letters=shuffle(ORDER).slice(0,20);return letters.map((letter,i)=>({letter,dir:i%2?'soundToLetter':'lowerToSound'}))}
   function start(){session={items:build(),idx:0,correct:0,total:20,misses:[],phase:'test'};renderProof()}
   function current(){return session?.items?.[session.idx]}
   function answer(value){
@@ -36,17 +32,14 @@
     if(session.phase==='test'){if(good)session.correct++;else session.misses.push(q)}
     if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist '+expected+'.');return}
     toast(good?'Richtig.':'Richtig ist '+expected+'.');session.idx++;
-    if(session.idx>=session.items.length){
-      if(session.phase==='test'&&session.misses.length){session.items=[...session.misses];session.misses=[];session.idx=0;session.phase='repair';renderProof();return}
-      finish();return;
-    }
+    if(session.idx>=session.items.length){if(session.phase==='test'&&session.misses.length){session.items=[...session.misses];session.misses=[];session.idx=0;session.phase='repair';renderProof();return}finish();return}
     renderProof();
   }
   function finish(){const st=ensure().caseReverse,score=Math.round(session.correct/session.total*100),passed=session.correct>=19;st.best=Math.max(Number(st.best)||0,score);st.passed=passed;st.date=date();st.attempts=(Number(st.attempts)||0)+1;save();session=null;toast(passed?'Kleinbuchstaben und Rückwärtsabruf bestanden.':score+' %. Fehler repariert; für die Freigabe brauchst du mindestens 19/20 in einem frischen Durchgang.');render()}
   function questionHtml(){
     const q=current(),repair=session.phase==='repair',pos=session.idx+1;
     if(q.dir==='lowerToSound'){
-      const vals=shuffle([sound(q.letter),...shuffle(ORDER.filter(l=>l!==q.letter).map(sound).filter((x,i,a)=>a.indexOf(x)===i&&x!==sound(q.letter))).slice(0,3)]);
+      const wrong=shuffle(ORDER.filter(l=>l!==q.letter).map(sound).filter((x,i,a)=>a.indexOf(x)===i&&x!==sound(q.letter))).slice(0,3),vals=shuffle([sound(q.letter),...wrong]);
       return '<div class="ap-test"><div class="label">Kleinbuchstabe → Laut'+(repair?' · Reparatur':'')+'</div><div class="small">'+pos+' von '+session.items.length+'</div><div class="ap-letter">'+q.letter.toLocaleLowerCase('uk')+'</div><div class="ap-grid">'+vals.map(x=>'<button class="answer" data-ap="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div></div>';
     }
     const vals=shuffle([q.letter,...shuffle(ORDER.filter(l=>l!==q.letter)).slice(0,3)]);
@@ -58,7 +51,8 @@
     const anchor=document.getElementById('alphabetMasteryLab')||document.getElementById('cards');if(!anchor)return;
     if(!panel){panel=document.createElement('section');panel.id='alphabetProof';panel.className='card';anchor.insertAdjacentElement('afterend',panel)}panel.hidden=false;
     const st=ensure().caseReverse,hard=hardRetentionCount();
-    panel.innerHTML='<div class="ap-head"><div><div class="label">Zusatznachweis · echte Lesesicherheit</div><h2>Kleinbuchstaben + Rückwärtsabruf</h2></div><div class="pill">'+([st.passed,hardRetentionReady()].filter(Boolean).length)+'/2</div></div><p class="small">Damit Großbuchstaben oder gemeinsame А/а-Karten deine Sicherheit nicht überschätzen, prüft dieser Block Zeichen isoliert. Schwierige Laute müssen außerdem an drei verschiedenen Lerntagen erfolgreich abgerufen worden sein.</p>'+(session?questionHtml():'<div class="ap-status"><div class="am-chip '+(st.passed?'ok':'')+'"><b>'+(st.passed?'✓ ':'')+'20er Mischtest</b><span>'+st.best+' % · Ziel ≥95 %</span></div><div class="am-chip '+(hardRetentionReady()?'ok':'')+'"><b>'+(hardRetentionReady()?'✓ ':'')+'Schwierige Zeichen</b><span>'+hard+' / '+HARD.length+' an 3 Tagen</span></div></div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="apStart">'+(st.passed?'noch einmal':'20 Fragen starten')+'</button></div>')+'<div class="tip">'+(caseReady()&&hardRetentionReady()?'Zusatznachweis erfüllt.':'Noch offen: '+(!caseReady()?'Kleinbuchstaben-/Rückwärtscheck. ':'')+(!hardRetentionReady()?(HARD.length-hard)+' schwierige Zeichen brauchen noch einen weiteren erfolgreichen Lerntag.':'')+'</div>';
+    const open=[];if(!caseReady())open.push('Kleinbuchstaben-/Rückwärtscheck');if(!hardRetentionReady())open.push((HARD.length-hard)+' schwierige Zeichen brauchen noch einen weiteren erfolgreichen Lerntag');
+    panel.innerHTML='<div class="ap-head"><div><div class="label">Zusatznachweis · echte Lesesicherheit</div><h2>Kleinbuchstaben + Rückwärtsabruf</h2></div><div class="pill">'+([st.passed,hardRetentionReady()].filter(Boolean).length)+'/2</div></div><p class="small">Damit Großbuchstaben oder gemeinsame А/а-Karten deine Sicherheit nicht überschätzen, prüft dieser Block Zeichen isoliert. Schwierige Laute müssen außerdem an drei verschiedenen Lerntagen erfolgreich abgerufen worden sein.</p>'+(session?questionHtml():'<div class="ap-status"><div class="am-chip '+(st.passed?'ok':'')+'"><b>'+(st.passed?'✓ ':'')+'20er Mischtest</b><span>'+st.best+' % · Ziel ≥95 %</span></div><div class="am-chip '+(hardRetentionReady()?'ok':'')+'"><b>'+(hardRetentionReady()?'✓ ':'')+'Schwierige Zeichen</b><span>'+hard+' / '+HARD.length+' an 3 Tagen</span></div></div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="apStart">'+(st.passed?'noch einmal':'20 Fragen starten')+'</button></div>')+'<div class="tip">'+(open.length?'Noch offen: '+open.join(' · '):'Zusatznachweis erfüllt.')+'</div>';
     panel.querySelectorAll('[data-ap]').forEach(b=>b.onclick=()=>answer(b.dataset.ap));const startBtn=document.getElementById('apStart');if(startBtn)startBtn.onclick=start;
   }
   const css=document.createElement('style');css.textContent='.ap-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.ap-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.ap-test{text-align:center;padding:14px;border-radius:16px;background:#f4f8fc}.ap-letter{font-size:3.4rem;font-weight:850;color:var(--d);margin:12px}.ap-sound{font-size:1.1rem;margin:16px}.ap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ap-grid .answer{text-align:center}@media(max-width:480px){.ap-status{grid-template-columns:1fr}}';document.head.append(css);
