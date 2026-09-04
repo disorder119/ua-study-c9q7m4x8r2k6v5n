@@ -24,10 +24,10 @@ try{JSON.parse(read('ukrainisch-lernen.webmanifest'))}catch(e){errors.push(`ukra
 
 const requiredModules=['ukrainischkurs-native-audio.js','ukrainischkurs-pronunciation.js','ukrainischkurs-pronunciation-mastery.js','ukrainischkurs-quality-hardening.js','ukrainischkurs-adaptive-alphabet.js','ukrainischkurs-alphabet-proof.js','ukrainischkurs-reading-bridge.js','ukrainischkurs-selftest.js'];
 const loader=read('ukrainischkurs-v2-loader.js');for(const file of requiredModules)assert(loader.includes(file),`Loader bindet ${file} nicht ein`);
-assert(loader.includes('ukrainischkurs-alphabet-proof.js?v=1'),'Alphabet-Proof ist nicht aktiv');
+assert(loader.includes('ukrainischkurs-alphabet-proof.js?v=2'),'Korrigierter Alphabet-Proof v2 ist nicht aktiv');
 const sw=read('ukrainisch-lernen-sw.js');for(const file of requiredModules)assert(sw.includes(`'./${file}'`),`Offline-Cache enthält ${file} nicht`);
-assert(sw.includes("ukrainischkurs-joel-v14"),'Service Worker ist nicht auf Cache v14');
-const app=read('ukrainischkurs-app.html');assert(app.includes('ukrainischkurs-v2-loader.js?v=14'),'App-Loader ist nicht auf v14');
+assert(sw.includes("ukrainischkurs-joel-v15"),'Service Worker ist nicht auf Cache v15');
+const app=read('ukrainischkurs-app.html');assert(app.includes('ukrainischkurs-v2-loader.js?v=15'),'App-Loader ist nicht auf v15');
 
 const part1=read('ukrainischkurs-v2.part1');const expected='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я';
 assert(part1.includes(`const ORDER = '${expected}'.split(' ')`),'Ukrainische Alphabet-Reihenfolge in v2.part1 stimmt nicht');
@@ -54,4 +54,4 @@ const bridge=read('ukrainischkurs-reading-bridge.js');for(const token of ['пр�
 const selftest=read('ukrainischkurs-selftest.js');assert(selftest.includes('intro.length===33'),'Laufzeit-Selbsttest prüft 33 Alphabetzeichen nicht');assert(selftest.includes('gameLetters().length===3'),'Laufzeit-Selbsttest prüft Tag-1-Buchstaben-Jagd nicht');assert(selftest.includes('s.alphabetMastery'),'Laufzeit-Selbsttest prüft adaptive Mastery nicht');assert(selftest.includes('s.alphabetProof'),'Laufzeit-Selbsttest prüft Alphabet-Proof nicht');assert(selftest.includes('s.readingBridge'),'Laufzeit-Selbsttest prüft Lese-Brücke nicht');
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);for(const e of errors)console.error('- '+e);process.exit(1)}
-console.log('VALIDIERUNG OK: Syntax, Loader v14, Offline-Cache v14, 14+-Mastery, Kleinbuchstaben/Rückwärtsabruf, 3-Tage-Schwierigkeiten, 33 Audioquellen sowie Betonungs- und Weichheitsbrücke geprüft.');
+console.log('VALIDIERUNG OK: Syntax, Loader v15, Offline-Cache v15, 14+-Mastery, Kleinbuchstaben/Rückwärtsabruf, 3-Tage-Schwierigkeiten, 33 Audioquellen sowie Betonungs- und Weichheitsbrücke geprüft.');
