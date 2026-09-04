@@ -33,11 +33,15 @@ Die Alphabetphase enthält deshalb einen verpflichtenden Aussprache-Coach mit:
 - zusätzlichem Aussprachetraining an den Tagen 12–14 mit Fokus auf schwierige bzw. zu wenig geübte Laute
 - Browser-Fallback, damit fehlende Aufnahme- oder Spracherkennungsfunktionen den Lernweg nicht blockieren
 
-### Freie ukrainische Muttersprachler-Audios
+### Freie menschliche ukrainische Audios für alle 33 Zeichen
 
-Für 21 Buchstaben sind jetzt echte ukrainische Referenzwörter aus **Lingua Libre / Wikimedia Commons** eingebunden. Verwendet werden Aufnahmen des Sprechers **Tohaomg**; die jeweilige Commons-Dateiseite bleibt in der Oberfläche als Attribution und Lizenzquelle verlinkt. Lingua-Libre-Aufnahmen werden unter freien Creative-Commons-Lizenzen veröffentlicht. System-TTS bleibt für nicht abgedeckte Ziellaute sowie als technischer Fallback verfügbar.
+Für **alle 33 Alphabetzeichen** ist jetzt eine menschliche ukrainische Referenz auf Wikimedia Commons hinterlegt. 21 Zeichen verwenden Lingua-Libre-Aufnahmen von **Tohaomg**, der Ukrainisch als Muttersprache dokumentiert hat. Für die zuvor fehlenden schwierigen Zeichen werden freie ukrainische Shtooka-Aufnahmen einer Sprecherin aus Kyiv verwendet, darunter `ґудзик`, `жук`, `син`, `їжа`, `хата`, `це`, `чай`, `школа`, `щука`, `кінь`, `юнак` und `я`.
 
-Die nativen Aufnahmen werden derzeit online von Wikimedia Commons gestreamt und nicht mit dem lokalen App-Cache ausgeliefert. Damit bleibt die App selbst klein; ohne Internet steht weiterhin die ukrainische Systemstimme als Fallback zur Verfügung.
+Die Shtooka-Dateien sind auf Commons als ukrainische Ausspracheaufnahmen mit Sprecherin aus Kyiv und CC-BY-Lizenz dokumentiert. Da die jeweilige Commons-Seite die Sprecherin nicht ausdrücklich mit dem Label „native speaker“ versieht, wird diese Eigenschaft in der App nicht erfunden. Die Dateien dienen als menschliche ukrainische Aussprache-Referenz. Jede Quelle bleibt mit Dateiname, Sprecher/Urheber, Projekt und Lizenzseite nachvollziehbar.
+
+Bei `Ь` wird bewusst kein eigener Laut vorgespielt: das Beispiel `кінь` demonstriert die Weichheit des vorausgehenden Konsonanten. System-TTS bleibt nur als technischer Fallback verfügbar, falls eine Commons-Aufnahme nicht geladen werden kann.
+
+Die menschlichen Aufnahmen werden online von Wikimedia Commons gestreamt und nicht mit dem lokalen App-Cache ausgeliefert. Damit bleibt die App selbst klein; ohne Internet steht weiterhin die ukrainische Systemstimme als Fallback zur Verfügung.
 
 Zusätzlich arbeitet eine adaptive **Laut-Festigung** über mehrere Kalendertage:
 
@@ -49,14 +53,23 @@ Zusätzlich arbeitet eine adaptive **Laut-Festigung** über mehrere Kalendertage
 - der angezeigte 0–100-Wert ist ausdrücklich eine Trainingsabdeckungs-Metrik und keine erfundene automatische Akzentnote
 - problematische Laute bleiben sichtbar und kehren automatisch wieder
 
+### Noch entscheidend für korrektes Sprechen nach der Alphabetphase
+
+Das Alphabet allein reicht nicht für vollständig natürliche Aussprache. Vor und während des Wortschatzteils müssen deshalb besonders zwei ukrainische Eigenschaften systematisch trainiert werden:
+
+1. **Wortbetonung:** ukrainische Betonung ist nicht zuverlässig aus der Schreibweise vorhersagbar und muss zusammen mit jedem neuen Wort gelernt werden.
+2. **Palatalisierung / weiche Konsonanten:** insbesondere `І`, `Є`, `Ю`, `Я` und `Ь` verändern je nach Position die Aussprache des vorausgehenden Konsonanten. Diese Kontextwirkung muss beim Übergang von Buchstaben zu echten Wörtern explizit geübt werden.
+
+Diese beiden Bereiche sind die wichtigste nächste Qualitätsstufe für den späteren Wortkurs.
+
 ## Qualitätssicherung
 
 Bekannte Logikfehler werden durch eine zusätzliche Härtung abgefangen. Dazu gehören unter anderem die frühere Tag-1-Buchstaben-Jagd mit einem noch nicht eingeführten vierten Zeichen sowie eine Streak-Anzeige, die mindestens einen Tag anzeigen konnte. Die Aussprache kann auf Geräten mit verfügbarer Aufnahme nicht mehr durch einen simplen manuellen Klick als erledigt gelten; dort zählen Aufnahme, Rückhören und Vergleich. Der manuelle Produktions-Fallback wird nur verwendet, wenn die benötigte Aufnahmefunktion fehlt oder blockiert ist.
 
 Zusätzlich gibt es zwei Testebenen:
 
-1. `ukrainischkurs-selftest.js` prüft beim Start wichtige Laufzeit-Invarianten wie Alphabet-Reihenfolge, 33 Zeichen, eindeutige Lernobjekt-IDs, Tag-1-Spielpool und verfügbare native Audioquellen.
-2. `tests/validate.mjs` läuft über GitHub Actions bei jedem Push und prüft JavaScript-Syntax, die zusammengesetzten Kursfragmente, Inline-Skripte, Manifest, Loader, Offline-Cache, Alphabetdaten, Qualitäts-Härtung und native Audiointegration.
+1. `ukrainischkurs-selftest.js` prüft beim Start wichtige Laufzeit-Invarianten wie Alphabet-Reihenfolge, 33 Zeichen, eindeutige Lernobjekt-IDs, Tag-1-Spielpool und die menschliche Audioquelle für jedes der 33 Zeichen.
+2. `tests/validate.mjs` läuft über GitHub Actions bei jedem Push und prüft JavaScript-Syntax, die zusammengesetzten Kursfragmente, Inline-Skripte, Manifest, Loader, Offline-Cache, Alphabetdaten, Qualitäts-Härtung und die vollständige Audiointegration.
 
 ## Dateien
 
@@ -64,7 +77,7 @@ Zusätzlich gibt es zwei Testebenen:
 - `ukrainischkurs-app.html` – stabiler App-Loader für die aktuelle Kurslogik
 - `ukrainisch-lernen.html` – bestehende vollständige Basis-App
 - `ukrainischkurs-v2-loader.js` + `ukrainischkurs-v2.part1`–`part5` – geführte 14-Tage-Alphabetlogik und State-Migration
-- `ukrainischkurs-native-audio.js` – freie ukrainische Muttersprachler-Referenzen aus Lingua Libre / Wikimedia Commons
+- `ukrainischkurs-native-audio.js` – freie menschliche ukrainische Referenzen aus Lingua Libre, Shtooka und Wikimedia Commons
 - `ukrainischkurs-pronunciation.js` – verpflichtender Aussprache-Coach mit Artikulationshinweisen, Aufnahme, A/B-Vergleich, Kontrasten und Verständlichkeitscheck
 - `ukrainischkurs-pronunciation-mastery.js` – adaptive mehrtägige Laut-Festigung mit Schwachstellen-Auswahl, Hör-Abruf und Produktionshistorie
 - `ukrainischkurs-quality-hardening.js` – zusätzliche Lernlogik- und Aussprache-Gates sowie Quellenattribution
