@@ -18,12 +18,30 @@ Der Hauptkurs entscheidet die Reihenfolge. Zusatzübungen bleiben freiwillig ver
 
 Die App nutzt aktiven Abruf, verteilte Wiederholung, sofortiges Feedback und Fehler-Reparaturrunden. Ein Lernobjekt kann nicht mehr durch viele richtige Antworten am selben Kalendertag als gemeistert gelten: erfolgreiche Abrufe müssen sich über mehrere getrennte Tage verteilen.
 
+## Aussprache: Mindestziel 9,5/10
+
+Aussprachelernen ist ein harter Qualitätsbereich des Kurses und darf langfristig nicht unter 9,5/10 bewertet werden. Ein bloßer Lautsprecher-Button oder das manuelle Markieren von „nachgesprochen“ gilt nicht als ausreichendes Training.
+
+Die Alphabetphase enthält deshalb einen verpflichtenden Aussprache-Coach mit:
+
+- IPA und konkreten Mund-/Zungenhinweisen für alle 33 Zeichen
+- kurzen ukrainischen Übungssilben statt isolierter TTS-Buchstaben, damit die Systemstimme nicht nur Buchstabennamen vorliest
+- normaler und verlangsamter Hörreferenz
+- eigener Mikrofonaufnahme, lokalem Rückhören und bewusstem A/B-Selbstvergleich
+- optionalem ukrainischem Spracherkennungs-Check als Verständlichkeitsindikator, ausdrücklich nicht als angeblich exakter Akzent-Score
+- gezieltem Lautkontrasttraining, unter anderem Г/Ґ, И/І, Ж/Ш, Ш/Щ, З/С und Ц/Ч
+- zusätzlichem Aussprachetraining an den Tagen 12–14 mit Fokus auf schwierige bzw. zu wenig geübte Laute
+- Browser-Fallback, damit fehlende Aufnahme- oder Spracherkennungsfunktionen den Lernweg nicht blockieren
+
+Für eine endgültige 9,5/10-Abnahme bleiben professionell geprüfte muttersprachliche Referenzaufnahmen für die Ziellaute und Beispielwörter die bevorzugte Referenz. System-TTS bleibt nur Fallback, sobald solche Audiodateien vorhanden sind.
+
 ## Dateien
 
 - `index.html` – Einstieg für GitHub Pages
 - `ukrainischkurs-app.html` – stabiler App-Loader für die aktuelle Kurslogik
 - `ukrainisch-lernen.html` – bestehende vollständige Basis-App
 - `ukrainischkurs-v2-loader.js` + `ukrainischkurs-v2.part1`–`part5` – aktuelle geführte 14-Tage-Alphabetlogik und State-Migration
+- `ukrainischkurs-pronunciation.js` – verpflichtender Aussprache-Coach mit Artikulationshinweisen, Aufnahme, A/B-Vergleich, Kontrasten und Verständlichkeitscheck
 - `ukrainisch-lernen.webmanifest` – PWA-Installation
 - `ukrainisch-lernen-sw.js` – Offline-Modus und Cache-Migration
 - App-Icons – Home-Bildschirm und Favicon
