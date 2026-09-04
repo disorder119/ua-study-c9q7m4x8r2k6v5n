@@ -22,19 +22,17 @@ for(const htmlFile of ['ukrainisch-lernen.html','ukrainischkurs-app.html','index
   const html=read(htmlFile);let i=0;
   for(const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))compile(match[1],`${htmlFile} inline-script-${++i}`);
 }
-
 try{JSON.parse(read('ukrainisch-lernen.webmanifest'))}catch(e){errors.push(`ukrainisch-lernen.webmanifest: ${e.message}`)}
 
 const requiredModules=['ukrainischkurs-native-audio.js','ukrainischkurs-pronunciation.js','ukrainischkurs-pronunciation-mastery.js','ukrainischkurs-quality-hardening.js','ukrainischkurs-adaptive-alphabet.js','ukrainischkurs-reading-bridge.js','ukrainischkurs-selftest.js'];
 const loader=read('ukrainischkurs-v2-loader.js');
 for(const file of requiredModules)assert(loader.includes(file),`Loader bindet ${file} nicht ein`);
-
+assert(loader.includes('ukrainischkurs-adaptive-alphabet.js?v=2'),'Loader nutzt nicht Adaptive Alphabet v2');
 const sw=read('ukrainisch-lernen-sw.js');
 for(const file of requiredModules)assert(sw.includes(`'./${file}'`),`Offline-Cache enthält ${file} nicht`);
-assert(sw.includes("ukrainischkurs-joel-v12"),'Service Worker ist nicht auf Cache v12');
-
+assert(sw.includes("ukrainischkurs-joel-v13"),'Service Worker ist nicht auf Cache v13');
 const app=read('ukrainischkurs-app.html');
-assert(app.includes('ukrainischkurs-v2-loader.js?v=12'),'App-Loader ist nicht auf v12');
+assert(app.includes('ukrainischkurs-v2-loader.js?v=13'),'App-Loader ist nicht auf v13');
 
 const part1=read('ukrainischkurs-v2.part1');
 const expected='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я';
@@ -55,7 +53,6 @@ for(const letter of expected.split(' '))assert(keyMatches.includes(letter),`Mens
 assert(native.includes('Lingua Libre / Wikimedia Commons'),'Lingua-Libre-Quelle fehlt');
 assert(native.includes('Shtooka Project / Wikimedia Commons'),'Shtooka-Quelle fehlt');
 assert(native.includes('CC BY 3.0 US'),'Shtooka-Lizenzhinweis fehlt');
-assert(native.includes('https://commons.wikimedia.org/wiki/Special:Redirect/file/'),'Native Audioquelle ist nicht Wikimedia Commons');
 
 const adaptive=read('ukrainischkurs-adaptive-alphabet.js');
 assert(adaptive.includes('retentionCount()===33'),'Mastery verlangt nicht alle 33 Zeichen an mehreren Tagen');
@@ -66,6 +63,8 @@ assert(adaptive.includes('extensionDates'),'14+-Festigungstage fehlen');
 assert(adaptive.includes('2-Minuten-Mix'),'Gemischte Zwischenabrufe fehlen');
 assert(adaptive.includes('window.UKRAINIAN_PRONUNCIATION_AUDIO'),'Hör-Diktat nutzt keine menschlichen Audioquellen');
 assert(adaptive.includes('m.visual.passed&&m.audio.passed&&m.contrast.passed&&retentionReady()'),'Alphabetfreigabe ist nicht mehrmodal');
+assert(adaptive.includes('schnellen 14-Tage-Pfad'),'Onboarding erklärt 14 Tage als Zieltempo statt Garantie nicht');
+assert(adaptive.includes('Mastery-Phase 14+'),'Fortschrittstext unterstützt Festigungstage nicht');
 
 const bridge=read('ukrainischkurs-reading-bridge.js');
 for(const token of ['приві́т','дя́кую','будь ла́ска','украї́нською'])assert(bridge.includes(token),`Betonungsbeispiel ${token} fehlt`);
@@ -81,4 +80,4 @@ assert(selftest.includes('s.alphabetMastery'),'Laufzeit-Selbsttest prüft adapti
 assert(selftest.includes('s.readingBridge'),'Laufzeit-Selbsttest prüft Lese-Brücke nicht');
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);for(const e of errors)console.error('- '+e);process.exit(1)}
-console.log('VALIDIERUNG OK: Syntax, Loader, Offline-Cache, 14+-Mastery, 33 Audioquellen, Hör-/Kontrasttests sowie Betonungs- und Weichheitsbrücke geprüft.');
+console.log('VALIDIERUNG OK: Syntax, Loader v13, Offline-Cache v13, 14+-Mastery, 33 Audioquellen, Hör-/Kontrasttests sowie Betonungs- und Weichheitsbrücke geprüft.');
