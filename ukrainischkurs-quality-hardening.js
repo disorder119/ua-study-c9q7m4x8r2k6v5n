@@ -1,8 +1,9 @@
-/* Ukrainischkurs für Joel · Qualitäts-Härtung v3
+/* Ukrainischkurs für Joel · Qualitäts-Härtung v4
    Behebt bekannte Lernlogikfehler und verhindert zu leichtes Abhaken der Aussprache. */
 (() => {
   const ORDER='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
   const nativeMeta=window.UKRAINIAN_PRONUNCIATION_META||{};
+  const HARD=['В','Г','Ґ','И','І','Ї','Р','Х','Ж','Ш','Щ','Ц','Ч'];
   streak=function(){
     const dates=[...new Set(s.dates||[])].sort().reverse();
     if(!dates.length)return 0;
@@ -13,7 +14,8 @@
     return n;
   };
   gameLetters=function(){const max=s.day<11?Math.min(33,(s.day+1)*3):33;return LETTERS.slice(0,max)};
-  function currentTargets(){if(s.day<11)return ORDER.slice(s.day*3,Math.min(33,s.day*3+3));if(s.day===11)return ['Г','Ґ','И','І'];if(s.day===12)return ['Ж','Ш','Щ','Х'];return []}
+  function leastPractised(limit=4){return [...HARD].sort((a,b)=>{const A=s.pronunciation?.letters?.[a]||{},B=s.pronunciation?.letters?.[b]||{};return ((A.recordings||0)+(A.checks||0)+(A.plays||0))-((B.recordings||0)+(B.checks||0)+(B.plays||0))}).slice(0,limit)}
+  function currentTargets(){if(s.day<11)return ORDER.slice(s.day*3,Math.min(33,s.day*3+3));if(s.day===11)return ['Г','Ґ','И','І'];if(s.day===12)return ['Ж','Ш','Щ','Х'];if(s.day===13)return leastPractised(4);return []}
   function ensureGate(){if(!s.pronunciation||typeof s.pronunciation!=='object')s.pronunciation={};if(!s.pronunciation.qualityGate||s.pronunciation.qualityGate.date!==date()||s.pronunciation.qualityGate.day!==s.day)s.pronunciation.qualityGate={date:date(),day:s.day,manualProduced:[],micFallback:false};return s.pronunciation.qualityGate}
   function recordingSupported(){return !!(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder)}
   function preferredProductionReady(){const d=s.pronunciation?.daily||{};return !!(d.recorded&&d.replayed&&d.selfPassed)}
@@ -21,9 +23,19 @@
   function pronunciationGateReady(){if(s.day>=14)return true;const targets=currentTargets();if(!targets.length)return true;const d=s.pronunciation?.daily||{};if(!targets.every(l=>(d.reference||[]).includes(l)))return false;const g=ensureGate();if(preferredProductionReady())return true;return (!recordingSupported()||g.micFallback)&&manualReady()}
   function markManual(letter){const g=ensureGate();if(!g.manualProduced.includes(letter))g.manualProduced.push(letter);save();patchUi()}
   function markMicFailure(){const g=ensureGate();g.micFallback=true;save();patchUi()}
+  function patchAttribution(){
+    const coach=document.getElementById('pronCoach');if(!coach)return;
+    const entries=currentTargets().map(l=>[l,nativeMeta[l]]).filter(x=>x[1]);
+    let credit=document.getElementById('pronNativeCredit');
+    if(!entries.length){if(credit)credit.hidden=true;return}
+    if(!credit){credit=document.createElement('div');credit.id='pronNativeCredit';credit.className='small';credit.style.marginTop='10px';coach.append(credit)}
+    credit.hidden=false;
+    credit.innerHTML='<strong>Freie Muttersprachler-Referenzen:</strong> '+entries.map(([l,m])=>'<a href="'+m.source+'" target="_blank" rel="noopener noreferrer">'+l+' · '+m.label+'</a>').join(' · ')+'<br>Gesprochen von Tohaomg · Lingua Libre/Wikimedia Commons · Lizenz und Attribution auf der jeweiligen Quelldatei.';
+  }
   function patchNativeLabels(){
     document.querySelectorAll('#pronMastery [data-pm-hear]').forEach(button=>{const letter=button.dataset.pmHear,m=nativeMeta[letter];if(m){button.textContent='🎙️ Muttersprachler';button.title='Native Referenz: '+m.label+' · '+m.speaker+' · Wikimedia Commons'}});
     document.querySelectorAll('#pronCoach [data-pron-play]').forEach(button=>{const letter=button.dataset.pronPlay,m=nativeMeta[letter];if(!m)return;const old=button.onclick;button.textContent='🎙️ Wort';button.title='Native Referenz: '+m.label;button.onclick=()=>{const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(!src){old?.();return}const a=new Audio(src);a.play().catch(()=>old?.());const d=s.pronunciation?.daily;if(d&&!(d.reference||[]).includes(letter)){d.reference=[...(d.reference||[]),letter];save()}}});
+    patchAttribution();
   }
   function patchManualPanel(){
     const coach=document.getElementById('pronCoach');if(!coach||s.day>=14)return;
