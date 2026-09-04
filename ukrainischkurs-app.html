@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#155db5">
+<title>Ukrainischkurs für Joel</title>
+<style>body{margin:0;padding:32px 20px;background:#f4f8fc;color:#103e75;font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.boot{max-width:520px;margin:18vh auto;text-align:center}.boot b{display:block;font-size:1.25rem;margin-bottom:7px}.boot span{color:#60708a}</style>
+</head>
+<body>
+<div class="boot" id="boot"><b>Ukrainischkurs für Joel</b><span>Dein geführter Lernweg wird geladen …</span></div>
+<script>
+(async()=>{
+  try{
+    const response=await fetch('./ukrainisch-lernen.html',{cache:'no-store'});
+    if(!response.ok)throw new Error('Basis nicht verfügbar');
+    let html=await response.text();
+    const upgrade='<script src="./ukrainischkurs-v2-loader.js?v=6"></scr'+'ipt>';
+    if(!html.includes('</body>'))throw new Error('Ungültige Basisdatei');
+    html=html.replace('</body>',upgrade+'</body>');
+    document.open();document.write(html);document.close();
+  }catch(error){
+    document.getElementById('boot').innerHTML='<b>Die App konnte gerade nicht vollständig geladen werden.</b><span>Prüfe kurz die Verbindung und öffne sie erneut. Nach einem erfolgreichen Online-Start funktioniert sie wieder offline.</span>';
+  }
+})();
+</script>
+</body>
+</html>
