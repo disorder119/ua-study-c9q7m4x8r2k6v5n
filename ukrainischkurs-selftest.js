@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v5 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v6 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
@@ -7,7 +7,7 @@
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
     ok(window.UKRAINIAN_PRONUNCIATION_AUDIO&&Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO).length===33,'33 menschliche Audioquellen fehlen');
     ok(!!s.alphabetMastery,'Adaptive Alphabet-Mastery fehlt');ok(!!s.alphabetProof,'Alphabet-Proof fehlt');ok(!!s.readingBridge,'Lese-Brücke fehlt');
-    ok(!!s.readingTransfer,'Lese-Transfer fehlt');ok(!!s.foundationExpansion,'Grundkurs-Erweiterung fehlt');
+    ok(!!s.readingTransfer,'Lese-Transfer fehlt');ok(!!s.foundationExpansion,'Grundkurs-Erweiterung fehlt');ok(!!s.a1CanDo,'A1-Can-do-Abschluss fehlt');
     ok(typeof scheduleMeta==='function'&&typeof dueCards==='function','Adaptives SRS fehlt');
     ok(D.length>=47,'Grundkurs enthält weniger als 47 geführte Tage');
     ok(document.getElementById('next'),'Weiter-Button fehlt');
