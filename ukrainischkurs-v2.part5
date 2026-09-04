@@ -1,0 +1,3 @@
+  if(s.day<ALPHABET_DAYS&&!calendarAllows(s.day))s.day=Math.min(calendarAge(),INTRO_DAYS-1);
+  syncLessons(); save(); render(); renderAlphabet();
+})();
