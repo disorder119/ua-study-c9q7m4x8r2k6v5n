@@ -1,0 +1,170 @@
+/* Ukrainischkurs für Joel · geführte Alphabetphase v2
+   Läuft als Upgrade-Layer nach der bestehenden App und hält alte Lerndaten migrierbar. */
+(() => {
+  const SCHEMA = 6;
+  const ALPHABET_DAYS = 14;
+  const INTRO_DAYS = 11;
+  const WORD_OFFSET = 7; // alte Wortlektion 8 wird neue Lektion 15
+  const OLD_D = D.map(day => [day[0], day[1], day[2], day[3].map(card => [...card])]);
+  const OLD_DIALOGS = Object.entries(DIALOGS).map(([key, value]) => [Number(key), value]);
+
+  const LETTER_INFO = {
+    'А':{pair:'А а',sound:'A',name:'а (a)',help:'wie A in „Anna“'},
+    'Б':{pair:'Б б',sound:'B',name:'бе (be)',help:'wie B in „Ball“'},
+    'В':{pair:'В в',sound:'W',name:'ве (we)',help:'wie W in „Wasser“',trap:'В sieht wie B aus, klingt im Ukrainischen aber W.'},
+    'Г':{pair:'Г г',sound:'H',name:'ге (he)',help:'ein weiches, stimmhaftes H – keine exakte deutsche Entsprechung'},
+    'Ґ':{pair:'Ґ ґ',sound:'G',name:'ґе (ge)',help:'wie G in „Garten“'},
+    'Д':{pair:'Д д',sound:'D',name:'де (de)',help:'wie D in „Dach“'},
+    'Е':{pair:'Е е',sound:'E',name:'е (e)',help:'wie ein klares E'},
+    'Є':{pair:'Є є',sound:'JE',name:'є (je)',help:'am Wortanfang ungefähr „je“; die genaue Aussprache wird später positionsabhängig vertieft'},
+    'Ж':{pair:'Ж ж',sound:'stimmhaftes SCH',name:'же (sche)',help:'ähnlich dem Laut in französisch „Journal“ – keine exakte deutsche Entsprechung'},
+    'З':{pair:'З з',sound:'stimmhaftes S',name:'зе (se)',help:'wie S in „Rose“'},
+    'И':{pair:'И и',sound:'kurzes I',name:'и (y)',help:'etwas offener als deutsches I – keine exakte deutsche Entsprechung'},
+    'І':{pair:'І і',sound:'I',name:'і (i)',help:'wie I in „Igel“'},
+    'Ї':{pair:'Ї ї',sound:'JI',name:'ї (ji)',help:'ungefähr „ji“'},
+    'Й':{pair:'Й й',sound:'J',name:'йот (jot)',help:'wie J in „ja“'},
+    'К':{pair:'К к',sound:'K',name:'ка (ka)',help:'wie K in „Kind“'},
+    'Л':{pair:'Л л',sound:'L',name:'ел (el)',help:'wie L'},
+    'М':{pair:'М м',sound:'M',name:'ем (em)',help:'wie M'},
+    'Н':{pair:'Н н',sound:'N',name:'ен (en)',help:'wie N in „Nase“',trap:'Н sieht wie H aus, klingt im Ukrainischen aber N.'},
+    'О':{pair:'О о',sound:'O',name:'о (o)',help:'wie O'},
+    'П':{pair:'П п',sound:'P',name:'пе (pe)',help:'wie P'},
+    'Р':{pair:'Р р',sound:'R',name:'ер (er)',help:'gerolltes bzw. deutliches R',trap:'Р sieht wie P aus, klingt im Ukrainischen aber R.'},
+    'С':{pair:'С с',sound:'S',name:'ес (es)',help:'wie stimmloses S in „Sonne“',trap:'С sieht wie C aus, klingt im Ukrainischen aber S.'},
+    'Т':{pair:'Т т',sound:'T',name:'те (te)',help:'wie T'},
+    'У':{pair:'У у',sound:'U',name:'у (u)',help:'wie U in „Uhr“',trap:'У sieht wie Y aus, klingt im Ukrainischen aber U.'},
+    'Ф':{pair:'Ф ф',sound:'F',name:'еф (ef)',help:'wie F'},
+    'Х':{pair:'Х х',sound:'CH',name:'ха (cha)',help:'wie CH in „Bach“'},
+    'Ц':{pair:'Ц ц',sound:'Z',name:'це (ze)',help:'wie Z in „Zeit“'},
+    'Ч':{pair:'Ч ч',sound:'TSCH',name:'че (tsche)',help:'wie „tsch“ in „Tschüss“'},
+    'Ш':{pair:'Ш ш',sound:'SCH',name:'ша (scha)',help:'wie SCH in „Schule“'},
+    'Щ':{pair:'Щ щ',sound:'SCHTSCH',name:'ща (schtscha)',help:'ungefähr „schtsch“; später wird der Laut genauer trainiert'},
+    'Ь':{pair:'Ь ь',sound:'kein eigener Laut',name:'м’який знак (mjakij snak)',help:'Weichheitszeichen: Es macht den Konsonanten davor weich; es ist kein normaler Laut.'},
+    'Ю':{pair:'Ю ю',sound:'JU',name:'ю (ju)',help:'am Wortanfang ungefähr „ju“; nach Konsonanten wird die genaue Wirkung später vertieft'},
+    'Я':{pair:'Я я',sound:'JA',name:'я (ja)',help:'am Wortanfang ungefähr „ja“; nach Konsonanten wird die genaue Wirkung später vertieft'}
+  };
+  const ORDER = 'А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
+  const INTRO_GROUPS = Array.from({length: INTRO_DAYS}, (_, i) => ORDER.slice(i * 3, i * 3 + 3));
+  const makeCard = letter => {
+    const info = LETTER_INFO[letter];
+    return [info.pair, info.sound, info.help];
+  };
+  const NEW_ALPHABET = INTRO_GROUPS.map((letters, index) => [
+    `Alphabet ${index + 1}/11: ${letters.join(' · ')}`,
+    `Heute kommen genau ${letters.length} neue Zeichen – nicht mehr. Laut ist wichtiger als Buchstabenname.`,
+    index === 0
+      ? 'Umschriften sind nur Merkhilfen. Höre hin, sprich nach und rufe die Laute anschließend ohne Hilfe ab.'
+      : `Wiederhole zuerst Fälliges. Danach lernst du nur ${letters.join(', ')} und schließt mit aktivem Abruf ab.`,
+    letters.map(makeCard)
+  ]);
+  NEW_ALPHABET.push(
+    ['Kontrasttag: ähnliche Zeichen auseinanderhalten','Heute kommt kein neuer Buchstabe. Du trainierst gezielt typische Verwechslungen.','Achte besonders auf Г/Ґ, Е/Є, И/І/Ї/Й, Ж/Ш/Щ/Ч/Ц sowie die falschen Freunde В, Н, Р, С und У.',[]],
+    ['Automatisierung: alle 33 Zeichen','Heute kommt nichts Neues. Ziel ist schneller, sicherer Abruf ohne Raten.','Kurze gemischte Aufgaben wechseln Zeichen → Laut und Laut → Zeichen. Genauigkeit bleibt wichtiger als Tempo.',[]],
+    ['Alphabet-Checkpoint','Heute entscheidest du nicht selbst, was dran ist: Die App prüft das komplette Alphabet.','Der Checkpoint nutzt alle 33 Zeichen. Erst nach bestandenem Checkpoint öffnet sich der geführte Weg zum Lesen und zu ersten Wörtern.',[]]
+  );
+
+  const oldWords = OLD_D.slice(7);
+  D.splice(0, D.length, ...NEW_ALPHABET, ...oldWords);
+  LETTERS.splice(0, LETTERS.length, ...ORDER.map(letter => [letter, LETTER_INFO[letter].sound]));
+  SRS_INTERVALS.splice(0, SRS_INTERVALS.length, 1, 2, 4, 7, 14, 30);
+  WEEKLY_REVIEW_DAYS.splice(0, WEEKLY_REVIEW_DAYS.length, 20, 27, D.length - 1);
+
+  // Wort-/Dialog-Funktionen behalten ihre Inhalte, verschieben sich aber hinter die 14 Alphabettage.
+  Object.keys(DIALOGS).forEach(key => delete DIALOGS[key]);
+  OLD_DIALOGS.forEach(([key, value]) => { DIALOGS[key + WORD_OFFSET] = value; });
+  MASTER_SENTENCE_UNLOCKS.forEach((value, index) => { MASTER_SENTENCE_UNLOCKS[index] = value + WORD_OFFSET; });
+  GAP_SENTENCE_UNLOCKS.forEach((value, index) => { GAP_SENTENCE_UNLOCKS[index] = value + WORD_OFFSET; });
+
+  function mergeMeta(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    const best = (Number(a.answers) || 0) >= (Number(b.answers) || 0) ? a : b;
+    return {...a, ...b, ...best,
+      answers: Math.max(Number(a.answers)||0, Number(b.answers)||0),
+      correct: Math.max(Number(a.correct)||0, Number(b.correct)||0),
+      wrong: Math.max(Number(a.wrong)||0, Number(b.wrong)||0),
+      errors: Math.max(Number(a.errors)||0, Number(b.errors)||0)
+    };
+  }
+
+  function migrateState() {
+    s.alphabetPhase = {...{contrastPassed:false, automationPassed:false, checkpointPassed:false}, ...(s.alphabetPhase || {})};
+    s.courseStartDate = s.courseStartDate || [...(s.dates || [])].sort()[0] || date();
+    if (Number(s.courseSchema) >= SCHEMA) return;
+
+    const oldKnown = {...(s.known || {})};
+    const oldProgress = {...(s.lessonProgress || {})};
+    const oldDone = {...(s.done || {})};
+    const oldDay = Number(s.day) || 0;
+    const migratedKnown = {};
+
+    Object.entries(oldKnown).forEach(([key, meta]) => {
+      const match = /^d(\d+)-(\d+)$/.exec(key);
+      if (!match) { migratedKnown[key] = meta; return; }
+      const di = Number(match[1]), ci = Number(match[2]);
+      let newKey = key;
+      if (di < 7) {
+        const letter = OLD_D[di]?.[3]?.[ci]?.[0]?.[0];
+        const pos = ORDER.indexOf(letter);
+        if (pos >= 0) newKey = `d${Math.floor(pos/3)}-${pos%3}`;
+      } else {
+        newKey = `d${di + WORD_OFFSET}-${ci}`;
+      }
+      migratedKnown[newKey] = mergeMeta(migratedKnown[newKey], meta);
+    });
+    s.known = migratedKnown;
+
+    const newProgress = {};
+    // Jede neue 3er-Gruppe gilt nur dann als bestanden, wenn alle Ursprungstage bereits ihren Test bestanden hatten.
+    INTRO_GROUPS.forEach((letters, newDay) => {
+      const sourceDays = letters.map(letter => {
+        for (let di=0; di<7; di++) for (let ci=0; ci<(OLD_D[di]?.[3]?.length||0); ci++) {
+          if (OLD_D[di][3][ci][0][0] === letter) return di;
+        }
+        return -1;
+      });
+      const passed = sourceDays.every(di => di >= 0 && oldProgress[di]?.testPassed);
+      const spoken = sourceDays.every(di => di >= 0 && oldProgress[di]?.spoken);
+      const reviewDone = sourceDays.every(di => di >= 0 && oldProgress[di]?.reviewDone);
+      if (passed || spoken || reviewDone) newProgress[newDay] = {testPassed:passed, spoken, reviewDone, testDate:date()};
+    });
+    Object.entries(oldProgress).forEach(([key, value]) => {
+      const di = Number(key);
+      if (di >= 7) newProgress[di + WORD_OFFSET] = value;
+    });
+    s.lessonProgress = newProgress;
+    s.done = {};
+
+    // Frühere Wortlektionen werden erst nach dem neuen Alphabet-Checkpoint wieder freigegeben.
+    if (oldDay >= 7) s.day = 11;
+    else {
+      let firstOpen = 0;
+      while (firstOpen < INTRO_DAYS && lessonComplete(firstOpen)) firstOpen++;
+      s.day = Math.min(firstOpen, INTRO_DAYS - 1);
+    }
+    s.courseSchema = SCHEMA;
+  }
+
+  function normalizeSpacingMeta(meta) {
+    if (!meta || typeof meta !== 'object') return meta;
+    meta.answers = Number(meta.answers)||0;
+    meta.correct = Number(meta.correct)||Number(meta.hits)||0;
+    meta.wrong = Number(meta.wrong)||Number(meta.errors)||0;
+    if (!Array.isArray(meta.successDates)) meta.successDates = [];
+    if (!meta.successDates.length && meta.last && meta.lastAnswer === 'richtig') meta.successDates = [meta.last];
+    meta.successDates = [...new Set(meta.successDates.filter(Boolean))].sort();
+    const maxStage = meta.successDates.length || (meta.answers ? 1 : 0);
+    meta.stage = Math.min(Math.max(0, Number(meta.stage)||0), maxStage);
+    return meta;
+  }
+
+  const baseFreshMeta = freshMeta;
+  freshMeta = function(){ return {...baseFreshMeta(), successDates:[], responseMs:[], confusion:{}}; };
+  normalizeMeta = function(meta){ return normalizeSpacingMeta(meta); };
+  Object.values(s.known || {}).forEach(normalizeSpacingMeta);
+  Object.values(s.sentences || {}).forEach(normalizeSpacingMeta);
+
+  learningStatus = function(meta){
+    if (!meta) return 'Neu';
+    normalizeSpacingMeta(meta);
+    const answers = Number(meta.answers)||0;
