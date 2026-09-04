@@ -1,0 +1,34 @@
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v1 */
+(() => {
+  function run(){
+    const errors=[],warnings=[];
+    const assert=(ok,msg)=>{if(!ok)errors.push(msg)};
+    const warn=(ok,msg)=>{if(!ok)warnings.push(msg)};
+    try{
+      const order='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
+      assert(order.length===33&&new Set(order).size===33,'Alphabet muss 33 eindeutige Zeichen enthalten.');
+      assert(Array.isArray(D)&&D.length>=14,'Kursdaten fehlen oder sind zu kurz.');
+      const intro=D.slice(0,11).flatMap(d=>d?.[3]||[]).map(c=>c?.[0]?.[0]);
+      assert(intro.length===33,'Tage 1–11 müssen zusammen genau 33 Buchstaben enthalten.');
+      assert(intro.join('')===order.join(''),'Alphabet-Reihenfolge der Einführungstage stimmt nicht.');
+      assert(D.slice(0,11).every(d=>(d?.[3]?.length||0)<=3),'Ein Einführungstag enthält mehr als drei neue Zeichen.');
+      assert(Array.isArray(LETTERS)&&LETTERS.length===33,'LETTERS muss 33 Einträge enthalten.');
+      assert(LETTERS.map(x=>x[0]).join('')===order.join(''),'LETTERS-Reihenfolge stimmt nicht mit dem ukrainischen Alphabet überein.');
+      assert(Number.isInteger(s.day)&&s.day>=0&&s.day<D.length,'Aktueller Kurstag liegt außerhalb der Kursdaten.');
+      assert(typeof gameLetters==='function','Buchstaben-Jagd fehlt.');
+      if(s.day===0)assert(gameLetters().length===3,'Tag 1 der Buchstaben-Jagd darf nur drei bekannte Zeichen enthalten.');
+      assert(typeof streak==='function'&&Number.isFinite(streak())&&streak()>=0,'Streak liefert keinen gültigen Wert.');
+      assert(document.getElementById('markSpoken'),'Aussprache-Abschlussbutton fehlt.');
+      assert(document.getElementById('cards'),'Lernkarten-Container fehlt.');
+      assert(document.getElementById('daily'),'Tagesplan-Container fehlt.');
+      warn(Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO||{}).length>=15,'Weniger als 15 native Audio-Referenzen aktiv.');
+      Object.entries(window.UKRAINIAN_PRONUNCIATION_AUDIO||{}).forEach(([k,u])=>assert(/^https:\/\//.test(u),'Native Audio-URL für '+k+' ist nicht HTTPS.'));
+      const keys=all().map(x=>x.k);assert(keys.length===new Set(keys).size,'Doppelte Lernobjekt-IDs gefunden.');
+      warn(!document.body.textContent.includes('persönlicher 30-Tage-Kurs'),'Veralteter sichtbarer 30-Tage-Text vorhanden.');
+    }catch(e){errors.push('Selbsttest abgebrochen: '+(e?.message||e))}
+    window.UKRAINIAN_COURSE_SELFTEST={time:new Date().toISOString(),errors,warnings,ok:errors.length===0};
+    if(errors.length)console.error('Ukrainischkurs Selbsttest:',errors,warnings);else console.info('Ukrainischkurs Selbsttest OK',warnings);
+    if(errors.length){const toast=document.getElementById('toast');if(toast){toast.textContent='Interner Kurscheck hat '+errors.length+' Problem'+(errors.length===1?'':'e')+' gefunden.';toast.classList.add('show')}}
+  }
+  setTimeout(run,0);
+})();
