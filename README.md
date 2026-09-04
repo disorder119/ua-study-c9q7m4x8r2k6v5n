@@ -1,25 +1,31 @@
 # Ukrainischkurs für Joel
 
-Eine offlinefähige, installierbare Lern-App für ukrainische Buchstaben, Wörter und Sätze. Sie ist für GitHub Pages vorbereitet und funktioniert danach auf iPhone, Android und Desktop.
+Eine offlinefähige, installierbare Lern-App für Ukrainisch, optimiert für einen deutschsprachigen absoluten Anfänger. Die App läuft auf GitHub Pages, benötigt kein Konto und speichert den Lernfortschritt lokal auf dem Gerät.
 
-## Auf GitHub veröffentlichen
+## Geführter Lernweg
 
-1. Erstelle auf [GitHub](https://github.com/new) ein neues leeres Repository, zum Beispiel ukrainischkurs-joel.
-2. Lade **alle Dateien aus diesem Paket** in die oberste Ebene des Repositorys hoch.
-3. Öffne im Repository **Settings** → **Pages**.
-4. Wähle bei **Build and deployment**: **Deploy from a branch**.
-5. Wähle Branch **main** und Ordner **/(root)**, dann **Save**.
-6. Nach kurzer Zeit zeigt GitHub dir die Adresse, zum Beispiel https://DEIN-NAME.github.io/ukrainischkurs-joel/.
+Die ersten 14 Kurstage gehören ausschließlich dem ukrainischen Alphabet:
 
-Öffne diese Adresse einmal auf dem iPhone in **Safari**. Dann: **Teilen** → **Zum Home-Bildschirm** → **Hinzufügen**. Das Icon öffnet sich danach ohne Safari-Leiste als eigene App.
+- Tage 1–11: alle 33 Buchstaben in echter ukrainischer Alphabet-Reihenfolge, höchstens drei neue Zeichen pro Tag
+- Tag 12: gezieltes Kontrast- und Verwechslungstraining
+- Tag 13: Automatisierung aller 33 Zeichen
+- Tag 14: Alphabet-Checkpoint
+- reguläre Wörter im Hauptkurs werden erst nach bestandener Alphabetphase freigeschaltet
+
+Der Hauptkurs entscheidet die Reihenfolge. Zusatzübungen bleiben freiwillig verfügbar, ohne den geführten Lernweg vorzuspringen.
+
+## Lernlogik
+
+Die App nutzt aktiven Abruf, verteilte Wiederholung, sofortiges Feedback und Fehler-Reparaturrunden. Ein Lernobjekt kann nicht mehr durch viele richtige Antworten am selben Kalendertag als gemeistert gelten: erfolgreiche Abrufe müssen sich über mehrere getrennte Tage verteilen.
 
 ## Dateien
 
-- index.html – Startseite für GitHub Pages
-- ukrainisch-lernen.html – komplette App: Design, Lernplan, Spiele und Speicherlogik
-- ukrainisch-lernen.webmanifest – Installation als App
-- ukrainisch-lernen-sw.js – Offline-Modus
-- ukrainisch-icon-180.png, ukrainisch-icon-192.png, ukrainisch-icon-512.png – Home-Bildschirm- und App-Icons
-- ukrainisch-lernen-icon.svg – Vektor-Favicon
+- `index.html` – Einstieg für GitHub Pages
+- `ukrainischkurs-app.html` – stabiler App-Loader für die aktuelle Kurslogik
+- `ukrainisch-lernen.html` – bestehende vollständige Basis-App
+- `ukrainischkurs-v2-loader.js` + `ukrainischkurs-v2.part1`–`part5` – aktuelle geführte 14-Tage-Alphabetlogik und State-Migration
+- `ukrainisch-lernen.webmanifest` – PWA-Installation
+- `ukrainisch-lernen-sw.js` – Offline-Modus und Cache-Migration
+- App-Icons – Home-Bildschirm und Favicon
 
-Es ist kein Konto innerhalb der App und kein Server nötig. Der Lernfortschritt wird auf dem jeweiligen Gerät gespeichert; unter **Fortschritt** kann er zusätzlich gesichert werden.
+Unter **Fortschritt** kann der lokale Lernstand exportiert und wieder importiert werden. Alte Sicherungen werden beim Laden auf den aktuellen Kursstand migriert.
