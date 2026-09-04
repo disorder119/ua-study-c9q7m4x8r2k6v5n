@@ -44,7 +44,7 @@ Wichtige Grammatikpunkte werden nicht als große Tabellen präsentiert, sondern 
 
 Die App kombiniert kleine neue Blöcke, aktiven Abruf, verteilte Wiederholung, gemischten Abruf, Fehler-Reparatur, Mastery Learning und Transferaufgaben. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
 
-Die Architektur wird schrittweise weiter verbessert; ein grüner Validator bedeutet technische Konsistenz der geprüften Regeln, nicht automatisch empirisch bewiesene Lernwirkung. Die Lernwirkung muss langfristig zusätzlich mit echten Anfängern und verzögerten Retentionstests gemessen werden.
+Das Ziel ist ein belastbarer Anfängerkurs, nicht eine künstliche Abschlussquote. Ein grüner Validator bedeutet technische Konsistenz der geprüften Regeln, nicht empirisch bewiesene Lernwirkung; diese muss zusätzlich mit echten Anfängern und verzögerten Retentionstests gemessen werden.
 
 ## Qualitätssicherung
 
