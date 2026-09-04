@@ -1,0 +1,146 @@
+    const days = meta.successDates.length;
+    if (!answers) return 'Gesehen';
+    if (days >= 4 && meta.stage >= 4) return 'Gemeistert';
+    if (days >= 3 && meta.stage >= 3) return 'Sicher';
+    if (days >= 2) return 'Fast sicher';
+    return 'Lernen';
+  };
+  learningStatusClass = function(meta){ return learningStatus(meta).toLocaleLowerCase('de').replace(/ /g,'-'); };
+  scheduleMeta = function(meta, correct){
+    normalizeSpacingMeta(meta);
+    meta.answers++;
+    trackAnswer(correct);
+    const today = date();
+    if (correct) {
+      const newDay = !meta.successDates.includes(today);
+      if (newDay) {
+        meta.successDates.push(today);
+        meta.stage = Math.min(SRS_INTERVALS.length, (meta.stage||0) + 1);
+      }
+      const wait = SRS_INTERVALS[Math.max(0, (meta.stage||1)-1)] || 1;
+      const nextDate = new Date(); nextDate.setDate(nextDate.getDate()+wait);
+      meta.due = dayKey(nextDate);
+      meta.correct++;
+      meta.hits=(meta.hits||0)+1;
+      meta.wrongStreak=0;
+    } else {
+      meta.stage=Math.max(0,(meta.stage||0)-1);
+      meta.due=today;
+      meta.wrong++;
+      meta.errors=(meta.errors||0)+1;
+      meta.wrongStreak=(meta.wrongStreak||0)+1;
+    }
+    meta.lastAnswer=correct?'richtig':'falsch';
+    meta.last=today;
+    meta.reviews=(meta.reviews||0)+1;
+  };
+
+  migrateState();
+  syncLessons();
+
+  function dayNumberDiff(from, to) {
+    const a = new Date(from+'T12:00:00'), b = new Date(to+'T12:00:00');
+    return Math.max(0, Math.floor((b-a)/86400000));
+  }
+  function calendarAge(){ return dayNumberDiff(s.courseStartDate || date(), date()); }
+  function calendarAllows(di){ return di >= ALPHABET_DAYS || di <= calendarAge() || !!s.done[di]; }
+  function introducedCount(){ return Math.min(33, Math.max(0, (Math.min(s.day, INTRO_DAYS-1)+1)*3)); }
+  function introducedAlphabetItems(){
+    const max = Math.min(33, Math.max(3, introducedCount()));
+    return all().filter(item => item.di < INTRO_DAYS).slice(0, max);
+  }
+
+  alphabetItems = function(){ return all().filter(item => item.di < INTRO_DAYS); };
+  alphabetKnown = function(){ return alphabetItems().filter(item => s.known[item.k]); };
+  alphabetVerifiedCount = function(){
+    let total=0;
+    for (let di=0; di<INTRO_DAYS; di++) if (lessonState(di).testPassed) total += D[di][3].length;
+    return Math.min(33,total);
+  };
+  alphabetReady = function(){
+    return alphabetVerifiedCount()===33 && !!s.alphabetPhase?.checkpointPassed && Array.from({length:ALPHABET_DAYS},(_,di)=>lessonComplete(di)).every(Boolean);
+  };
+  requireAlphabet = function(){
+    if (alphabetReady()) return true;
+    show('learn');
+    const missing = 33-alphabetVerifiedCount();
+    toast(missing ? `Erst noch ${missing} Buchstaben sicher abrufen – danach folgen Kontrast, Automatisierung und Checkpoint.` : 'Schließe erst Tag 12–14 der Alphabetphase ab.');
+    return false;
+  };
+
+  transliterationMarkup = function(c,di){
+    if (di < INTRO_DAYS) return '<div class="trans">Merkhilfe: '+c[2]+'</div>';
+    const label=di<21?'Aussprache anzeigen':'Aussprache nur bei Bedarf';
+    return '<details class="pronunciation"><summary>'+label+'</summary><div class="trans">'+c[2]+'</div></details>';
+  };
+
+  function letterFromCard(c){ return c?.[0]?.[0] || ''; }
+  function letterCardHTML(c, di, ci){
+    const letter=letterFromCard(c), info=LETTER_INFO[letter], k=id(di,ci), meta=s.known[k], status=learningStatus(meta);
+    return '<article class="word letters '+(meta?'known ':'')+'" data-letter-card="'+ci+'">'+
+      '<button class="sound" aria-label="'+letter+' mit Systemstimme anhören">🔊</button>'+
+      '<div class="uk">'+info.pair+'</div>'+
+      '<div class="meaning">Laut: <strong>'+info.sound+'</strong></div>'+
+      '<div class="trans">Buchstabenname: '+info.name+'</div>'+
+      '<div class="hint">'+info.help+'</div>'+
+      (info.trap?'<div class="tip" style="margin-top:9px">'+info.trap+'</div>':'')+
+      '<div class="card-status '+learningStatusClass(meta)+'">'+status+'</div>'+
+      '<button class="know">'+(meta?'✓ Angesehen':'Als gesehen markieren')+'</button></article>';
+  }
+
+  function renderOnboarding(){
+    if (s.onboardingSeen || s.day!==0) return '';
+    return '<article class="word" id="alphabetOnboarding" style="grid-column:1/-1;cursor:default;padding-bottom:15px">'+
+      '<div class="label">Start in unter 1 Minute</div><h2>Du brauchst keinerlei Vorwissen</h2>'+
+      '<p class="small"><strong>Kyrillisch</strong> ist die Schrift, die Ukrainisch benutzt. Das ukrainische Alphabet hat <strong>33 Buchstaben</strong>. Einige sehen deutschen Buchstaben ähnlich, bedeuten aber etwas anderes – zum Beispiel В = W und Р = R.</p>'+
+      '<p class="small">Die App führt dich <strong>14 Tage</strong>: höchstens drei neue Zeichen pro Einführungstag, Tag 12 für Verwechslungen, Tag 13 für Automatisierung und Tag 14 als Checkpoint. Wörter im Hauptkurs beginnen erst danach.</p>'+
+      '<p class="small">Umschriften sind nur Merkhilfen. Entscheidend ist der Laut. Du musst nie selbst auswählen, was als Nächstes sinnvoll ist.</p>'+
+      '<button class="primary" id="finishOnboarding">Verstanden – Tag 1 starten</button></article>';
+  }
+
+  function renderSpecialDay(){
+    const specs={
+      11:{title:'Kontraste, die wirklich verwechselt werden',text:'Heute gibt es keine neuen Zeichen. Der Test mischt bewusst ähnliche Formen und Laute.',pairs:['Г / Ґ','Е / Є','И / І / Ї / Й','Ж / Ш / Щ / Ч / Ц','В / Б','Р / П','С / З','Ш / Щ']},
+      12:{title:'Abruf automatisieren',text:'Heute siehst du die 33 Zeichen in wechselnder Richtung. Nicht stumpf wiederholen: erst erinnern, dann antworten.',pairs:['Zeichen → Laut','Laut → Zeichen','falsche Freunde','schwierige Konsonanten','Vokale im Wechsel']},
+      13:{title:'Echter Alphabet-Checkpoint',text:'Der Checkpoint prüft alle 33 Zeichen. Mindestens 90 % müssen beim ersten Versuch stimmen; Fehler werden trotzdem sofort repariert.',pairs:['33 Zeichen','gemischte Reihenfolge','erster Versuch zählt','Fehler kommen erneut','erst danach Lesen']}
+    }[s.day];
+    $('cards').innerHTML='<article class="word" style="grid-column:1/-1;cursor:default;padding-bottom:15px"><h2>'+specs.title+'</h2><p class="small">'+specs.text+'</p><div class="actions">'+specs.pairs.map(x=>'<span class="secondary" style="cursor:default">'+x+'</span>').join('')+'</div></article>';
+  }
+
+  updateDaily = function(){
+    ensureDaily();
+    const p=lessonState(s.day), review=priorDue(s.day).length===0;
+    if(review&&p.testPassed&&!p.reviewDone){p.reviewDone=true;syncLesson(s.day);save();}
+    if (s.day < INTRO_DAYS) {
+      const newCards=D[s.day][3].every((_,ci)=>s.known[id(s.day,ci)]);
+      const items=[
+        ['Wiederholen',review,review?'heute nichts fällig':'noch '+priorDue(s.day).length+' fällig'],
+        ['3 neue Buchstaben',newCards,newCards?'alle drei angesehen':'nur die heutigen Zeichen kennenlernen'],
+        ['Hören',!!s.daily.listened,'Systemstimme ist aktuell nur Fallback'],
+        ['Nachsprechen',!!s.daily.spoken,'Laute laut produzieren'],
+        ['Aktiv abrufen',!!p.testPassed,p.testPassed?'alle heutigen Zeichen beim ersten Versuch richtig':'alle heutigen Zeichen müssen stimmen'],
+        ['Buchstaben-Jagd',!!s.daily.game,s.daily.game?'Runde geschafft':'kurze Recognition-Runde']
+      ];
+      const done=items.filter(x=>x[1]).length;
+      const next=!review?'Beginne mit den fälligen Wiederholungen.':!newCards?'Lerne jetzt nur die drei heutigen Buchstaben.':!s.daily.listened?'Höre die drei Zeichen einmal an.':!s.daily.spoken?'Sprich ihre Laute jetzt laut.':!p.testPassed?'Starte den Aktiv-Abruf-Test.':!s.daily.game?'Zum Abschluss eine kurze Buchstaben-Jagd.':'Tagesziel geschafft. Der nächste Einführungstag öffnet sich erst am nächsten Kalendertag.';
+      $('daily').innerHTML='<div class="daily-head">Heute '+done+' von '+items.length+' Aufgaben geschafft</div><div class="daily-next"><b>Dein nächster Schritt</b>'+next+'</div>'+items.map(x=>'<div class="daily-item '+(x[1]?'done':'')+'"><b>'+(x[1]?'✓ ':'')+x[0]+'</b><span class="subdone">'+x[2]+'</span></div>').join('');
+      $('methodKeyboard').hidden=true;
+      renderDialog(); return;
+    }
+    if (s.day < ALPHABET_DAYS) {
+      const phaseNames=['Kontrasttraining','Automatisierung','Checkpoint'];
+      const items=[
+        ['Fällige Wiederholungen',review,review?'erledigt':'noch '+priorDue(s.day).length+' fällig'],
+        ['Laut nachsprechen',!!s.daily.spoken,'kurz aktiv produzieren'],
+        [phaseNames[s.day-11],!!p.testPassed,p.testPassed?'bestanden':s.day===13?'mindestens 90 % beim ersten Versuch':'mindestens 85 % beim ersten Versuch']
+      ];
+      const done=items.filter(x=>x[1]).length;
+      $('daily').innerHTML='<div class="daily-head">Alphabet · Tag '+(s.day+1)+' von 14 · '+done+' von '+items.length+' Aufgaben</div><div class="daily-next"><b>Dein nächster Schritt</b>'+(!review?'Zuerst fällige Zeichen wiederholen.':!s.daily.spoken?'Sprich einige schwierige Laute einmal laut.':!p.testPassed?'Starte jetzt den geführten Test.':'Tagesziel geschafft.')+'</div>'+items.map(x=>'<div class="daily-item '+(x[1]?'done':'')+'"><b>'+(x[1]?'✓ ':'')+x[0]+'</b><span class="subdone">'+x[2]+'</span></div>').join('');
+      $('methodKeyboard').hidden=true;
+      renderDialog(); return;
+    }
+    // Nach dem Alphabet bleibt die bisherige Tageslogik erhalten, aber mit den verschobenen Wortlektionen.
+    const writing=s.writing.date===date()&&s.writing.count>=s.writing.target,
+      newCards=D[s.day][3].every((_,ci)=>s.known[id(s.day,ci)]),hasDialog=!!DIALOGS[s.day],practiceDone=hasDialog?!!s.daily.dialog:true,
+      items=[['Wiederholen',review,review?'heute nichts fällig':'noch '+priorDue(s.day).length+' fällig'],['Neue Karten',newCards,newCards?'angesehen':'wenige Karten kennenlernen'],['Hören',!!s.daily.listened,'mindestens einmal ohne mitzulesen'],['Nachsprechen',!!s.daily.spoken,'getrennt vom Anhören'],['Schreiben',writing,writing?'heutiges Ziel':'freiwillige Schreibpraxis'],['Aktiv abrufen',!!p.testPassed,p.testPassed?'Abschlusstest bestanden':'mind. 80 % nötig'],hasDialog?['Mini-Dialog',practiceDone,practiceDone?'laut beantwortet':'Antwort erst selbst sagen']:null].filter(Boolean),
+      done=items.filter(x=>x[1]).length,
