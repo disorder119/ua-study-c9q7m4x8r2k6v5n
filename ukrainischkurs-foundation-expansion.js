@@ -1,0 +1,57 @@
+/* Ukrainischkurs für Joel · Foundation Expansion v1
+   Erweitert den bisherigen Minikurs um A1-nahe Kernbereiche und kleine Grammatikmuster.
+   Fokus: konkrete Bedürfnisse, Fragen, Familie, Verben, Einkaufen, Verkehr, Gesundheit. */
+(() => {
+  const VERSION=1;
+  const start=D.length;
+  const LESSONS=[
+    ['Menschen benennen','Wer ist wer?','Lerne Personen nicht isoliert, sondern direkt in kleinen Aussagen.',[['він','er','win'],['вона','sie','wo-na'],['вони','sie (Plural)','wo-ny'],['Хто це?','Wer ist das?','chto ze'],['Це мій друг','Das ist mein Freund','ze mij druh']]],
+    ['Mein, meine, meine','Besitz in einfachen Grundformen.','Мій, моя, моє und мої richten sich nach dem Nomen. Für den Anfang lernst du die häufigsten Grundformen als Muster.',[['мій','mein (mask.)','mij'],['моя','meine (fem.)','mo-ja'],['моє','mein (neutr.)','mo-je'],['мої','meine (Plural)','mo-ji'],['Це моя сім’я','Das ist meine Familie','ze mo-ja sim-ja']]],
+    ['Fünf wichtige Verben','Sag etwas über dich.','Lerne Verben sofort mit Я. So merkst du nicht nur eine Wörterbuchform, sondern eine verwendbare Aussage.',[['Я живу…','Ich wohne / lebe …','ja schy-wu'],['Я працюю…','Ich arbeite …','ja pra-zu-ju'],['Я говорю…','Ich spreche …','ja ho-wo-rju'],['Я маю…','Ich habe …','ja ma-ju'],['Я хочу…','Ich möchte / will …','ja cho-tschu']]],
+    ['Fragen, die Gespräche öffnen','Fünf Fragewörter für echte Situationen.','Lerne das Fragewort zusammen mit seiner Funktion, nicht als lose Liste.',[['хто?','wer?','chto'],['що?','was?','schtscho'],['де?','wo?','de'],['коли?','wann?','ko-ly'],['скільки?','wie viel / wie viele?','skil-ky']]],
+    ['Zahlen 6 bis 10','Jetzt kannst du bis zehn zählen.','Sprich die Zahlen laut und mische sie mit 1–5 aus der früheren Lektion.',[['шість','sechs','schist'],['сім','sieben','sim'],['вісім','acht','wi-sim'],['дев’ять','neun','de-wjat'],['десять','zehn','de-sjat']]],
+    ['Einkaufen','Preis verstehen und etwas nehmen.','Diese Chunks sind wichtiger als eine lange Produktliste.',[['Скільки це коштує?','Wie viel kostet das?','skil-ky ze kosch-tu-je'],['дорого','teuer','do-ro-ho'],['дешево','günstig','de-sche-wo'],['Я беру це','Ich nehme das','ja be-ru ze'],['карткою','mit Karte','kart-ko-ju']]],
+    ['Bus, Zug und Haltestelle','Unterwegs selbstständig bleiben.','Trainiere die Wörter direkt mit den Fragen, die du unterwegs wirklich brauchst.',[['вокзал','Bahnhof','wok-sal'],['зупинка','Haltestelle','su-pyn-ka'],['автобус','Bus','aw-to-bus'],['потяг','Zug','po-tjah'],['Де зупинка?','Wo ist die Haltestelle?','de su-pyn-ka']]],
+    ['Gesundheit und Hilfe','Wenige Sätze, die im Ernstfall nützlich sind.','Hier zählt Verständlichkeit mehr als elegante Grammatik.',[['лікар','Arzt / Ärztin','li-kar'],['аптека','Apotheke','ap-te-ka'],['Мені погано','Mir geht es schlecht','me-ni po-ha-no'],['У мене болить…','Mir tut … weh','u me-ne bo-lyt'],['Мені потрібна допомога','Ich brauche Hilfe','me-ni po-trib-na do-po-mo-ha']]],
+    ['Wo bist du?','Ortsmuster als fertige Chunks.','Kasusformen werden später systematisch erklärt. Jetzt erkennst und benutzt du häufige Ortsmuster.',[['в Україні','in der Ukraine','w ukra-ji-ni'],['у Києві','in Kyjiw','u ky-je-wi'],['в готелі','im Hotel','w ho-te-li'],['вдома','zu Hause','wdo-ma'],['Я зараз вдома','Ich bin jetzt zu Hause','ja sa-ras wdo-ma']]],
+    ['Flexible Überlebensmuster','Aus bekannten Teilen neue Aussagen bauen.','Diese fünf Satzrahmen lassen sich später mit vielen neuen Wörtern kombinieren.',[['Я хочу …','Ich möchte …','ja cho-tschu'],['Мені потрібно …','Ich brauche …','me-ni po-trib-no'],['Де …?','Wo ist / sind …?','de'],['У мене є …','Ich habe …','u me-ne je'],['Я не знаю','Ich weiß nicht','ja ne sna-ju']]]
+  ];
+  const RULES={};
+  function rule(offset,title,note,items){RULES[start+offset]={title,note,items}}
+  rule(1,'Possessivmuster','Die Grundform richtet sich nach Genus/Zahl des folgenden Nomens.',[
+    {q:'___ друг (mein Freund)',a:'мій',o:['мій','моя','моє','мої']},{q:'___ сім’я (meine Familie)',a:'моя',o:['мій','моя','моє','мої']},{q:'___ друзі (meine Freunde)',a:'мої',o:['мій','моя','моє','мої']}
+  ]);
+  rule(2,'Verb als verwendbarer Chunk','Für den Start merkst du häufige Verben direkt als Я-Aussage.',[
+    {q:'Ich wohne / lebe …',a:'Я живу…',o:['Я живу…','Я маю…','Я хочу…']},{q:'Ich habe …',a:'Я маю…',o:['Я говорю…','Я маю…','Я працюю…']},{q:'Ich spreche …',a:'Я говорю…',o:['Я говорю…','Я живу…','Я хочу…']}
+  ]);
+  rule(3,'Fragewörter','Ordne Funktion statt nur Übersetzung.',[
+    {q:'Du fragst nach einer Person.',a:'хто?',o:['хто?','що?','де?']},{q:'Du fragst nach einem Ort.',a:'де?',o:['коли?','де?','скільки?']},{q:'Du fragst nach einer Menge / einem Preis.',a:'скільки?',o:['скільки?','хто?','що?']}
+  ]);
+  rule(5,'Einkaufsdialog','Baue kleine funktionale Sequenzen.',[
+    {q:'Du willst den Preis wissen.',a:'Скільки це коштує?',o:['Скільки це коштує?','Де зупинка?','Я не знаю']},{q:'Du entscheidest dich dafür.',a:'Я беру це',o:['Я беру це','Мені погано','Я живу…']},{q:'Du willst mit Karte zahlen.',a:'карткою',o:['карткою','дорого','вдома']}
+  ]);
+  rule(7,'Hilfe ausdrücken','Erkenne drei verschiedene Bedürfnisse.',[
+    {q:'Dir geht es schlecht.',a:'Мені погано',o:['Мені погано','Я не знаю','Я беру це']},{q:'Du brauchst Hilfe.',a:'Мені потрібна допомога',o:['Мені потрібна допомога','У мене є допомога','Де допомога?']},{q:'Etwas tut weh.',a:'У мене болить…',o:['У мене болить…','Я говорю…','Мені потрібно…']}
+  ]);
+  rule(9,'Satzrahmen kombinieren','Wähle den Rahmen nach deiner Absicht.',[
+    {q:'Du möchtest etwas.',a:'Я хочу …',o:['Я хочу …','Де …?','Я не знаю']},{q:'Du suchst einen Ort.',a:'Де …?',o:['У мене є …','Де …?','Мені потрібно …']},{q:'Du weißt die Antwort nicht.',a:'Я не знаю',o:['Я не знаю','Я хочу …','У мене є …']}
+  ]);
+
+  LESSONS.forEach(x=>D.push(x));
+  WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,20,27,36,43,D.length-1);
+  DIALOGS[start+0]={title:'Menschen vorstellen',situation:'Du zeigst auf einen Freund.',prompt:'Sag: Das ist mein Freund.',answer:'Це мій друг.<br><span class="small">Das ist mein Freund.</span>'};
+  DIALOGS[start+3]={title:'Frage stellen',situation:'Du möchtest wissen, wer eine Person ist.',prompt:'Frag: Wer ist das?',answer:'Хто це?<br><span class="small">Wer ist das?</span>'};
+  DIALOGS[start+5]={title:'Im Laden',situation:'Du möchtest den Preis wissen.',prompt:'Frag erst selbst.',answer:'Скільки це коштує?<br><span class="small">Wie viel kostet das?</span>'};
+  DIALOGS[start+6]={title:'Unterwegs',situation:'Du suchst die Haltestelle.',prompt:'Frag auf Ukrainisch.',answer:'Де зупинка?<br><span class="small">Wo ist die Haltestelle?</span>'};
+  DIALOGS[start+7]={title:'Hilfe',situation:'Dir geht es schlecht und du brauchst Hilfe.',prompt:'Sag einen passenden Satz.',answer:'Мені потрібна допомога.<br><span class="small">Ich brauche Hilfe.</span>'};
+
+  function ensure(){if(!s.foundationExpansion||typeof s.foundationExpansion!=='object')s.foundationExpansion={version:VERSION,rules:{}};s.foundationExpansion.version=VERSION;s.foundationExpansion.rules=s.foundationExpansion.rules||{};return s.foundationExpansion}
+  let ruleSession=null;
+  function ruleState(day){const st=ensure();return st.rules[day]||(st.rules[day]={passed:false,best:0,attempts:0,date:''})}
+  function startRule(){const r=RULES[s.day];if(!r)return;ruleSession={items:[...r.items].sort(()=>Math.random()-.5),idx:0,correct:0};renderRule()}
+  function answerRule(v){const r=RULES[s.day],q=ruleSession.items[ruleSession.idx],good=v===q.a;if(good)ruleSession.correct++;toast(good?'Richtig.':'Richtig ist: '+q.a);ruleSession.idx++;if(ruleSession.idx>=ruleSession.items.length){const st=ruleState(s.day),score=Math.round(ruleSession.correct/ruleSession.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=ruleSession.correct===ruleSession.items.length;save();ruleSession=null;toast(st.passed?'Muster verstanden.':'Noch nicht stabil: alle drei Muster müssen in einem frischen Durchgang stimmen.');render();return}renderRule()}
+  function renderRule(){let box=document.getElementById('foundationRule');const r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='foundationRule';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=ruleState(s.day);if(ruleSession){const q=ruleSession.items[ruleSession.idx];box.innerHTML='<div class="label">Muster-Test · '+(ruleSession.idx+1)+' / '+ruleSession.items.length+'</div><h2>'+r.title+'</h2><div class="fr-q">'+q.q+'</div><div class="fr-grid">'+[...q.o].sort(()=>Math.random()-.5).map(x=>'<button class="answer" data-fr="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div>'}else box.innerHTML='<div class="label">Grammatik in kleinen Dosen</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Dieses Muster sitzt für heute.':'Alle 3 Aufgaben müssen in einem frischen Durchgang richtig sein. Keine große Grammatiktabelle nötig.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="frStart">'+(st.passed?'noch einmal':'3 Musterfragen starten')+'</button></div>';box.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>answerRule(b.dataset.fr));const btn=document.getElementById('frStart');if(btn)btn.onclick=startRule}
+  const baseNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){const r=RULES[s.day];if(r&&!ruleState(s.day).passed){renderRule();document.getElementById('foundationRule')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Kurstag erst das heutige Sprachmuster sicher anwenden.');return}return baseNext?.call(this,e)};
+  const css=document.createElement('style');css.textContent='.fr-q{font-weight:800;font-size:1.05rem;margin:12px 0}.fr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.fr-grid .answer{text-align:center}@media(max-width:520px){.fr-grid{grid-template-columns:1fr}}';document.head.append(css);
+  const previousRender=render;render=function(){previousRender();renderRule()};ensure();renderRule();
+})();
