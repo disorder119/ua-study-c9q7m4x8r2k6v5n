@@ -25,7 +25,7 @@ Das adaptive SRS speichert neben erfolgreichen Lerntagen auch Intervall, Schwier
 
 ## Grundkurs nach dem Alphabet
 
-Der ursprüngliche Minikurs wurde um **10 zusätzliche Grundlagenlektionen mit 50 Lernobjekten** erweitert. Neue Bereiche:
+Der ursprüngliche Minikurs wurde in **v16** um **10 zusätzliche Grundlagenlektionen mit 50 Lernobjekten** erweitert. Neue Bereiche:
 
 - Menschen benennen und vorstellen
 - мій / моя / моє / мої
