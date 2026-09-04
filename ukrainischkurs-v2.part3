@@ -1,0 +1,103 @@
+      next=!review?'Beginne mit den fälligen Wiederholungen.':!newCards?'Sieh dir die wenigen neuen Karten an.':!s.daily.listened?'Höre die neuen Karten an.':!s.daily.spoken?'Sprich die Reihe laut nach.':!p.testPassed?'Zum Schluss kommt der Abruf-Test.':!practiceDone?'Runde die Einheit mit dem Mini-Dialog ab.':'Tagesziel geschafft.';
+    $('daily').innerHTML='<div class="daily-head">Heute '+done+' von '+items.length+' Aufgaben geschafft</div><div class="daily-next"><b>Dein nächster Schritt</b>'+next+'</div>'+items.map(x=>'<div class="daily-item '+(x[1]?'done':'')+'"><b>'+(x[1]?'✓ ':'')+x[0]+'</b><span class="subdone">'+x[2]+'</span></div>').join('');
+    $('methodKeyboard').hidden=!keyboardUnlocked(); renderDialog();
+  };
+
+  render = function(){
+    const d=D[s.day], spoken=!!s.daily.spoken, alphabetDay=s.day<ALPHABET_DAYS;
+    $('label').textContent=alphabetDay?`Tag ${s.day+1} von 14 · Alphabet`:`Lektion ${s.day+1} · nach dem Alphabet`;
+    $('title').textContent=d[0]; $('focus').textContent=d[1]; $('tip').textContent=d[2];
+    $('markSpoken').textContent=spoken?'✓ Heute laut nachgesprochen':'🗣️ Heute laut nachsprechen'; $('markSpoken').classList.toggle('done',spoken);
+    $('cards').innerHTML='';
+    if (s.day < INTRO_DAYS) {
+      $('speakPrompt').textContent='Höre die Zeichen an und sprich vor allem ihre Laute laut: '+d[3].map(c=>LETTER_INFO[letterFromCard(c)].sound).join(' · ');
+      $('cards').innerHTML=renderOnboarding()+d[3].map((c,ci)=>letterCardHTML(c,s.day,ci)).join('');
+      $('cards').querySelectorAll('[data-letter-card]').forEach((el,ci)=>{
+        const c=d[3][ci], letter=letterFromCard(c);
+        el.onclick=e=>{if(!e.target.closest('.know')){speak(letter,el.querySelector('.sound'));markListened()}};
+        el.querySelector('.sound').onclick=e=>{e.stopPropagation();speak(letter,e.currentTarget);markListened()};
+        el.querySelector('.know').onclick=e=>{e.stopPropagation();toggle(s.day,ci)};
+      });
+      const intro=$('finishOnboarding'); if(intro) intro.onclick=()=>{s.onboardingSeen=true;save();render()};
+    } else if (s.day < ALPHABET_DAYS) {
+      $('speakPrompt').textContent='Sprich schwierige Laute bewusst langsam nach, bevor du den Test startest.';
+      renderSpecialDay();
+    } else {
+      $('speakPrompt').textContent='Höre die Reihe an und sprich laut nach: '+d[3].slice(0,2).map(c=>c[0]).join(' · ');
+      d[3].forEach((c,ci)=>{let k=id(s.day,ci),meta=s.known[k],status=learningStatus(meta),e=document.createElement('article');e.className='word '+(meta?'known ':'');e.tabIndex=0;e.innerHTML='<button class="sound" aria-label="Anhören">🔊</button><div class="uk">'+c[0]+'</div>'+transliterationMarkup(c,s.day)+'<div class="meaning">'+c[1]+'</div><div class="card-status '+learningStatusClass(meta)+'">'+status+'</div><div class="hint">Ukrainisch · anhören, laut sagen, dann im Test abrufen</div><button class="know">'+(meta?'✓ Angesehen':'Als gesehen markieren')+'</button>';e.onclick=x=>{if(!x.target.closest('.know')){speak(c[0],e.querySelector('.sound'));markListened()}};e.querySelector('.sound').onclick=x=>{x.stopPropagation();speak(c[0],x.currentTarget);markListened()};e.querySelector('.know').onclick=x=>{x.stopPropagation();toggle(s.day,ci)};$('cards').append(e)});
+    }
+    $('next').textContent=s.day===D.length-1?'Zum Anfang':'Nächster Kurstag';
+    audioState(); updateDaily(); progress();
+  };
+
+  renderAlphabet = function(){
+    const b=$('alphabetGrid'); if(!b)return; b.innerHTML='';
+    const verified=alphabetVerifiedCount(); $('alphabetCount').textContent=verified+' / 33 geprüft';
+    ORDER.forEach(letter=>{const info=LETTER_INFO[letter],e=document.createElement('button');e.className='alphabet-card';e.type='button';e.setAttribute('aria-label','Buchstabe '+letter+', Laut '+info.sound+', Name '+info.name);e.innerHTML='<div class="alphabet-letter">'+letter+'</div><div class="alphabet-sound">Laut: '+info.sound+'</div><div class="alphabet-help">Name: '+info.name+'</div>';e.onclick=()=>{speak(letter,e);markListened()};b.append(e)});
+  };
+
+  progress = function(){
+    const due=dueCards().length;
+    if (!alphabetReady()) {
+      const verified=alphabetVerifiedCount();
+      $('bar').style.width=(verified/33*100)+'%';
+      $('progressText').textContent=`Alphabet: ${verified} von 33 geprüft · Kurstag ${Math.min(s.day+1,14)} von 14 · ${due} Wiederholung${due===1?'':'en'} fällig`;
+    } else {
+      const seen=Object.keys(s.known).length,total=all().length,done=Object.keys(s.done).length,safe=Object.values(s.known).filter(meta=>['Sicher','Gemeistert'].includes(learningStatus(meta))).length;
+      $('bar').style.width=(done/D.length*100)+'%';
+      $('progressText').textContent=seen+' von '+total+' Lernobjekten gesehen · '+safe+' sicher oder gemeistert · '+done+' von '+D.length+' Kurstagen abgeschlossen';
+    }
+    $('streak').textContent=streak()+' Tage dran';
+  };
+
+  gameLetters = function(){
+    const max=s.day<INTRO_DAYS?Math.min(33,(s.day+1)*3):33;
+    const available=LETTERS.slice(0,max); return available.length>3?available:LETTERS.slice(0,4);
+  };
+  matchingPool = function(){
+    if(s.day<ALPHABET_DAYS)return introducedAlphabetItems();
+    const known=all().filter(item=>item.di>=ALPHABET_DAYS&&s.known[item.k]); return known.length>=4?known:all().filter(item=>item.di===s.day);
+  };
+  mixedItems = function(){
+    if(!alphabetReady()) return introducedAlphabetItems();
+    const words=all().filter(item=>item.di>=ALPHABET_DAYS&&s.known[item.k]); return words.length?words:all().filter(item=>item.di>=ALPHABET_DAYS&&item.di<=s.day);
+  };
+  contrastItems = function(){
+    const tricky=['В','Н','Р','С','У','Г','Ґ','Е','Є','Ж','З','И','І','Ї','Й','П','Б','Х','Ц','Ч','Ш','Щ','Ь'];
+    const pool=s.day<INTRO_DAYS?introducedAlphabetItems():alphabetItems(); return pool.filter(x=>tricky.includes(x.c[0][0]));
+  };
+  speedPool = function(){ return all().filter(x=>x.di>=ALPHABET_DAYS&&s.known[x.k]); };
+  startListening = function(){
+    const pool=all().filter(item=>item.di>=ALPHABET_DAYS&&s.known[item.k]);
+    if(pool.length<4){toast('Nach dem Alphabet brauchst du zuerst vier bekannte Wörter für dieses Hörtraining.');show('learn');return}
+    start(pool,{lesson:false,limit:5,kind:'listening',forceMode:'audioChoice'});
+  };
+  typingPool = function(){ return all().filter(x=>x.di>=ALPHABET_DAYS&&s.known[x.k]); };
+  keyboardUnlocked = function(){ return alphabetReady()&&completedLessons()>=17; };
+  masterUnlocked = function(){ return alphabetReady()&&completedLessons()>=15; };
+  newDictation = function(){let pool=all().filter(x=>x.di>=ALPHABET_DAYS&&s.known[x.k]);if(!pool.length)return;let choices=pool.filter(x=>!master.dictation||x.k!==master.dictation.k),set=choices.length?choices:pool;master.dictation=set[Math.floor(Math.random()*set.length)];master.dictationAnswered=false;renderDictation()};
+
+  // Quizfrage: Buchstaben bleiben bis Tag 14 Buchstaben und werden nicht versehentlich als Wörter behandelt.
+  ask = function(){
+    let x=quiz.items[quiz.at],c=x.c;quiz.answered=false;
+    $('quizMeta').textContent=x.retry?'Sofort wiederholen · dieselbe Karte noch einmal':quiz.kind==='listening'?'Hörverständnis · Aufgabe '+(quiz.at+1)+' von '+quiz.baseTotal:'Aktiv abrufen · Frage '+(quiz.at+1)+' von '+quiz.baseTotal;
+    $('feedback').textContent='';$('continue').hidden=true;$('answers').innerHTML='';
+    let word=x.di>=ALPHABET_DAYS,mode=quiz.forceMode||(!word?(quiz.at%2?'letterType':'letterChoice'):(keyboardUnlocked()&&quiz.at%3===0?'ukType':quiz.at%3===1?'audioChoice':'deType'));quiz.mode=mode;
+    if(mode==='letterChoice'){
+      $('question').innerHTML='Welches Zeichen klingt wie <strong>'+c[1]+'</strong>?';
+      let source=quiz.originDay<INTRO_DAYS?all().filter(item=>item.di<INTRO_DAYS&&item.di<=quiz.originDay):alphabetItems(),options=[c,...source.filter(y=>y.k!==x.k&&y.c[1]!==c[1]).sort(()=>Math.random()-.5).slice(0,3).map(y=>y.c)].sort(()=>Math.random()-.5);
+      options.forEach(o=>{let b=document.createElement('button');b.className='answer';b.textContent=o[0];b.onclick=()=>answer(b,o===c,c,x.di);$('answers').append(b)});return;
+    }
+    if(mode==='letterType'){
+      $('question').innerHTML='Welchen Laut hat <strong>'+c[0]+'</strong>?';
+      makeTypedAnswer('z. B. W oder SCH',input=>{let good=normalAnswer(input.value)===normalAnswer(c[1]);if(!recordQuizAnswer(good,c,x.di))return;input.disabled=true;input.classList.add(good?'good':'bad');$('feedback').textContent=good?'Richtig – '+c[0]+' klingt wie '+c[1]+'.':'Richtig wäre: '+c[1]+'. Diese Karte kommt sofort noch einmal.';});return;
+    }
+    if(mode==='ukType'){$('question').innerHTML='Deutsch: <strong>'+c[1]+'</strong><br><span class="small">Tippe es auf Ukrainisch.</span>';makeTypedAnswer('Ukrainisch eingeben …',input=>{let good=tolerantMatch(input.value,c[0]);if(!recordQuizAnswer(good,c,x.di))return;input.disabled=true;input.classList.add(good?'good':'bad');$('feedback').textContent=good?'Richtig geschrieben!':'Richtig: '+c[0]+' · diese Karte kommt sofort noch einmal.';});return}
+    if(mode==='audioChoice'){$('question').innerHTML='Höre zu: Was bedeutet dieses Wort?';let listen=document.createElement('button');listen.className='secondary';listen.textContent='🔊 Wort anhören';listen.onclick=e=>{speak(c[0],e.currentTarget);markListened()};$('answers').append(listen);let options=[c,...all().filter(y=>y.di===x.di&&y.c!==c).sort(()=>Math.random()-.5).slice(0,3).map(y=>y.c)].sort(()=>Math.random()-.5);options.forEach(o=>{let b=document.createElement('button');b.className='answer';b.textContent=o[1];b.onclick=()=>answer(b,o===c,c,x.di);$('answers').append(b)});return}
+    $('question').innerHTML='Was bedeutet <strong>'+c[0]+'</strong>?';makeTypedAnswer('Deutsch eingeben …',input=>{let good=germanMatches(input.value,c[1]);if(!recordQuizAnswer(good,c,x.di))return;input.disabled=true;input.classList.add(good?'good':'bad');$('feedback').textContent=good?'Richtig!':'Richtig: '+c[1]+' · diese Karte kommt sofort noch einmal.';});
+  };
+
+  start = function(items,config={}){
+    let originDay=config.originDay??s.day,lesson=config.lesson??!items,kind=config.kind||(lesson&&originDay===D.length-1?'final':lesson&&WEEKLY_REVIEW_DAYS.includes(originDay)?'weekly':'daily'),pool=items||D[originDay][3].map((c,ci)=>({c,ci,di:originDay,k:id(originDay,ci)}));
+    if(!items&&kind==='weekly')pool=all().filter(item=>item.di<=originDay);
+    if(!items&&kind==='final')pool=all();
