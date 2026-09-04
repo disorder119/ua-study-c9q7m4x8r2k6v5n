@@ -1,6 +1,6 @@
 (async()=>{
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=13`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=14`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
     const code=(await Promise.all(responses.map(response=>response.text()))).join('');
@@ -26,11 +26,15 @@
     if(!adaptiveResponse.ok)throw new Error('Adaptive Alphabet-Mastery fehlt');
     eval(await adaptiveResponse.text());
 
+    const proofResponse=await fetch('./ukrainischkurs-alphabet-proof.js?v=1',{cache:'no-store'});
+    if(!proofResponse.ok)throw new Error('Alphabet-Proof fehlt');
+    eval(await proofResponse.text());
+
     const bridgeResponse=await fetch('./ukrainischkurs-reading-bridge.js?v=1',{cache:'no-store'});
     if(!bridgeResponse.ok)throw new Error('Lese-Brücke fehlt');
     eval(await bridgeResponse.text());
 
-    const testResponse=await fetch('./ukrainischkurs-selftest.js?v=3',{cache:'no-store'});
+    const testResponse=await fetch('./ukrainischkurs-selftest.js?v=4',{cache:'no-store'});
     if(!testResponse.ok)throw new Error('Selbsttest fehlt');
     eval(await testResponse.text());
   }catch(error){
