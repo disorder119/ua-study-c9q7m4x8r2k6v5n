@@ -1,9 +1,8 @@
-/* Ukrainischkurs für Joel · Adaptive Alphabet-Mastery v1
+/* Ukrainischkurs für Joel · Adaptive Alphabet-Mastery v2
    14 Tage sind der schnellste Pfad, nicht die Garantie. Freigabe erst nach mehrmodalem Mastery-Nachweis. */
 (() => {
-  const VERSION=1;
+  const VERSION=2;
   const ORDER='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
-  const HARD=['В','Г','Ґ','И','І','Ї','Р','Х','Ж','Ш','Щ','Ц','Ч'];
   const CONF={
     'В':['Б','У','Н'],'Б':['В','П','Р'],'Г':['Ґ','Х','К'],'Ґ':['Г','К','Д'],'Е':['Є','И','І'],'Є':['Е','Ї','Я'],
     'Ж':['Ш','Щ','Ч'],'З':['С','Ц','Ж'],'И':['І','Е','Ї'],'І':['И','Ї','Й'],'Ї':['І','Й','Є'],'Й':['Ї','І','Я'],
@@ -68,19 +67,9 @@
     toast('Alphabet noch nicht freigegeben: '+missing.join(' · '));return false;
   };
 
-  function optionsForLetter(letter){
-    const pool=[letter,...(CONF[letter]||[]),...shuffle(ORDER.filter(x=>x!==letter))];
-    return shuffle([...new Set(pool)].slice(0,4));
-  }
-  function soundOptions(letter){
-    const letters=optionsForLetter(letter),vals=letters.map(l=>sound(l));
-    const own=sound(letter);if(!vals.includes(own))vals[0]=own;return shuffle([...new Set(vals)]).slice(0,4);
-  }
-  function masked(label,letter){
-    const low=letter.toLocaleLowerCase('uk');
-    const i=label.toLocaleLowerCase('uk').indexOf(low);
-    return i<0?'＿'+label:label.slice(0,i)+'＿'+label.slice(i+1);
-  }
+  function optionsForLetter(letter){const pool=[letter,...(CONF[letter]||[]),...shuffle(ORDER.filter(x=>x!==letter))];return shuffle([...new Set(pool)].slice(0,4))}
+  function soundOptions(letter){const letters=optionsForLetter(letter),vals=letters.map(l=>sound(l)),own=sound(letter);if(!vals.includes(own))vals[0]=own;return shuffle([...new Set(vals)]).slice(0,4)}
+  function masked(label,letter){const low=letter.toLocaleLowerCase('uk'),i=label.toLocaleLowerCase('uk').indexOf(low);return i<0?'＿'+label:label.slice(0,i)+'＿'+label.slice(i+1)}
   function buildSession(type){
     if(type==='visual')return {type,phase:'test',items:shuffle(ORDER).map(letter=>({letter})),idx:0,correct:0,total:33,misses:[],threshold:32};
     if(type==='audio')return {type,phase:'test',items:shuffle(AUDIO_TARGETS).map(letter=>({letter})),idx:0,correct:0,total:AUDIO_TARGETS.length,misses:[],threshold:AUDIO_TARGETS.length-1};
@@ -92,94 +81,44 @@
   function current(){return session?.items?.[session.idx]}
   function finishSession(){
     const m=ensure(),ratio=session.total?session.correct/session.total:0,score=Math.round(ratio*100),passed=session.correct>=session.threshold;
-    if(session.type==='mix'){
-      m.mixDates[date()]={score,total:session.total};save();toast('Mix-Check: '+score+' %. Schwache Zeichen wurden aktualisiert.');session=null;renderPanels();return;
-    }
+    if(session.type==='mix'){m.mixDates[date()]={score,total:session.total};save();toast('Mix-Check: '+score+' %. Schwache Zeichen wurden aktualisiert.');session=null;renderPanels();return}
     const slot=m[session.type];slot.best=Math.max(Number(slot.best)||0,score);slot.date=date();slot.passed=!!passed;slot.attempts=(Number(slot.attempts)||0)+1;save();
-    toast(passed?'Teilprüfung bestanden.':score+' % beim ersten Durchgang. Die Fehler wurden repariert; für die Freigabe brauchst du einen stärkeren frischen Versuch.');
-    session=null;render();
+    toast(passed?'Teilprüfung bestanden.':score+' % beim ersten Durchgang. Die Fehler wurden repariert; für die Freigabe brauchst du einen stärkeren frischen Versuch.');session=null;render();
   }
-  function afterMainPhase(){
-    const missed=[...new Set(session.misses)];
-    if(missed.length){
-      session.phase='repair';session.items=missed.map(x=>session.type==='contrast'?x:{letter:x});session.idx=0;session.misses=[];renderPanels();return;
-    }
-    finishSession();
-  }
+  function afterMainPhase(){const missed=[...new Set(session.misses)];if(missed.length){session.phase='repair';session.items=missed.map(x=>session.type==='contrast'?x:{letter:x});session.idx=0;session.misses=[];renderPanels();return}finishSession()}
   function advance(){session.idx++;if(session.idx>=session.items.length){if(session.phase==='test')afterMainPhase();else finishSession()}else renderPanels()}
-  function answerVisual(value){
-    const item=current(),letter=item.letter,good=value===sound(letter);recordEvidence(letter,good);
-    if(session.phase==='test'){if(good)session.correct++;else session.misses.push(letter)}
-    if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist: '+sound(letter));setTimeout(()=>renderPanels(),450);return}
-    toast(good?'Richtig.':'Richtig wäre: '+sound(letter));setTimeout(advance,420);
-  }
-  function answerAudio(value){
-    const item=current(),letter=item.letter,good=value===letter;recordEvidence(letter,good);
-    if(session.phase==='test'){if(good)session.correct++;else session.misses.push(letter)}
-    if(session.phase==='repair'&&!good){toast('Noch nicht. In die Lücke gehört '+letter+'.');setTimeout(()=>renderPanels(),500);return}
-    toast(good?'Richtig gehört.':'In die Lücke gehört '+letter+'.');setTimeout(advance,450);
-  }
-  function answerContrast(value){
-    const item=current(),good=value===item.a;recordEvidence(item.a,good);
-    if(session.phase==='test'){if(good)session.correct++;else session.misses.push(item)}
-    if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist '+item.a+'.');setTimeout(()=>renderPanels(),500);return}
-    toast(good?'Richtig unterschieden.':'Richtig ist '+item.a+'.');setTimeout(advance,450);
-  }
-  function playAudio(letter,button){
-    const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];
-    if(src){const a=new Audio(src);button.disabled=true;a.onended=()=>button.disabled=false;a.onerror=()=>{button.disabled=false;toast('Menschliche Referenz gerade nicht erreichbar.');};a.play().catch(()=>{button.disabled=false;toast('Tippe erneut auf Anhören.');});return}
-    if(typeof speak==='function')speak(letter,button);
-  }
+  function answerVisual(value){const item=current(),letter=item.letter,good=value===sound(letter);recordEvidence(letter,good);if(session.phase==='test'){if(good)session.correct++;else session.misses.push(letter)}if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist: '+sound(letter));setTimeout(()=>renderPanels(),450);return}toast(good?'Richtig.':'Richtig wäre: '+sound(letter));setTimeout(advance,420)}
+  function answerAudio(value){const item=current(),letter=item.letter,good=value===letter;recordEvidence(letter,good);if(session.phase==='test'){if(good)session.correct++;else session.misses.push(letter)}if(session.phase==='repair'&&!good){toast('Noch nicht. In die Lücke gehört '+letter+'.');setTimeout(()=>renderPanels(),500);return}toast(good?'Richtig gehört.':'In die Lücke gehört '+letter+'.');setTimeout(advance,450)}
+  function answerContrast(value){const item=current(),good=value===item.a;recordEvidence(item.a,good);if(session.phase==='test'){if(good)session.correct++;else session.misses.push(item)}if(session.phase==='repair'&&!good){toast('Noch nicht. Richtig ist '+item.a+'.');setTimeout(()=>renderPanels(),500);return}toast(good?'Richtig unterschieden.':'Richtig ist '+item.a+'.');setTimeout(advance,450)}
+  function playAudio(letter,button){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(src){const a=new Audio(src);button.disabled=true;a.onended=()=>button.disabled=false;a.onerror=()=>{button.disabled=false;toast('Menschliche Referenz gerade nicht erreichbar.')};a.play().catch(()=>{button.disabled=false;toast('Tippe erneut auf Anhören.')});return}if(typeof speak==='function')speak(letter,button)}
   function sessionHtml(){
-    if(!session)return '';
-    const item=current(),pos=session.idx+1,total=session.items.length,repair=session.phase==='repair';
-    if(!item)return '';
-    if(session.type==='visual'||session.type==='mix'){
-      const letter=item.letter,pair=alphaItem(letter)?.c?.[0]||letter,opts=soundOptions(letter);
-      return '<div class="am-test"><div class="label">'+(session.type==='mix'?'Gemischter Zwischencheck':'33-Zeichen-Check')+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+'</div><div class="am-prompt">'+pair+'</div><div class="small">Welcher Laut gehört dazu?</div><div class="am-grid">'+opts.map(x=>'<button class="answer" data-am-visual="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div></div>';
-    }
-    if(session.type==='audio'){
-      const letter=item.letter,meta=window.UKRAINIAN_PRONUNCIATION_META?.[letter],label=meta?.label||letter,blank=masked(label,letter),opts=optionsForLetter(letter);
-      return '<div class="am-test"><div class="label">Hör-Diktat'+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+' · nicht raten: zuerst anhören</div><div class="am-prompt am-word">'+blank+'</div><button class="secondary" id="amPlay">🎙️ Menschliche Referenz anhören</button><div class="small">Welches Zeichen fehlt im gehörten Wort?</div><div class="am-grid">'+opts.map(x=>'<button class="answer" data-am-audio="'+x+'">'+x+'</button>').join('')+'</div></div>';
-    }
-    const opts=shuffle(item.o||[item.a]);
-    return '<div class="am-test"><div class="label">Verwechslungs-Test'+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+'</div><div class="am-question">'+item.q+'</div><div class="am-grid two">'+opts.map(x=>'<button class="answer" data-am-contrast="'+x+'">'+x+'</button>').join('')+'</div></div>';
+    if(!session)return '';const item=current(),pos=session.idx+1,total=session.items.length,repair=session.phase==='repair';if(!item)return '';
+    if(session.type==='visual'||session.type==='mix'){const letter=item.letter,pair=alphaItem(letter)?.c?.[0]||letter,opts=soundOptions(letter);return '<div class="am-test"><div class="label">'+(session.type==='mix'?'Gemischter Zwischencheck':'33-Zeichen-Check')+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+'</div><div class="am-prompt">'+pair+'</div><div class="small">Welcher Laut gehört dazu?</div><div class="am-grid">'+opts.map(x=>'<button class="answer" data-am-visual="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div></div>'}
+    if(session.type==='audio'){const letter=item.letter,meta=window.UKRAINIAN_PRONUNCIATION_META?.[letter],label=meta?.label||letter,blank=masked(label,letter),opts=optionsForLetter(letter);return '<div class="am-test"><div class="label">Hör-Diktat'+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+' · zuerst anhören, dann entscheiden</div><div class="am-prompt am-word">'+blank+'</div><button class="secondary" id="amPlay">🎙️ Menschliche Referenz anhören</button><div class="small">Welches Zeichen fehlt im gehörten Wort?</div><div class="am-grid">'+opts.map(x=>'<button class="answer" data-am-audio="'+x+'">'+x+'</button>').join('')+'</div></div>'}
+    const opts=shuffle(item.o||[item.a]);return '<div class="am-test"><div class="label">Verwechslungs-Test'+(repair?' · Reparatur':'')+'</div><div class="small">Aufgabe '+pos+' von '+total+'</div><div class="am-question">'+item.q+'</div><div class="am-grid two">'+opts.map(x=>'<button class="answer" data-am-contrast="'+x+'">'+x+'</button>').join('')+'</div></div>'
+  }
+  function patchCourseCopy(){
+    const sub=document.querySelector('header .sub');if(sub)sub.textContent='Dein geführter Lernweg: Alphabet im 14+-Mastery-Pfad, danach Lesen und alltagstaugliches Ukrainisch.';
+    const onboarding=document.getElementById('alphabetOnboarding');if(onboarding){const ps=onboarding.querySelectorAll('p.small');if(ps[1])ps[1].innerHTML='Die App plant einen <strong>schnellen 14-Tage-Pfad</strong>: höchstens drei neue Zeichen pro Einführungstag. Wenn danach noch etwas wackelt, folgen automatisch Festigungstage – du wirst nicht nach Kalender weitergeschoben.';}
+    const courseText=document.querySelector('#course .small');if(courseText)courseText.textContent='Du kannst abgeschlossene Tage wiederholen. 14 Tage sind das Zieltempo der Alphabetphase; bei Lücken folgen automatisch Festigungstage.';
+    const alphabetText=document.querySelector('#alphabet .top .small');if(alphabetText)alphabetText.textContent='33 Buchstaben in echter ukrainischer Reihenfolge. 14 Tage sind der schnellste Pfad; die Freigabe erfolgt erst nach den Mastery-Nachweisen.';
+    const progress=document.getElementById('progressText');if(progress&&Number(s.day)===13&&!alphabetReady())progress.textContent=progress.textContent.replace(/Kurstag 14 von 14/g,'Mastery-Phase 14+');
   }
   function renderMastery(){
-    if(Number(s.day)!==13){const old=document.getElementById('alphabetMasteryLab');if(old)old.hidden=true;return;}
-    const m=ensure();
-    if(!m.legacyGrandfathered){const start=new Date((s.courseStartDate||date())+'T12:00:00'),now=new Date(date()+'T12:00:00'),elapsed=Math.floor((now-start)/86400000)+1;if(elapsed>14&&!m.extensionDates.includes(date())){m.extensionDates.push(date());save();}}
-    let panel=document.getElementById('alphabetMasteryLab');const cards=document.getElementById('cards');if(!cards)return;
-    if(!panel){panel=document.createElement('section');panel.id='alphabetMasteryLab';panel.className='card';cards.insertAdjacentElement('afterend',panel)}panel.hidden=false;
-    const retained=retentionCount(),base=lessonState(13),basePct=base.total?Math.round((base.score||0)/base.total*100):0;
-    const checks=[['Basis-Checkpoint',!!s.alphabetPhase?.checkpointPassed,basePct+' %'],['33 Zeichen',m.visual.passed,m.visual.best+' %'],['Hör-Diktat',m.audio.passed,m.audio.best+' %'],['Verwechslungen',m.contrast.passed,m.contrast.best+' %'],['2 Lerntage',retentionReady(),retained+' / 33']];
-    panel.innerHTML='<div class="am-head"><div><div class="label">Alphabet-Zertifizierung · 14+</div><h2>Du gehst erst weiter, wenn du es wirklich kannst</h2></div><div class="pill">'+checks.filter(x=>x[1]).length+'/'+checks.length+' Nachweise</div></div><p class="small">14 Tage sind das schnellste Ziel. Wenn einzelne Zeichen noch wackeln, verlängert die App automatisch und trainiert nur die Lücken. Kein künstliches Durchfallen, kein automatisches Weiterklicken.</p><div class="am-status">'+checks.map(x=>'<div class="am-chip '+(x[1]?'ok':'')+'"><b>'+(x[1]?'✓ ':'')+x[0]+'</b><span>'+x[2]+'</span></div>').join('')+'</div>'+
-      (session?sessionHtml():'<div class="am-actions"><button class="primary" data-am-start="visual">33-Zeichen-Check</button><button class="secondary" data-am-start="audio">Hör-Diktat</button><button class="secondary" data-am-start="contrast">Verwechslungs-Test</button></div>')+
-      '<div class="tip">'+(alphabetReady()?'Alphabet wirklich freigegeben: mehrere Testarten + Wiederholung an getrennten Tagen erfüllt.':retained<33?'Noch '+(33-retained)+' Zeichen brauchen mindestens einen weiteren erfolgreichen Abruf an einem anderen Kalendertag. Schwächste aktuell: '+weakLetters(6).join(' · ')+'.':'Die mehrtägige Erinnerung sitzt. Schließe jetzt die noch offenen Teilprüfungen ab.')+'</div>';
-    bindPanel(panel);
-    const label=document.getElementById('label');if(label){const ext=m.extensionDates.length;label.textContent=ext?'Festigungstag '+(14+ext)+' · Alphabet 14+':'Tag 14 · Alphabet-Zertifizierung';}
-    const title=document.getElementById('title');if(title&&!alphabetReady())title.textContent='Alphabet festigen, bis es automatisch sitzt';
+    if(Number(s.day)!==13){const old=document.getElementById('alphabetMasteryLab');if(old)old.hidden=true;return}
+    const m=ensure();if(!m.legacyGrandfathered){const start=new Date((s.courseStartDate||date())+'T12:00:00'),now=new Date(date()+'T12:00:00'),elapsed=Math.floor((now-start)/86400000)+1;if(elapsed>14&&!m.extensionDates.includes(date())){m.extensionDates.push(date());save()}}
+    let panel=document.getElementById('alphabetMasteryLab');const cards=document.getElementById('cards');if(!cards)return;if(!panel){panel=document.createElement('section');panel.id='alphabetMasteryLab';panel.className='card';cards.insertAdjacentElement('afterend',panel)}panel.hidden=false;
+    const retained=retentionCount(),base=lessonState(13),basePct=base.total?Math.round((base.score||0)/base.total*100):0,checks=[['Basis-Checkpoint',!!s.alphabetPhase?.checkpointPassed,basePct+' %'],['33 Zeichen',m.visual.passed,m.visual.best+' %'],['Hör-Diktat',m.audio.passed,m.audio.best+' %'],['Verwechslungen',m.contrast.passed,m.contrast.best+' %'],['2 Lerntage',retentionReady(),retained+' / 33']];
+    panel.innerHTML='<div class="am-head"><div><div class="label">Alphabet-Zertifizierung · 14+</div><h2>Du gehst erst weiter, wenn du es wirklich kannst</h2></div><div class="pill">'+checks.filter(x=>x[1]).length+'/'+checks.length+' Nachweise</div></div><p class="small">14 Tage sind das schnellste Ziel. Wenn einzelne Zeichen noch wackeln, verlängert die App automatisch und trainiert nur die Lücken. Kein künstliches Durchfallen, kein automatisches Weiterklicken.</p><div class="am-status">'+checks.map(x=>'<div class="am-chip '+(x[1]?'ok':'')+'"><b>'+(x[1]?'✓ ':'')+x[0]+'</b><span>'+x[2]+'</span></div>').join('')+'</div>'+(session?sessionHtml():'<div class="am-actions"><button class="primary" data-am-start="visual">33-Zeichen-Check</button><button class="secondary" data-am-start="audio">Hör-Diktat</button><button class="secondary" data-am-start="contrast">Verwechslungs-Test</button></div>')+'<div class="tip">'+(alphabetReady()?'Alphabet wirklich freigegeben: mehrere Testarten + Wiederholung an getrennten Tagen erfüllt.':retained<33?'Noch '+(33-retained)+' Zeichen brauchen mindestens einen weiteren erfolgreichen Abruf an einem anderen Kalendertag. Schwächste aktuell: '+weakLetters(6).join(' · ')+'.':'Die mehrtägige Erinnerung sitzt. Schließe jetzt die noch offenen Teilprüfungen ab.')+'</div>';
+    bindPanel(panel);const label=document.getElementById('label');if(label){const ext=m.extensionDates.length;label.textContent=ext?'Festigungstag '+(14+ext)+' · Alphabet 14+':'Tag 14 · Alphabet-Zertifizierung'}const title=document.getElementById('title');if(title&&!alphabetReady())title.textContent='Alphabet festigen, bis es automatisch sitzt';patchCourseCopy();
   }
   function renderMix(){
-    if(Number(s.day)>=13||Number(s.day)<0){const old=document.getElementById('alphabetMix');if(old)old.hidden=true;return;}
-    let panel=document.getElementById('alphabetMix');const cards=document.getElementById('cards');if(!cards)return;
-    if(!panel){panel=document.createElement('section');panel.id='alphabetMix';panel.className='card';cards.insertAdjacentElement('afterend',panel)}panel.hidden=false;
-    const pool=introduced(),weak=[...pool].sort((a,b)=>weakness(a)-weakness(b)).slice(0,6);
-    panel.innerHTML='<div class="am-head"><div><div class="label">2-Minuten-Mix</div><h2>Alt + neu mischen statt nur blockweise lernen</h2></div></div><p class="small">Kurzer Abruf aus bereits eingeführten Zeichen. Die App nimmt bevorzugt das, was noch am wenigsten stabil ist.</p>'+(session&&session.type==='mix'?sessionHtml():'<div class="actions"><button class="secondary" data-am-start="mix">'+Math.min(6,pool.length)+' Fragen starten</button><span class="small">Heute schwächer: '+(weak.join(' · ')||'noch keine Daten')+'</span></div>');
-    bindPanel(panel);
+    if(Number(s.day)>=13||Number(s.day)<0){const old=document.getElementById('alphabetMix');if(old)old.hidden=true;patchCourseCopy();return}
+    let panel=document.getElementById('alphabetMix');const cards=document.getElementById('cards');if(!cards)return;if(!panel){panel=document.createElement('section');panel.id='alphabetMix';panel.className='card';cards.insertAdjacentElement('afterend',panel)}panel.hidden=false;
+    const pool=introduced(),weak=[...pool].sort((a,b)=>weakness(a)-weakness(b)).slice(0,6);panel.innerHTML='<div class="am-head"><div><div class="label">2-Minuten-Mix</div><h2>Alt + neu mischen statt nur blockweise lernen</h2></div></div><p class="small">Kurzer Abruf aus bereits eingeführten Zeichen. Die App nimmt bevorzugt das, was noch am wenigsten stabil ist.</p>'+(session&&session.type==='mix'?sessionHtml():'<div class="actions"><button class="secondary" data-am-start="mix">'+Math.min(6,pool.length)+' Fragen starten</button><span class="small">Heute schwächer: '+(weak.join(' · ')||'noch keine Daten')+'</span></div>');bindPanel(panel);patchCourseCopy();
   }
-  function bindPanel(panel){
-    panel.querySelectorAll('[data-am-start]').forEach(b=>b.onclick=()=>startTest(b.dataset.amStart));
-    panel.querySelectorAll('[data-am-visual]').forEach(b=>b.onclick=()=>answerVisual(b.dataset.amVisual));
-    panel.querySelectorAll('[data-am-audio]').forEach(b=>b.onclick=()=>answerAudio(b.dataset.amAudio));
-    panel.querySelectorAll('[data-am-contrast]').forEach(b=>b.onclick=()=>answerContrast(b.dataset.amContrast));
-    const play=document.getElementById('amPlay');if(play&&session?.type==='audio')play.onclick=()=>playAudio(current().letter,play);
-  }
-  function renderPanels(){renderMastery();renderMix()}
-
+  function bindPanel(panel){panel.querySelectorAll('[data-am-start]').forEach(b=>b.onclick=()=>startTest(b.dataset.amStart));panel.querySelectorAll('[data-am-visual]').forEach(b=>b.onclick=()=>answerVisual(b.dataset.amVisual));panel.querySelectorAll('[data-am-audio]').forEach(b=>b.onclick=()=>answerAudio(b.dataset.amAudio));panel.querySelectorAll('[data-am-contrast]').forEach(b=>b.onclick=()=>answerContrast(b.dataset.amContrast));const play=document.getElementById('amPlay');if(play&&session?.type==='audio')play.onclick=()=>playAudio(current().letter,play)}
+  function renderPanels(){renderMastery();renderMix();patchCourseCopy()}
   const css=document.createElement('style');css.textContent='.am-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.am-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:14px 0}.am-chip{display:flex;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:12px;background:#f1f5f9;color:#526b87;font-size:.82rem}.am-chip.ok{background:#e4faef;color:#126946}.am-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.am-test{margin-top:13px;padding:14px;border-radius:16px;background:#f4f8fc;text-align:center}.am-prompt{font-size:2.7rem;font-weight:850;color:var(--d);margin:10px 0}.am-word{font-size:2rem}.am-question{font-size:1.08rem;font-weight:800;color:var(--d);margin:13px auto;max-width:520px}.am-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.am-grid .answer{text-align:center}.am-grid.two{max-width:420px;margin-left:auto;margin-right:auto}@media(max-width:520px){.am-actions{grid-template-columns:1fr}.am-status{grid-template-columns:1fr}}';document.head.append(css);
-
-  const previousRender=render;
-  render=function(){previousRender();renderPanels()};
-  ensure();renderPanels();
+  const previousRender=render;render=function(){previousRender();renderPanels()};ensure();renderPanels();
 })();
