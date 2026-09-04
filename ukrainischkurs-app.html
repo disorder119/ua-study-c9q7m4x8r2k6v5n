@@ -15,7 +15,7 @@
     const response=await fetch('./ukrainisch-lernen.html',{cache:'no-store'});
     if(!response.ok)throw new Error('Basis nicht verfügbar');
     let html=await response.text();
-    const upgrade='<script src="./ukrainischkurs-v2-loader.js?v=8"></scr'+'ipt>';
+    const upgrade='<script src="./ukrainischkurs-v2-loader.js?v=9"></scr'+'ipt>';
     if(!html.includes('</body>'))throw new Error('Ungültige Basisdatei');
     html=html.replace('</body>',upgrade+'</body>');
     document.open();document.write(html);document.close();
