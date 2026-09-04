@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Qualitäts-Härtung v4
+/* Ukrainischkurs für Joel · Qualitäts-Härtung v5
    Behebt bekannte Lernlogikfehler und verhindert zu leichtes Abhaken der Aussprache. */
 (() => {
   const ORDER='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
@@ -23,6 +23,7 @@
   function pronunciationGateReady(){if(s.day>=14)return true;const targets=currentTargets();if(!targets.length)return true;const d=s.pronunciation?.daily||{};if(!targets.every(l=>(d.reference||[]).includes(l)))return false;const g=ensureGate();if(preferredProductionReady())return true;return (!recordingSupported()||g.micFallback)&&manualReady()}
   function markManual(letter){const g=ensureGate();if(!g.manualProduced.includes(letter))g.manualProduced.push(letter);save();patchUi()}
   function markMicFailure(){const g=ensureGate();g.micFallback=true;save();patchUi()}
+  function sourceLabel(m){return String(m?.project||'').includes('Lingua Libre')?'Muttersprachler-Referenz':'menschliche ukrainische Referenz'}
   function patchAttribution(){
     const coach=document.getElementById('pronCoach');if(!coach)return;
     const entries=currentTargets().map(l=>[l,nativeMeta[l]]).filter(x=>x[1]);
@@ -30,11 +31,11 @@
     if(!entries.length){if(credit)credit.hidden=true;return}
     if(!credit){credit=document.createElement('div');credit.id='pronNativeCredit';credit.className='small';credit.style.marginTop='10px';coach.append(credit)}
     credit.hidden=false;
-    credit.innerHTML='<strong>Freie Muttersprachler-Referenzen:</strong> '+entries.map(([l,m])=>'<a href="'+m.source+'" target="_blank" rel="noopener noreferrer">'+l+' · '+m.label+'</a>').join(' · ')+'<br>Gesprochen von Tohaomg · Lingua Libre/Wikimedia Commons · Lizenz und Attribution auf der jeweiligen Quelldatei.';
+    credit.innerHTML='<strong>Freie menschliche ukrainische Referenzen:</strong> '+entries.map(([l,m])=>'<a href="'+m.source+'" target="_blank" rel="noopener noreferrer">'+l+' · '+m.label+'</a> ('+m.speaker+')').join(' · ')+'<br>Lingua Libre bzw. Shtooka / Wikimedia Commons · Lizenz und Attribution auf der jeweiligen Quelldatei.';
   }
   function patchNativeLabels(){
-    document.querySelectorAll('#pronMastery [data-pm-hear]').forEach(button=>{const letter=button.dataset.pmHear,m=nativeMeta[letter];if(m){button.textContent='🎙️ Muttersprachler';button.title='Native Referenz: '+m.label+' · '+m.speaker+' · Wikimedia Commons'}});
-    document.querySelectorAll('#pronCoach [data-pron-play]').forEach(button=>{const letter=button.dataset.pronPlay,m=nativeMeta[letter];if(!m)return;const old=button.onclick;button.textContent='🎙️ Wort';button.title='Native Referenz: '+m.label;button.onclick=()=>{const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(!src){old?.();return}const a=new Audio(src);a.play().catch(()=>old?.());const d=s.pronunciation?.daily;if(d&&!(d.reference||[]).includes(letter)){d.reference=[...(d.reference||[]),letter];save()}}});
+    document.querySelectorAll('#pronMastery [data-pm-hear]').forEach(button=>{const letter=button.dataset.pmHear,m=nativeMeta[letter];if(m){button.textContent=String(m.project||'').includes('Lingua Libre')?'🎙️ Muttersprachler':'🎙️ Ukrainisch';button.title=sourceLabel(m)+': '+m.label+' · '+m.speaker+' · Wikimedia Commons'}});
+    document.querySelectorAll('#pronCoach [data-pron-play]').forEach(button=>{const letter=button.dataset.pronPlay,m=nativeMeta[letter];if(!m)return;const old=button.onclick;button.textContent='🎙️ Wort';button.title=sourceLabel(m)+': '+m.label+' · '+m.speaker;button.onclick=()=>{const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(!src){old?.();return}const a=new Audio(src);a.play().catch(()=>old?.());const d=s.pronunciation?.daily;if(d&&!(d.reference||[]).includes(letter)){d.reference=[...(d.reference||[]),letter];save()}}});
     patchAttribution();
   }
   function patchManualPanel(){
@@ -47,7 +48,7 @@
     const recordState=document.getElementById('pronRecordState');if(recordState&&!recordState.dataset.qgObserved){recordState.dataset.qgObserved='1';new MutationObserver(()=>{const t=(recordState.textContent||'').toLowerCase();if(t.includes('nicht verfügbar')||t.includes('nicht erlaubt')||t.includes('nicht freigegeben'))markMicFailure()}).observe(recordState,{childList:true,subtree:true,characterData:true})}
     const oldFallback=document.getElementById('pronManual');if(oldFallback)oldFallback.hidden=!fallback;
   }
-  function patchUi(){const desc=document.querySelector('meta[name="description"]');if(desc)desc.content='Ukrainischkurs für Joel: geführter Ukrainischkurs mit 14-Tage-Alphabetphase, Aussprache, Hören, Sprechen und verteiltem Wiederholen.';patchNativeLabels();patchManualPanel();const streakEl=document.getElementById('streak');if(streakEl)streakEl.textContent=streak()+' Tage dran'}
+  function patchUi(){const desc=document.querySelector('meta[name="description"]');if(desc)desc.content='Ukrainischkurs für Joel: adaptiver 14+-Alphabetweg mit Aussprache, Hören, Sprechen, Mastery-Checks und verteiltem Wiederholen.';patchNativeLabels();patchManualPanel();const streakEl=document.getElementById('streak');if(streakEl)streakEl.textContent=streak()+' Tage dran'}
   const previousRender=render;render=function(){previousRender();patchUi()};
   const previousSpoken=$('markSpoken').onclick;$('markSpoken').onclick=function(e){if(!pronunciationGateReady()){patchUi();document.getElementById('pronCoach')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Aussprache noch offen: alle Ziellaute hören und die eigene Produktion vollständig vergleichen.');return}return previousSpoken?.call(this,e)};
   patchUi();
