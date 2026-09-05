@@ -1,4 +1,4 @@
-const CACHE='ukrainischkurs-joel-v25';
+const CACHE='ukrainischkurs-joel-v26';
 const ASSETS=[
   './','./index.html','./ukrainischkurs-app.html','./ukrainisch-lernen.html','./ukrainisch-lernen.webmanifest',
   './ukrainisch-icon-180.png','./ukrainisch-icon-192.png','./ukrainisch-icon-512.png','./ukrainisch-lernen-icon.svg',
