@@ -1,8 +1,9 @@
-/* Ukrainischkurs für Joel · Human Course Audio v3
+/* Ukrainischkurs für Joel · Human Course Audio v4
    Verifizierte menschliche Wort-/Phrasenaufnahmen außerhalb des Alphabets.
-   Die Laufzeit meldet transparent, ob die menschliche Datei oder TTS-Fallback lief. */
+   Die Laufzeit meldet transparent, ob die menschliche Datei oder TTS-Fallback lief.
+   Unterbrochene Wiedergaben werden sauber beendet und zugehörige Buttons entsperrt. */
 (()=>{
-  const VERSION=3;
+  const VERSION=4;
   const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
   const commonsFile=file=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file);
   const commonsPage=file=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(file);
@@ -29,25 +30,41 @@
   function announce(item,source){
     try{window.dispatchEvent(new CustomEvent('ukrainian-audio-source',{detail:{text:item.text,source,speaker:item.speaker,license:item.license}}))}catch{}
   }
+  function release(playback){
+    if(!playback||playback.released)return;
+    playback.released=true;
+    playback.audio.onended=null;playback.audio.onerror=null;
+    if(playback.button)playback.button.disabled=false;
+    if(current===playback)current=null;
+  }
+  function stopCurrent(){
+    const playback=current;if(!playback)return;
+    try{playback.audio.pause()}catch{}
+    release(playback);
+  }
   function fallback(item,button){
-    if(button){button.dataset.audioSource='tts-fallback';button.title='System-TTS-Fallback · menschliche Datei konnte nicht geladen werden'}
+    if(button){button.disabled=false;button.dataset.audioSource='tts-fallback';button.title='System-TTS-Fallback · menschliche Datei konnte nicht geladen werden'}
     announce(item,'tts-fallback');baseSpeak(item.text,button);
   }
   function humanSpeak(item,button){
+    stopCurrent();
     try{
-      if(current){current.pause();current=null}
-      const audio=new Audio(item.url);current=audio;let failed=false;
+      const audio=new Audio(item.url),playback={audio,button,released:false};current=playback;let failed=false;
       if(button){button.disabled=true;button.dataset.humanAudio='1';button.dataset.audioSource='loading';button.title='Menschliche Aufnahme wird geladen · '+item.speaker}
-      const done=()=>{if(button)button.disabled=false;if(current===audio)current=null};
-      const failOnce=()=>{if(failed)return;failed=true;done();fallback(item,button)};
-      audio.onended=done;
-      audio.onerror=failOnce;
+      const done=()=>release(playback);
+      const failOnce=()=>{if(failed||playback.released)return;failed=true;release(playback);fallback(item,button)};
+      audio.onended=done;audio.onerror=failOnce;
       const p=audio.play();
-      if(p&&typeof p.then==='function')p.then(()=>{if(failed)return;if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(failOnce);
-      else{if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}
-    }catch{fallback(item,button)}
+      if(p&&typeof p.then==='function')p.then(()=>{if(failed||playback.released)return;if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(failOnce);
+      else if(!playback.released){if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}
+    }catch{stopCurrent();fallback(item,button)}
   }
-  speak=function(text,button){const item=MAP.get(norm(text));if(item)return humanSpeak(item,button);return baseSpeak(text,button)};
+  speak=function(text,button){
+    const item=MAP.get(norm(text));
+    if(item)return humanSpeak(item,button);
+    stopCurrent();
+    return baseSpeak(text,button)
+  };
   window.UKRAINIAN_HUMAN_SENTENCE_AUDIO={version:VERSION,count:ITEMS.length,items:ITEMS.map(x=>({...x})),has:text=>MAP.has(norm(text))};
   function credits(){
     if(document.getElementById('humanAudioCredits'))return;
