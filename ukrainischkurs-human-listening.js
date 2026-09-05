@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Human Listening Bridge v1
+/* Ukrainischkurs für Joel · Human Listening Bridge v2
    Drei Tage echtes Audio-Diktat mit den 12 verifizierten menschlichen Aufnahmen.
-   Keine deutschen Antwortoptionen und kein sichtbares Transkript vor der Antwort. */
+   Bewertung und Skill-Evidenz laufen über den zentralen Lernkern. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
   const start=D.length;
   const GROUPS=[
     ['вода','аптека','магазин','автобус'],
@@ -16,7 +16,8 @@
   ];
   const TARGETS={};GROUPS.forEach((g,i)=>TARGETS[start+i]=g);
   LESSONS.forEach(x=>D.push(x));
-  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const fallbackNorm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const norm=x=>core?core.normalize(x):fallbackNorm(x);
   function ensure(){if(!s.humanListening||typeof s.humanListening!=='object')s.humanListening={version:VERSION,start,days:{}};s.humanListening.version=VERSION;s.humanListening.start=start;s.humanListening.days=s.humanListening.days||{};return s.humanListening}
   function required(){return Array.isArray(TARGETS[Number(s.day)])}
   function state(){const root=ensure(),k=String(s.day);return root.days[k]||(root.days[k]={passed:false,best:0,humanBest:0,attempts:0,date:''})}
@@ -28,12 +29,12 @@
   window.addEventListener('ukrainian-audio-source',e=>{if(!session||norm(e.detail?.text)!==norm(current()))return;session.source=e.detail?.source||'';session.listened=true;renderBox()});
   function answer(value){
     if(!session?.listened){toast(session?.source==='loading'?'Audio wird noch geladen.':'Erst anhören, dann schreiben.');return}
-    const wanted=current(),good=norm(value)===norm(wanted);if(good){session.correct++;if(session.source==='human')session.human++}else session.misses.push(wanted);
+    const wanted=current(),good=core?core.accepts(value,[wanted]):norm(value)===norm(wanted);if(good){session.correct++;if(session.source==='human')session.human++}else session.misses.push(wanted);
     toast(good?'Richtig gehört.':'Gehört wurde: '+wanted);session.idx++;
     if(session.idx>=session.items.length){finish();return}
     session.listened=false;session.source='';renderBox()
   }
-  function finish(){const st=state(),score=Math.round(session.correct/session.items.length*100),human=session.human,passed=session.correct===session.items.length;st.best=Math.max(st.best||0,score);st.humanBest=Math.max(st.humanBest||0,human);st.attempts++;st.date=date();st.passed=passed;save();session=null;toast(passed?'Audio-Diktat fehlerfrei bestanden.':'Noch nicht stabil: für die Freigabe 4/4 in einem frischen Durchgang.');render()}
+  function finish(){const st=state(),score=Math.round(session.correct/session.items.length*100),human=session.human,passed=session.correct===session.items.length;st.best=Math.max(st.best||0,score);st.humanBest=Math.max(st.humanBest||0,human);st.attempts++;st.date=date();st.passed=passed;if(core)core.recordSession({skills:['listening','writing'],correct:session.correct,total:session.items.length,passed,module:'human-listening',day:s.day,assisted:human<session.items.length});else save();session=null;toast(passed?'Audio-Diktat fehlerfrei bestanden.':'Noch nicht stabil: für die Freigabe 4/4 in einem frischen Durchgang.');render()}
   function renderBox(){
     let box=document.getElementById('humanListeningBox');if(!required()){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='humanListeningBox';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state();
     if(session){const pos=session.idx+1;box.innerHTML='<div class="hl-head"><div><div class="label">Human-Audio-Diktat · '+pos+' / '+session.items.length+'</div><h2>Nur hören. Dann Ukrainisch schreiben.</h2></div><div class="pill">'+session.correct+'/'+session.idx+'</div></div><p class="small">Kein Transkript und keine deutsche Auswahl. Wenn die externe menschliche Datei technisch nicht lädt, wird der TTS-Fallback ausdrücklich angezeigt.</p><div class="actions"><button class="primary" id="hlListen">🔊 Aufnahme anhören</button></div><div class="hl-source">'+sourceLabel()+'</div><input id="hlInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="Schreibe exakt, was du hörst …"><div class="actions"><button class="primary" id="hlCheck">Prüfen</button></div>';const input=document.getElementById('hlInput'),listen=document.getElementById('hlListen');listen.onclick=()=>play(listen);document.getElementById('hlCheck').onclick=()=>answer(input.value);input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answer(input.value)}};setTimeout(()=>input.focus(),0)
