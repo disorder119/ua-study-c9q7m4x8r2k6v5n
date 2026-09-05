@@ -1,8 +1,8 @@
-const CACHE='ukrainischkurs-joel-v36';
+const CACHE='ukrainischkurs-joel-v37';
 const ASSETS=[
   './','./index.html','./ukrainischkurs-app.html','./ukrainisch-lernen.html','./ukrainisch-lernen.webmanifest',
   './ukrainisch-icon-180.png','./ukrainisch-icon-192.png','./ukrainisch-icon-512.png','./ukrainisch-lernen-icon.svg',
-  './ukrainischkurs-v2-loader.js','./ukrainischkurs-v2.part1','./ukrainischkurs-v2.part2','./ukrainischkurs-v2.part3','./ukrainischkurs-v2.part4','./ukrainischkurs-v2.part5',
+  './ukrainischkurs-v2-loader.js','./ukrainischkurs-v2-core.js',
   './ukrainischkurs-native-audio.js','./ukrainischkurs-pronunciation.js','./ukrainischkurs-pronunciation-mastery.js','./ukrainischkurs-quality-hardening.js',
   './ukrainischkurs-adaptive-alphabet.js','./ukrainischkurs-alphabet-proof.js','./ukrainischkurs-reading-bridge.js','./ukrainischkurs-reading-transfer.js',
   './ukrainischkurs-adaptive-srs.js','./ukrainischkurs-learning-core.js','./ukrainischkurs-foundation-expansion.js','./ukrainischkurs-a1-expansion-2.js','./ukrainischkurs-a1-grammar-bridge.js','./ukrainischkurs-time-bridge.js','./ukrainischkurs-genitive-bridge.js','./ukrainischkurs-word-stress.js','./ukrainischkurs-human-sentence-audio.js','./ukrainischkurs-human-listening.js','./ukrainischkurs-speaking-bridge.js','./ukrainischkurs-immersion-transfer.js','./ukrainischkurs-open-dialogue.js','./ukrainischkurs-conversation-chain.js','./ukrainischkurs-free-reading-transfer.js','./ukrainischkurs-comprehension-lab.js','./ukrainischkurs-active-production.js',
