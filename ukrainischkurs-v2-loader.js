@@ -1,5 +1,6 @@
 (async()=>{
   const VERSION='23';
+  window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'classic-script',evalFree:true};
   const coreErrorKey='__UKRAINIAN_COURSE_CORE_ERROR__';
   const coreDoneKey='__UKRAINIAN_COURSE_CORE_DONE__';
   function runCore(code){
