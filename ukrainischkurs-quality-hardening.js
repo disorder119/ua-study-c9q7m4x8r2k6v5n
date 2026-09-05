@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Qualitäts-Härtung v5
+/* Ukrainischkurs für Joel · Qualitäts-Härtung v6
    Behebt bekannte Lernlogikfehler und verhindert zu leichtes Abhaken der Aussprache. */
 (() => {
   const ORDER='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
@@ -16,12 +16,13 @@
   gameLetters=function(){const max=s.day<11?Math.min(33,(s.day+1)*3):33;return LETTERS.slice(0,max)};
   function leastPractised(limit=4){return [...HARD].sort((a,b)=>{const A=s.pronunciation?.letters?.[a]||{},B=s.pronunciation?.letters?.[b]||{};return ((A.recordings||0)+(A.checks||0)+(A.plays||0))-((B.recordings||0)+(B.checks||0)+(B.plays||0))}).slice(0,limit)}
   function currentTargets(){if(s.day<11)return ORDER.slice(s.day*3,Math.min(33,s.day*3+3));if(s.day===11)return ['Г','Ґ','И','І'];if(s.day===12)return ['Ж','Ш','Щ','Х'];if(s.day===13)return leastPractised(4);return []}
-  function ensureGate(){if(!s.pronunciation||typeof s.pronunciation!=='object')s.pronunciation={};if(!s.pronunciation.qualityGate||s.pronunciation.qualityGate.date!==date()||s.pronunciation.qualityGate.day!==s.day)s.pronunciation.qualityGate={date:date(),day:s.day,manualProduced:[],micFallback:false};return s.pronunciation.qualityGate}
+  function ensureGate(){if(!s.pronunciation||typeof s.pronunciation!=='object')s.pronunciation={};if(!s.pronunciation.qualityGate||s.pronunciation.qualityGate.date!==date()||s.pronunciation.qualityGate.day!==s.day)s.pronunciation.qualityGate={date:date(),day:s.day,manualProduced:[],confirmedTargets:[],micFallback:false};const g=s.pronunciation.qualityGate;g.manualProduced=Array.isArray(g.manualProduced)?g.manualProduced:[];g.confirmedTargets=Array.isArray(g.confirmedTargets)?g.confirmedTargets:[];return g}
   function recordingSupported(){return !!(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder)}
-  function preferredProductionReady(){const d=s.pronunciation?.daily||{};return !!(d.recorded&&d.replayed&&d.selfPassed)}
+  function preferredProductionReady(){const d=s.pronunciation?.daily||{},g=ensureGate(),targets=currentTargets();return !!(d.recorded&&d.replayed&&d.selfPassed&&targets.length&&targets.every(l=>g.confirmedTargets.includes(l)))}
   function manualReady(){const g=ensureGate(),targets=currentTargets();return targets.length>0&&targets.every(l=>g.manualProduced.includes(l))}
   function pronunciationGateReady(){if(s.day>=14)return true;const targets=currentTargets();if(!targets.length)return true;const d=s.pronunciation?.daily||{};if(!targets.every(l=>(d.reference||[]).includes(l)))return false;const g=ensureGate();if(preferredProductionReady())return true;return (!recordingSupported()||g.micFallback)&&manualReady()}
   function markManual(letter){const g=ensureGate();if(!g.manualProduced.includes(letter))g.manualProduced.push(letter);save();patchUi()}
+  function confirmRecordedTarget(letter){const d=s.pronunciation?.daily||{};if(!(d.recorded&&d.replayed&&d.selfPassed)){toast('Erst Aufnahme anhören und mit der Referenz vergleichen.');return}const g=ensureGate();if(!g.confirmedTargets.includes(letter))g.confirmedTargets.push(letter);save();patchUi()}
   function markMicFailure(){const g=ensureGate();g.micFallback=true;save();patchUi()}
   function sourceLabel(m){return String(m?.project||'').includes('Lingua Libre')?'Muttersprachler-Referenz':'menschliche ukrainische Referenz'}
   function patchAttribution(){
@@ -41,10 +42,13 @@
   function patchManualPanel(){
     const coach=document.getElementById('pronCoach');if(!coach||s.day>=14)return;
     let box=document.getElementById('pronQualityGate');if(!box){box=document.createElement('div');box.id='pronQualityGate';box.className='pron-production';coach.append(box)}
-    const targets=currentTargets(),g=ensureGate();if(!targets.length){box.hidden=true;return}box.hidden=false;
+    const targets=currentTargets(),g=ensureGate(),d=s.pronunciation?.daily||{};if(!targets.length){box.hidden=true;return}box.hidden=false;
     const fallback=!recordingSupported()||g.micFallback;
-    box.innerHTML='<strong>Produktionskontrolle</strong><p class="small">'+(fallback?'Manueller Fallback ist aktiv. Sprich jeden Ziellaut wirklich dreimal laut.':'Auf diesem Gerät ist Aufnahme verfügbar. Für den Pflichtteil zählen Aufnahme → Rückhören → A/B-Selbstvergleich. Der manuelle Fallback wird erst bei einem Mikrofonproblem freigeschaltet.')+'</p>'+(fallback?'<div class="actions">'+targets.map(l=>'<button class="secondary" data-qg-manual="'+l+'">'+(g.manualProduced.includes(l)?'✓ ':'')+l+' 3× gesprochen</button>').join('')+'</div>':'')+'<div class="small">Status: '+(pronunciationGateReady()?'✓ Produktionsnachweis vollständig':'noch offen')+'</div>';
+    const recordingCompared=!!(d.recorded&&d.replayed&&d.selfPassed);
+    const perTarget=!fallback&&recordingCompared?'<p class="small">Bestätige nach dem Rückhören jeden Ziellaut separat. Das ist eine bewusste Selbstkontrolle – keine behauptete automatische Akzentmessung.</p><div class="actions">'+targets.map(l=>'<button class="secondary" data-qg-confirm="'+l+'">'+(g.confirmedTargets.includes(l)?'✓ ':'')+l+' im Mitschnitt geprüft</button>').join('')+'</div>':'';
+    box.innerHTML='<strong>Produktionskontrolle</strong><p class="small">'+(fallback?'Manueller Fallback ist aktiv. Sprich jeden Ziellaut wirklich dreimal laut.':'Auf diesem Gerät ist Aufnahme verfügbar. Für den Pflichtteil zählen Aufnahme → Rückhören → A/B-Selbstvergleich → Einzelbestätigung aller heutigen Ziellaute.')+'</p>'+(fallback?'<div class="actions">'+targets.map(l=>'<button class="secondary" data-qg-manual="'+l+'">'+(g.manualProduced.includes(l)?'✓ ':'')+l+' 3× gesprochen</button>').join('')+'</div>':perTarget)+'<div class="small">Status: '+(pronunciationGateReady()?'✓ Produktionsnachweis vollständig':'noch offen')+'</div>';
     box.querySelectorAll('[data-qg-manual]').forEach(b=>b.onclick=()=>markManual(b.dataset.qgManual));
+    box.querySelectorAll('[data-qg-confirm]').forEach(b=>b.onclick=()=>confirmRecordedTarget(b.dataset.qgConfirm));
     const recordState=document.getElementById('pronRecordState');if(recordState&&!recordState.dataset.qgObserved){recordState.dataset.qgObserved='1';new MutationObserver(()=>{const t=(recordState.textContent||'').toLowerCase();if(t.includes('nicht verfügbar')||t.includes('nicht erlaubt')||t.includes('nicht freigegeben'))markMicFailure()}).observe(recordState,{childList:true,subtree:true,characterData:true})}
     const oldFallback=document.getElementById('pronManual');if(oldFallback)oldFallback.hidden=!fallback;
   }
