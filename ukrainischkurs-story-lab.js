@@ -1,17 +1,18 @@
-/* Ukrainischkurs für Joel · Story Lab v1
+/* Ukrainischkurs für Joel · Story Lab v2
    Kurze zusammenhängende Texte: erst lesen, dann Text ausblenden und Inhalt abrufen. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2;
   const STORIES=[
     {min:43,text:'Я живу в готелі. Зараз я йду в ресторан.',qs:[{q:'Wo wohnt die Person?',a:'im Hotel',o:['im Hotel','zu Hause','in der Apotheke']},{q:'Wohin geht sie jetzt?',a:'ins Restaurant',o:['ins Restaurant','zum Bahnhof','zum Supermarkt']},{q:'Welches ukrainische Wort stand für „jetzt“?',a:'зараз',o:['зараз','вдома','коли']}]},
     {min:44,text:'Мені погано. Я йду в аптеку. Мені потрібна допомога.',qs:[{q:'Wie geht es der Person?',a:'schlecht',o:['schlecht','gut','sie ist nur müde']},{q:'Wohin geht sie?',a:'in die Apotheke',o:['in die Apotheke','in die Bank','ins Hotel']},{q:'Was braucht sie?',a:'Hilfe',o:['Hilfe','Kaffee','ein Ticket']}]},
     {min:50,text:'Це моя сім’я. У мене є брат і сестра. Вони вдома.',qs:[{q:'Worum geht es?',a:'um die Familie',o:['um die Familie','um Arbeit','um Essen']},{q:'Welche Geschwister werden genannt?',a:'Bruder und Schwester',o:['Bruder und Schwester','zwei Brüder','nur eine Schwester']},{q:'Wo sind sie?',a:'zu Hause',o:['zu Hause','in Kyjiw','im Restaurant']}]},
-    {min:53,text:'Я хочу їсти і пити. Зараз я в ресторані. Я хочу воду.',qs:[{q:'Was möchte die Person zuerst allgemein?',a:'essen und trinken',o:['essen und trinken','schlafen','arbeiten']},{q:'Wo ist die Person?',a:'im Restaurant',o:['im Restaurant','im Hotel','am Bahnhof']},{q:'Was möchte sie konkret?',a:'Wasser',o:['Wasser','Kaffee','Frühstück']}]},
+    {min:55,text:'Я хочу їсти. Зараз я в ресторані. Я їм обід.',qs:[{q:'Was möchte die Person zuerst?',a:'essen',o:['essen','schlafen','arbeiten']},{q:'Wo ist die Person?',a:'im Restaurant',o:['im Restaurant','im Hotel','am Bahnhof']},{q:'Was isst sie?',a:'Mittagessen',o:['Mittagessen','Frühstück','Abendessen']}]},
     {min:54,text:'Я не знаю, де магазин. Я питаю: «Де магазин?»',qs:[{q:'Was weiß die Person nicht?',a:'wo das Geschäft ist',o:['wo das Geschäft ist','wie viel etwas kostet','wann der Bus kommt']},{q:'Welche Frage stellt sie?',a:'Де магазин?',o:['Де магазин?','Скільки це коштує?','Ти розумієш?']},{q:'Welche Fähigkeit wird hier gebraucht?',a:'nach einem Ort fragen',o:['nach einem Ort fragen','sich vorstellen','bezahlen']}]},
-    {min:56,text:'Я з Німеччини. Я живу в Ашаффенбурзі. Я вивчаю українську.',qs:[{q:'Woher kommt die Person?',a:'aus Deutschland',o:['aus Deutschland','aus der Ukraine','aus Frankreich']},{q:'Wo wohnt sie?',a:'in Aschaffenburg',o:['in Aschaffenburg','in Kyjiw','in Berlin']},{q:'Was lernt sie?',a:'Ukrainisch',o:['Ukrainisch','Deutsch','Französisch']}]}
+    {min:56,text:'Я з Німеччини. Я вивчаю українську. Зараз я вдома.',qs:[{q:'Woher kommt die Person?',a:'aus Deutschland',o:['aus Deutschland','aus der Ukraine','aus Frankreich']},{q:'Was lernt sie?',a:'Ukrainisch',o:['Ukrainisch','Deutsch','Französisch']},{q:'Wo ist sie jetzt?',a:'zu Hause',o:['zu Hause','im Restaurant','am Bahnhof']}]}
   ];
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
-  const reviewDay=()=>Number(s.day)>=43&&(WEEKLY_REVIEW_DAYS.includes(Number(s.day))||Number(s.day)===D.length-1);
+  const lateReviews=()=>[...new Set(WEEKLY_REVIEW_DAYS.map(Number))].filter(d=>d>=43&&d<D.length-1).sort((a,b)=>a-b);
+  const reviewDay=()=>{const i=lateReviews().indexOf(Number(s.day));return i>=0&&i%2===1};
   function ensure(){if(!s.storyLab||typeof s.storyLab!=='object')s.storyLab={version:VERSION,days:{}};s.storyLab.version=VERSION;s.storyLab.days=s.storyLab.days||{};return s.storyLab}
   function state(){const k=String(s.day),st=ensure();return st.days[k]||(st.days[k]={passed:false,best:0,attempts:0,date:''})}
   let session=null;
