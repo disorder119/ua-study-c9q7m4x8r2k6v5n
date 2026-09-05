@@ -1,39 +1,123 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
-const root=process.cwd(),read=p=>fs.readFileSync(path.join(root,p),'utf8'),errors=[];
+
+const root=process.cwd();
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const errors=[];
 const assert=(ok,msg)=>{if(!ok)errors.push(msg)};
 const compile=(code,name)=>{try{new vm.Script(code,{filename:name})}catch(e){errors.push(`${name}: ${e.message}`)}};
-const modules=['ukrainischkurs-native-audio.js','ukrainischkurs-pronunciation.js','ukrainischkurs-pronunciation-mastery.js','ukrainischkurs-quality-hardening.js','ukrainischkurs-adaptive-alphabet.js','ukrainischkurs-alphabet-proof.js','ukrainischkurs-reading-bridge.js','ukrainischkurs-reading-transfer.js','ukrainischkurs-adaptive-srs.js','ukrainischkurs-learning-core.js','ukrainischkurs-foundation-expansion.js','ukrainischkurs-a1-expansion-2.js','ukrainischkurs-a1-grammar-bridge.js','ukrainischkurs-time-bridge.js','ukrainischkurs-genitive-bridge.js','ukrainischkurs-word-stress.js','ukrainischkurs-human-sentence-audio.js','ukrainischkurs-human-listening.js','ukrainischkurs-speaking-bridge.js','ukrainischkurs-immersion-transfer.js','ukrainischkurs-open-dialogue.js','ukrainischkurs-conversation-chain.js','ukrainischkurs-free-reading-transfer.js','ukrainischkurs-comprehension-lab.js','ukrainischkurs-active-production.js','ukrainischkurs-grammar-spiral.js','ukrainischkurs-story-lab.js','ukrainischkurs-dictation.js','ukrainischkurs-adaptive-review.js','ukrainischkurs-a1-cando.js','ukrainischkurs-uk-keyboard.js','ukrainischkurs-dynamic-course-ui.js','ukrainischkurs-skill-profile.js','ukrainischkurs-selftest.js'];
-for(const file of ['ukrainischkurs-v2-loader.js','ukrainischkurs-v2-core.js',...modules,'ukrainisch-lernen-sw.js']){assert(fs.existsSync(path.join(root,file)),`${file} fehlt`);if(fs.existsSync(path.join(root,file)))compile(read(file),file)}
+
+const modules=[
+  'ukrainischkurs-native-audio.js','ukrainischkurs-pronunciation.js','ukrainischkurs-pronunciation-mastery.js','ukrainischkurs-quality-hardening.js',
+  'ukrainischkurs-adaptive-alphabet.js','ukrainischkurs-alphabet-proof.js','ukrainischkurs-reading-bridge.js','ukrainischkurs-reading-transfer.js',
+  'ukrainischkurs-adaptive-srs.js','ukrainischkurs-learning-core.js','ukrainischkurs-foundation-expansion.js','ukrainischkurs-a1-expansion-2.js',
+  'ukrainischkurs-a1-grammar-bridge.js','ukrainischkurs-time-bridge.js','ukrainischkurs-genitive-bridge.js','ukrainischkurs-word-stress.js',
+  'ukrainischkurs-human-sentence-audio.js','ukrainischkurs-human-listening.js','ukrainischkurs-speaking-bridge.js','ukrainischkurs-immersion-transfer.js',
+  'ukrainischkurs-open-dialogue.js','ukrainischkurs-conversation-chain.js','ukrainischkurs-free-reading-transfer.js','ukrainischkurs-comprehension-lab.js',
+  'ukrainischkurs-active-production.js','ukrainischkurs-grammar-spiral.js','ukrainischkurs-story-lab.js','ukrainischkurs-dictation.js',
+  'ukrainischkurs-adaptive-review.js','ukrainischkurs-a1-cando.js','ukrainischkurs-uk-keyboard.js','ukrainischkurs-dynamic-course-ui.js',
+  'ukrainischkurs-skill-profile.js','ukrainischkurs-selftest.js'
+];
+
+for(const file of ['ukrainischkurs-v2-loader.js','ukrainischkurs-v2-core.js',...modules,'ukrainisch-lernen-sw.js']){
+  assert(fs.existsSync(path.join(root,file)),`${file} fehlt`);
+  if(fs.existsSync(path.join(root,file)))compile(read(file),file);
+}
+
 const legacyParts=[1,2,3,4,5].map(n=>read(`ukrainischkurs-v2.part${n}`));
-const legacyRuntime=legacyParts.join('');compile(legacyRuntime,'ukrainischkurs-v2.part1–5');
-const canonicalLegacy=legacyParts.map(part=>part.replace(/\n?$/,'')).join('\n'),staticCore=read('ukrainischkurs-v2-core.js');assert(staticCore===canonicalLegacy,'Statischer Core weicht inhaltlich von den fünf historischen Fragmenten ab');
-for(const htmlFile of ['ukrainisch-lernen.html','ukrainischkurs-app.html','index.html']){const html=read(htmlFile);let i=0;for(const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))compile(m[1],`${htmlFile} inline-script-${++i}`)}
+compile(legacyParts.join(''),'ukrainischkurs-v2.part1–5');
+const canonicalLegacy=legacyParts.map(part=>part.replace(/\n?$/,'')).join('\n');
+const staticCore=read('ukrainischkurs-v2-core.js');
+assert(staticCore===canonicalLegacy,'Statischer Core weicht inhaltlich von den fünf historischen Fragmenten ab');
+
+for(const htmlFile of ['ukrainisch-lernen.html','ukrainischkurs-app.html','index.html']){
+  const html=read(htmlFile);let i=0;
+  for(const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))compile(m[1],`${htmlFile} inline-script-${++i}`);
+}
 try{JSON.parse(read('ukrainisch-lernen.webmanifest'))}catch(e){errors.push(`ukrainisch-lernen.webmanifest: ${e.message}`)}
 
-const loader=read('ukrainischkurs-v2-loader.js');for(const f of modules)assert(loader.includes(f),`Loader bindet ${f} nicht ein`);
-assert(loader.includes("const VERSION='37'"),'Loader ist nicht auf v37');assert(loader.includes('evalFree:true'),'Loader kennzeichnet eval-freien Modus nicht');assert(loader.includes("mode:'external-core-script'")&&loader.includes('staticCore:true'),'Loader meldet den statischen externen Core nicht');assert(loader.includes('ukrainischkurs-v2-core.js?v=${VERSION}'),'Loader lädt den statischen Core nicht');assert(!/\beval\s*\(/.test(loader),'Loader verwendet wieder eval()');assert(!loader.includes('ukrainischkurs-v2.part'),'Loader referenziert wieder Runtime-Fragmente');assert(!loader.includes('response.text()'),'Loader liest wieder Kerncode als Text');assert(!loader.includes('runCore('),'Loader führt wieder dynamisch zusammengesetzten Kerncode aus');assert(!loader.includes('script.textContent'),'Loader erzeugt wieder ausführbaren Kerncode als Inline-Text');
-for(const token of ['learning-core.js?v=3','foundation-expansion.js?v=3','a1-expansion-2.js?v=2','a1-grammar-bridge.js?v=3','time-bridge.js?v=3','genitive-bridge.js?v=3','human-listening.js?v=3','speaking-bridge.js?v=2','immersion-transfer.js?v=3','open-dialogue.js?v=4','conversation-chain.js?v=4','free-reading-transfer.js?v=3','comprehension-lab.js?v=5','active-production.js?v=5','grammar-spiral.js?v=5','story-lab.js?v=4','dictation.js?v=5','adaptive-review.js?v=1','a1-cando.js?v=7','skill-profile.js?v=2','selftest.js?v=26'])assert(loader.includes(token),`Loader vermisst ${token}`);
-assert(loader.indexOf('v2-core.js')<loader.indexOf('native-audio.js'),'Featuremodule laden vor dem statischen Kern');assert(loader.indexOf('adaptive-srs.js')<loader.indexOf('learning-core.js'),'Lernkern lädt vor SRS');assert(loader.indexOf('learning-core.js')<loader.indexOf('foundation-expansion.js'),'Foundation lädt vor Lernkern');assert(loader.indexOf('human-listening.js')<loader.indexOf('speaking-bridge.js'),'Sprechbrücke lädt vor Human-Listening');assert(loader.indexOf('speaking-bridge.js')<loader.indexOf('immersion-transfer.js'),'Immersion lädt vor Sprechbrücke');assert(loader.indexOf('adaptive-review.js')<loader.indexOf('a1-cando.js'),'Can-do lädt vor adaptivem Review');assert(loader.indexOf('dynamic-course-ui.js')<loader.indexOf('skill-profile.js'),'Skill-Profil lädt vor dynamischer UI');assert(loader.indexOf('skill-profile.js')<loader.indexOf('selftest.js'),'Selbsttest lädt vor Skill-Profil');
+const loader=read('ukrainischkurs-v2-loader.js');
+for(const f of modules)assert(loader.includes(f),`Loader bindet ${f} nicht ein`);
+assert(loader.includes("const VERSION='38'"),'Loader ist nicht auf v38');
+assert(loader.includes('evalFree:true'),'Loader kennzeichnet eval-freien Modus nicht');
+assert(loader.includes("mode:'external-core-script'")&&loader.includes('staticCore:true'),'Loader meldet den statischen externen Core nicht');
+assert(loader.includes('ukrainischkurs-v2-core.js?v=${VERSION}'),'Loader lädt den statischen Core nicht');
+assert(!/\beval\s*\(/.test(loader),'Loader verwendet wieder eval()');
+assert(!loader.includes('ukrainischkurs-v2.part'),'Loader referenziert wieder Runtime-Fragmente');
+assert(!loader.includes('response.text()'),'Loader liest wieder Kerncode als Text');
+assert(!loader.includes('runCore('),'Loader führt wieder dynamisch zusammengesetzten Kerncode aus');
+assert(!loader.includes('script.textContent'),'Loader erzeugt wieder ausführbaren Kerncode als Inline-Text');
+for(const token of ['learning-core.js?v=3','foundation-expansion.js?v=3','a1-expansion-2.js?v=2','a1-grammar-bridge.js?v=3','time-bridge.js?v=3','genitive-bridge.js?v=3','human-listening.js?v=3','speaking-bridge.js?v=2','immersion-transfer.js?v=3','open-dialogue.js?v=4','conversation-chain.js?v=4','free-reading-transfer.js?v=3','comprehension-lab.js?v=5','active-production.js?v=5','grammar-spiral.js?v=5','story-lab.js?v=4','dictation.js?v=5','adaptive-review.js?v=1','a1-cando.js?v=7','skill-profile.js?v=2','selftest.js?v=27'])assert(loader.includes(token),`Loader vermisst ${token}`);
+assert(loader.indexOf('v2-core.js')<loader.indexOf('native-audio.js'),'Featuremodule laden vor dem statischen Kern');
+assert(loader.indexOf('adaptive-srs.js')<loader.indexOf('learning-core.js'),'Lernkern lädt vor SRS');
+assert(loader.indexOf('learning-core.js')<loader.indexOf('foundation-expansion.js'),'Foundation lädt vor Lernkern');
+assert(loader.indexOf('human-listening.js')<loader.indexOf('speaking-bridge.js'),'Sprechbrücke lädt vor Human-Listening');
+assert(loader.indexOf('speaking-bridge.js')<loader.indexOf('immersion-transfer.js'),'Immersion lädt vor Sprechbrücke');
+assert(loader.indexOf('adaptive-review.js')<loader.indexOf('a1-cando.js'),'Can-do lädt vor adaptivem Review');
+assert(loader.indexOf('skill-profile.js')<loader.indexOf('selftest.js'),'Selbsttest lädt vor Skill-Profil');
 
-const sw=read('ukrainisch-lernen-sw.js');for(const f of modules)assert(sw.includes(`'./${f}'`),`Offline-Cache enthält ${f} nicht`);assert(sw.includes("'./ukrainischkurs-v2-core.js'"),'Offline-Cache enthält statischen Core nicht');assert(!sw.includes('ukrainischkurs-v2.part'),'Offline-Cache enthält wieder historische Core-Fragmente');assert(sw.includes("ukrainischkurs-joel-v37"),'Service Worker ist nicht v37');assert(sw.includes("event.request.mode==='navigate'||event.request.destination==='document'"),'App-Shell-Fallback ist nicht navigation-only');assert(sw.includes("new Response('Offline-Asset nicht verfügbar'"),'Sauberer Offline-Assetfehler fehlt');assert(!/catch\(\(\)=>caches\.match\('\.\/ukrainischkurs-app\.html'\)\)/.test(sw),'Assetfehler kann wieder HTML liefern');
-const app=read('ukrainischkurs-app.html');assert(app.includes('ukrainischkurs-v2-loader.js?v=37'),'App-Loader ist nicht v37');assert(app.includes('ukrainisch-lernen.html?v=37'),'Basis-App ist nicht v37');
+const base=read('ukrainisch-lernen.html');
+const app=read('ukrainischkurs-app.html');
+const expectedApp=base.replace('</body>','<script src="./ukrainischkurs-v2-loader.js?v=38"></script>\n</body>');
+assert(app===expectedApp,'Statische App-Hülle ist nicht deterministisch aus Basis + Loader v38 generiert');
+assert(app.includes('ukrainischkurs-v2-loader.js?v=38'),'App-Hülle bindet Loader v38 nicht ein');
+assert(!app.includes("fetch('./ukrainisch-lernen.html"),'App-Hülle lädt die Basis wieder als Text');
+assert(!app.includes('document.write(')&&!app.includes('document.open('),'App-Hülle verwendet wieder document.write/document.open');
+const generator=read('scripts/build-app-shell.mjs');
+assert(generator.includes("loader.match(/const VERSION='(\\d+)'/")&&generator.includes("base.replace('</body>'"),'Generator leitet Loader-Version/HTML nicht deterministisch ab');
+assert(generator.includes("process.argv.includes('--check')"),'Generator hat keinen CI-Checkmodus');
 
-const expected='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я';assert(staticCore.includes(`const ORDER = '${expected}'.split(' ')`),'Alphabet-Reihenfolge stimmt im statischen Core nicht');assert((staticCore.match(/'[^']+':\{pair:/g)||[]).length===33,'LETTER_INFO im statischen Core enthält nicht 33 Zeichen');assert(staticCore.includes('function migrateState()')&&staticCore.includes('s.courseSchema = SCHEMA'),'Fortschrittsmigration fehlt im statischen Core');
+const validateWorkflow=read('.github/workflows/validate-course.yml');
+const buildWorkflow=read('.github/workflows/build-app-shell.yml');
+for(const [name,wf] of [['Validierungsworkflow',validateWorkflow],['Build-Workflow',buildWorkflow]]){
+  assert(wf.includes('actions/checkout@v7'),`${name} nutzt nicht checkout@v7`);
+  assert(wf.includes('actions/setup-node@v7'),`${name} nutzt nicht setup-node@v7`);
+}
+assert(validateWorkflow.includes('node scripts/build-app-shell.mjs --check'),'Validierungsworkflow prüft generierte App-Hülle nicht');
+assert(buildWorkflow.includes('permissions:\n  contents: write'),'Build-Workflow hat keine explizite Schreibberechtigung');
+assert(buildWorkflow.includes("git diff --quiet -- ukrainischkurs-app.html"),'Build-Workflow vermeidet unnötige Generator-Commits nicht');
+
+const sw=read('ukrainisch-lernen-sw.js');
+for(const f of modules)assert(sw.includes(`'./${f}'`),`Offline-Cache enthält ${f} nicht`);
+assert(sw.includes("'./ukrainischkurs-v2-core.js'"),'Offline-Cache enthält statischen Core nicht');
+assert(!sw.includes('ukrainischkurs-v2.part'),'Offline-Cache enthält wieder historische Core-Fragmente');
+assert(sw.includes("ukrainischkurs-joel-v38"),'Service Worker ist nicht v38');
+assert(sw.includes("event.request.mode==='navigate'||event.request.destination==='document'"),'App-Shell-Fallback ist nicht navigation-only');
+assert(sw.includes("new Response('Offline-Asset nicht verfügbar'"),'Sauberer Offline-Assetfehler fehlt');
+assert(!/catch\(\(\)=>caches\.match\('\.\/ukrainischkurs-app\.html'\)\)/.test(sw),'Assetfehler kann wieder HTML liefern');
+
+const expected='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я';
+assert(staticCore.includes(`const ORDER = '${expected}'.split(' ')`),'Alphabet-Reihenfolge stimmt im statischen Core nicht');
+assert((staticCore.match(/'[^']+':\{pair:/g)||[]).length===33,'LETTER_INFO im statischen Core enthält nicht 33 Zeichen');
+assert(staticCore.includes('function migrateState()')&&staticCore.includes('s.courseSchema = SCHEMA'),'Fortschrittsmigration fehlt im statischen Core');
+
 const native=read('ukrainischkurs-native-audio.js');assert([...native.matchAll(/^\s*'([А-ЯІЇЄҐЬ])':\{file:/gmu)].length===33,'Alphabet-Audioabdeckung ist nicht 33');
 const hard=read('ukrainischkurs-quality-hardening.js');assert(hard.includes('targets.every(l=>g.confirmedTargets.includes(l))'),'Per-Laut-Aussprachebestätigung fehlt');
 const alphabet=read('ukrainischkurs-adaptive-alphabet.js');assert(alphabet.includes('retentionCount()===33')&&alphabet.includes('threshold:32'),'Alphabet-Mastery 32/33 + Retention fehlt');
 const proof=read('ukrainischkurs-alphabet-proof.js');assert(proof.includes('session.correct>=19')&&proof.includes('successDays(l)>=3'),'Alphabet-Proof/3-Tage-Retention fehlt');
 const srs=read('ukrainischkurs-adaptive-srs.js');for(const t of ['meta.ease','meta.lapses','meta.interval','meta.leech','repairPending','90'])assert(srs.includes(t),`SRS vermisst ${t}`);
 
-const core=read('ukrainischkurs-learning-core.js');assert(core.includes('const VERSION=3'),'Lernkern ist nicht v3');for(const t of ["const SKILLS=['reading','listening','writing','speaking','grammar']",'function normalize(value,opts={})','function accepts(value,answers,opts={})','function introductionDay(needle,opts={})','function introductionDays(requirements,opts={})','function allIntroduced(requirements,opts={})','function anchorDay(requirements,opts={})','function isIntroduced(needle,opts={})','function recordSession(meta={})','function reviewFocus()','function isUnlocked(id)',"'immersion.transfer'","'a1.final'"])assert(core.includes(t),`Lernkern vermisst ${t}`);assert(core.includes("replace(/[ʼ’‘'`]/g,'’')")&&core.includes("normalize('NFC')"),'Zentrale Unicode-/Apostrophnormalisierung fehlt');assert(core.includes("if(!WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return null"),'Review-Fokus wird außerhalb echter Reviews erzeugt');assert(core.includes('st.history.length>40')&&core.includes('keys.length>30'),'Skill-/Fokus-Historien sind nicht begrenzt');
+const core=read('ukrainischkurs-learning-core.js');
+assert(core.includes('const VERSION=3'),'Lernkern ist nicht v3');
+for(const t of ["const SKILLS=['reading','listening','writing','speaking','grammar']",'function normalize(value,opts={})','function accepts(value,answers,opts={})','function introductionDay(needle,opts={})','function introductionDays(requirements,opts={})','function allIntroduced(requirements,opts={})','function anchorDay(requirements,opts={})','function isIntroduced(needle,opts={})','function recordSession(meta={})','function reviewFocus()','function isUnlocked(id)',"'immersion.transfer'","'a1.final'"])assert(core.includes(t),`Lernkern vermisst ${t}`);
+assert(core.includes("replace(/[ʼ’‘'`]/g,'’')")&&core.includes("normalize('NFC')"),'Zentrale Unicode-/Apostrophnormalisierung fehlt');
+assert(core.includes("if(!WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return null"),'Review-Fokus wird außerhalb echter Reviews erzeugt');
+assert(core.includes('st.history.length>40')&&core.includes('keys.length>30'),'Skill-/Fokus-Historien sind nicht begrenzt');
 
-const foundation=read('ukrainischkurs-foundation-expansion.js');assert(foundation.includes('const VERSION=3')&&foundation.includes('extensionReviews')&&foundation.includes('dynamicReviews:true'),'Foundation v3 hat keine dynamischen Reviews');assert(!foundation.includes('20,27,36,43'),'Foundation enthält wieder feste Review-Tagesliste');assert(foundation.includes('assisted:true')&&foundation.includes('weight:.5'),'Foundation-MC wird nicht schwächer gewichtet');for(const t of ['Мені: Gefühl und Bedarf','Де? → Ortsform','в Україні','у Києві'])assert(foundation.includes(t),`Foundation vermisst ${t}`);
-const a12=read('ukrainischkurs-a1-expansion-2.js');assert(a12.includes('const VERSION=2')&&a12.includes('extensionReviews')&&a12.includes('dynamicReviews:true'),'A1 Expansion 2 v2 hat keine dynamischen Reviews');assert(!a12.includes('20,27,36,43,50'),'A1 Expansion 2 enthält wieder feste Review-Tagesliste');assert(a12.includes('assisted:true')&&a12.includes('weight:.5'),'A1-Expansion-MC wird nicht schwächer gewichtet');
+const foundation=read('ukrainischkurs-foundation-expansion.js');
+assert(foundation.includes('const VERSION=3')&&foundation.includes('extensionReviews')&&foundation.includes('dynamicReviews:true'),'Foundation v3 hat keine dynamischen Reviews');
+assert(!foundation.includes('20,27,36,43'),'Foundation enthält wieder feste Review-Tagesliste');
+assert(foundation.includes('assisted:true')&&foundation.includes('weight:.5'),'Foundation-MC wird nicht schwächer gewichtet');
+for(const t of ['Мені: Gefühl und Bedarf','Де? → Ortsform','в Україні','у Києві'])assert(foundation.includes(t),`Foundation vermisst ${t}`);
+const a12=read('ukrainischkurs-a1-expansion-2.js');
+assert(a12.includes('const VERSION=2')&&a12.includes('extensionReviews')&&a12.includes('dynamicReviews:true'),'A1 Expansion 2 v2 hat keine dynamischen Reviews');
+assert(!a12.includes('20,27,36,43,50'),'A1 Expansion 2 enthält wieder feste Review-Tagesliste');
+assert(a12.includes('assisted:true')&&a12.includes('weight:.5'),'A1-Expansion-MC wird nicht schwächer gewichtet');
 
 const centralized=['ukrainischkurs-a1-grammar-bridge.js','ukrainischkurs-time-bridge.js','ukrainischkurs-genitive-bridge.js','ukrainischkurs-human-listening.js','ukrainischkurs-immersion-transfer.js','ukrainischkurs-open-dialogue.js','ukrainischkurs-conversation-chain.js','ukrainischkurs-free-reading-transfer.js','ukrainischkurs-active-production.js','ukrainischkurs-grammar-spiral.js','ukrainischkurs-dictation.js','ukrainischkurs-a1-cando.js'];
 for(const file of centralized){const src=read(file);assert(!src.includes('fallbackNorm'),`${file} enthält wieder lokalen fallbackNorm`);assert(!src.includes(".normalize('NFC')"),`${file} normalisiert Unicode wieder lokal`);assert(src.includes('core.accepts')||file==='ukrainischkurs-human-listening.js',`${file} nutzt zentrale Antwortbewertung nicht`)}
+
 const grammarBridge=read('ukrainischkurs-a1-grammar-bridge.js');assert(grammarBridge.includes('const VERSION=3')&&grammarBridge.includes('centralScoring:true')&&grammarBridge.includes('core.accepts(value,q.a)'),'A1-Grammatik v3 ist nicht zentralisiert');
 const time=read('ukrainischkurs-time-bridge.js');assert(time.includes('const VERSION=3')&&time.includes('centralScoring:true')&&time.includes('core.accepts(value,q.a)'),'Zeit-Brücke v3 ist nicht zentralisiert');
 const genitive=read('ukrainischkurs-genitive-bridge.js');assert(genitive.includes('const VERSION=3')&&genitive.includes('centralScoring:true')&&genitive.includes('core.accepts(value,q.a)'),'Genitiv-Brücke v3 ist nicht zentralisiert');
@@ -55,7 +139,7 @@ const human=read('ukrainischkurs-human-sentence-audio.js');assert((human.match(/
 const speaking=read('ukrainischkurs-speaking-bridge.js');assert(speaking.includes('navigator.mediaDevices?.getUserMedia')&&speaking.includes('new Audio(rec.url)'),'Sprech-A/B-Aufnahme/Rückhören fehlt');assert(speaking.includes('Keine automatische Akzentnote'),'Sprechbrücke behauptet automatische Akzentnote');
 const ar=read('ukrainischkurs-adaptive-review.js');assert(ar.includes("core.reviewFocus()==='speaking'")&&ar.includes('core.isIntroduced(x)')&&ar.includes('automatic:true'),'Adaptiver Sprech-Review ist nicht fokusgesteuert');assert(!ar.includes('data-skill-choice'),'Adaptiver Review enthält Lernweg-Auswahl');
 const profile=read('ukrainischkurs-skill-profile.js');assert(profile.includes('adaptiveReview:true'),'Skill-Profil meldet adaptive Reviews nicht');
-const selftest=read('ukrainischkurs-selftest.js');assert(selftest.includes('Laufzeit-Selbsttest v26')&&selftest.includes('version===37')&&selftest.includes("mode==='external-core-script'")&&selftest.includes('staticCore===true')&&selftest.includes("'allIntroduced'")&&selftest.includes("'anchorDay'"),'Selbsttest ist nicht auf v26/v37-Static-Core-Architektur');
+const selftest=read('ukrainischkurs-selftest.js');assert(selftest.includes('Laufzeit-Selbsttest v27')&&selftest.includes('version===38')&&selftest.includes("mode==='external-core-script'")&&selftest.includes('staticCore===true')&&selftest.includes("'allIntroduced'")&&selftest.includes("'anchorDay'"),'Selbsttest ist nicht auf v27/v38-Architektur');
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);errors.forEach(e=>console.error('- '+e));process.exit(1)}
-console.log('VALIDIERUNG OK: Syntax, Loader/Cache v37, kanonisch identischer statischer Core statt Runtime-Konkatenation, keine produktiven .part-Abhängigkeiten, erhaltene Fortschrittsmigration, Lernkern v3 mit Mehrfach-Abhängigkeiten, dynamische Reviews/Transferanker, zentrale Freitextbewertung, fünf adaptive Skillkanäle und sicherer Offline-Fallback geprüft.');
+console.log('VALIDIERUNG OK: Syntax, Loader/Cache v38, deterministisch generierte statische App-Hülle ohne HTML-Fetch/document.write, Actions v7, statischer Core ohne Runtime-Fragmente, erhaltene Fortschrittsmigration, Lernkern v3, dynamische Reviews/Transferanker, zentrale Freitextbewertung, fünf adaptive Skillkanäle und sicherer Offline-Fallback geprüft.');
