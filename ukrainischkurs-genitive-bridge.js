@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Genitive Bridge v1
+/* Ukrainischkurs für Joel · Genitive Bridge v2
    Praktischer A1-Genitiv: Fehlen mit немає, Herkunft mit з/із und Mengen 5+.
-   Keine Volltabelle; Formen werden in bereits nutzbaren Alltagssätzen produziert. */
+   Bewertung und Skill-Evidenz laufen zentral über den Lernkern. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
   const start=D.length;
   const LESSONS=[
     ['Wenn etwas fehlt: немає','Das bekannte У мене немає… bekommt jetzt ein System.','Nach немає steht das fehlende Ding im Genitiv. Lerne zuerst wenige sehr häufige Formen als ganze Sätze.',[
@@ -22,7 +22,8 @@
     ]],
     ['Genitiv-Transfer','Fehlen, Herkunft und Mengen ohne Grammatiküberschrift unterscheiden.','Heute entscheidet nur die Bedeutung, ob du води, Німеччини, гривень, квитка oder квитків brauchst.',[]]
   ];
-  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const fallbackNorm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const accepts=(v,a)=>core?core.accepts(v,a):a.map(fallbackNorm).includes(fallbackNorm(v));
   const RULES={};
   const rule=(offset,title,note,items)=>RULES[start+offset]={title,note,items};
   rule(0,'немає + Genitiv','Bilde vollständige Sätze selbst.',[
@@ -50,7 +51,7 @@
   function state(day){const st=ensure();return st.rules[String(day)]||(st.rules[String(day)]={passed:false,best:0,attempts:0,date:''})}
   let session=null;
   function startRule(){const r=RULES[s.day];if(!r)return;session={items:[...r.items].sort(()=>Math.random()-.5),idx:0,correct:0};renderBox()}
-  function answer(value){const q=session.items[session.idx],good=q.a.map(norm).includes(norm(value));if(good)session.correct++;toast(good?'Richtig.':'Muster: '+q.a[0]);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),perfect=session.correct===session.items.length,score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=perfect;save();session=null;toast(perfect?'Genitiv-Transfer bestanden.':'Noch nicht stabil: starte einen neuen fehlerfreien Durchgang.');render();return}renderBox()}
+  function answer(value){const q=session.items[session.idx],good=accepts(value,q.a);if(good)session.correct++;toast(good?'Richtig.':'Muster: '+q.a[0]);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),perfect=session.correct===session.items.length,score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=perfect;if(core)core.recordSession({skills:['grammar','writing'],correct:session.correct,total:session.items.length,passed:perfect,module:'genitive-bridge',day:s.day});else save();session=null;toast(perfect?'Genitiv-Transfer bestanden.':'Noch nicht stabil: starte einen neuen fehlerfreien Durchgang.');render();return}renderBox()}
   function renderBox(){let box=document.getElementById('genitiveBridgeBox');const r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='genitiveBridgeBox';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state(s.day);if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">Genitiv-Transfer · '+(session.idx+1)+' / '+session.items.length+'</div><h2>'+r.title+'</h2><p class="gb-q">'+q.q+'</p><input id="gbInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="Ukrainisch selbst bilden …"><div class="actions"><button class="primary" id="gbCheck">Prüfen</button></div>';const inp=document.getElementById('gbInput');document.getElementById('gbCheck').onclick=()=>answer(inp.value);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answer(inp.value)}};setTimeout(()=>inp.focus(),0)}else box.innerHTML='<div class="label">A1-Genitiv · aktiv</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Heute fehlerfrei produziert.':'Freigabe erst nach einem frischen fehlerfreien Durchgang.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="gbStart">'+(st.passed?'noch einmal':'Aktiven Test starten')+'</button></div>';const btn=document.getElementById('gbStart');if(btn)btn.onclick=startRule}
   const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(RULES[s.day]&&!state(s.day).passed){renderBox();document.getElementById('genitiveBridgeBox')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Tag erst den heutigen Genitiv-Transfer fehlerfrei produzieren.');return}return oldNext?.call(this,e)};
   const css=document.createElement('style');css.textContent='.gb-q{font-size:1.08rem;font-weight:850;margin:14px 0}';document.head.append(css);
