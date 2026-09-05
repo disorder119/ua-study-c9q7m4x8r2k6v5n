@@ -22,10 +22,11 @@
       ['Завтра я буду працювати','Morgen werde ich arbeiten','saw-tra ja bu-du pra-zju-wa-ty'],
       ['Що ти будеш робити завтра?','Was wirst du morgen machen?','schtscho ty bu-desch ro-by-ty saw-tra'],
       ['Я буду жити в Києві','Ich werde in Kyjiw wohnen','ja bu-du schy-ty w ky-je-wi']
-    ]]
+    ]],
+    ['Abschluss-Review','Kein neuer Stoff. Die wichtigsten Fähigkeiten werden getrennt vom Sprechtraining abschließend geprüft.','Heute kommt keine zusätzliche Satzaufnahme mehr dazu. Dadurch bleibt der Abschluss anspruchsvoll, aber nicht unnötig überladen.',[]]
   ];
   const TARGETS={};
-  LESSONS.forEach((lesson,offset)=>TARGETS[start+offset]=lesson[3].map(x=>x[0]));
+  LESSONS.forEach((lesson,offset)=>{if(lesson[3].length)TARGETS[start+offset]=lesson[3].map(x=>x[0])});
   LESSONS.forEach(x=>D.push(x));
   const reviews=[...new Set([...WEEKLY_REVIEW_DAYS.map(Number).filter(d=>d<start),start-1,D.length-1])].sort((a,b)=>a-b);
   WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,...reviews);
@@ -121,6 +122,6 @@
     return oldNext?.call(this,e)
   };
   const css=document.createElement('style');css.textContent='.sb-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.sb-phrase{font-size:1.65rem;font-weight:850;margin:15px 0}.sb-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sb-steps button{min-height:48px}@media(max-width:520px){.sb-steps{grid-template-columns:1fr}}';document.head.append(css);
-  window.UKRAINIAN_SENTENCE_SPEAKING={version:VERSION,start,count:Object.values(TARGETS).reduce((n,x)=>n+x.length,0)};
+  window.UKRAINIAN_SENTENCE_SPEAKING={version:VERSION,start,count:Object.values(TARGETS).reduce((n,x)=>n+x.length,0),days:Object.keys(TARGETS).length};
   const previousRender=render;render=function(){previousRender();renderBox()};ensure();resetPhrase(currentPhrase());renderBox();
 })();
