@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Learning Core v1
-   Gemeinsame Normalisierung, Curriculum-Abhängigkeiten und skillbasierte Evidenz.
-   Ziel: weniger duplizierte Bewertungslogik und stabilere Freischaltungen. */
+/* Ukrainischkurs für Joel · Learning Core v2
+   Gemeinsame Normalisierung, Curriculum-Abhängigkeiten, dynamische Freischaltung
+   und skillbasierte Evidenz mit automatischem Review-Fokus. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2;
   const SKILLS=['reading','listening','writing','speaking','grammar'];
   const LABELS={reading:'Lesen',listening:'Hören',writing:'Schreiben',speaking:'Sprechen',grammar:'Grammatik'};
   function ensure(){
@@ -30,6 +30,7 @@
     }
     return Number.isFinite(opts.fallback)?Number(opts.fallback):-1;
   }
+  function isIntroduced(needle,opts={}){const d=introductionDay(needle,opts);return d>=0&&d<=Number(s.day)}
   function addEvidence(skill,score,meta={},persist=true){
     if(!SKILLS.includes(skill))return;const root=ensure(),st=root.skills[skill],weight=clamp(Number(meta.weight)||1,.25,4),pct=clamp(Number(score)||0,0,100);
     st.sessions=(Number(st.sessions)||0)+1;st.scoreSum=(Number(st.scoreSum)||0)+pct*weight;st.weight=(Number(st.weight)||0)+weight;st.passed=(Number(st.passed)||0)+(meta.passed?1:0);st.assisted=(Number(st.assisted)||0)+(meta.assisted?1:0);st.lastDate=meta.date||date();
@@ -42,7 +43,16 @@
   }
   function skillScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
   function profile(){const root=ensure();return Object.fromEntries(SKILLS.map(k=>[k,{label:LABELS[k],score:skillScore(k),sessions:Number(root.skills[k].sessions)||0,passed:Number(root.skills[k].passed)||0,assisted:Number(root.skills[k].assisted)||0,lastDate:root.skills[k].lastDate||''}]))}
-  function weakest(){const p=profile(),eligible=SKILLS.filter(k=>p[k].sessions>0);if(!eligible.length)return null;return eligible.sort((a,b)=>(p[a].score??101)-(p[b].score??101)||p[a].sessions-p[b].sessions)[0]}
+  function rankedSkills(minSessions=1){const p=profile();return SKILLS.filter(k=>p[k].sessions>=minSessions).sort((a,b)=>(p[a].score??101)-(p[b].score??101)||p[a].sessions-p[b].sessions)}
+  function weakest(){return rankedSkills(1)[0]||null}
+  function focusForDay(day=Number(s.day),opts={}){
+    const root=ensure(),key=String(day);if(root.focusHistory[key]&&SKILLS.includes(root.focusHistory[key]))return root.focusHistory[key];
+    const ranked=rankedSkills(Number(opts.minSessions)||1);if(!ranked.length)return null;
+    let chosen=ranked[0],previousKeys=Object.keys(root.focusHistory).map(Number).filter(Number.isFinite).filter(x=>x<day).sort((a,b)=>b-a),previous=previousKeys.length?root.focusHistory[String(previousKeys[0])]:'';
+    if(previous===chosen&&ranked[1]){const p=profile(),gap=Math.abs((p[ranked[1]].score??100)-(p[chosen].score??100));if(gap<=Number(opts.rotateGap??6))chosen=ranked[1]}
+    root.focusHistory[key]=chosen;const keys=Object.keys(root.focusHistory).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(keys.length>30)keys.slice(0,keys.length-30).forEach(x=>delete root.focusHistory[String(x)]);if(typeof save==='function'&&opts.persist!==false)save();return chosen
+  }
+  function reviewFocus(){return focusForDay(Number(s.day),{minSessions:1,rotateGap:6})}
   function passedMap(map,expected){const vals=Object.values(map||{});return vals.length>=expected&&vals.filter(x=>x?.passed).length>=expected}
   function speakingComplete(){const days=Object.values(s.speakingBridge?.days||{}),done=days.reduce((n,x)=>n+(Array.isArray(x?.completed)?x.completed.length:0),0);return done>=12}
   const MILESTONES={
@@ -69,5 +79,5 @@
     if(typeof save==='function')save();
   }
   ensure();seedLegacy();
-  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,recordSession,skillScore,profile,weakest,registerMilestone,isComplete,isUnlocked,unmet,curriculum};
+  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,isIntroduced,recordSession,skillScore,profile,rankedSkills,weakest,focusForDay,reviewFocus,registerMilestone,isComplete,isUnlocked,unmet,curriculum};
 })();
