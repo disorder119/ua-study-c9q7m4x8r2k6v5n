@@ -28,7 +28,7 @@
   const TARGETS={};
   LESSONS.forEach((lesson,offset)=>{if(lesson[3].length)TARGETS[start+offset]=lesson[3].map(x=>x[0])});
   LESSONS.forEach(x=>D.push(x));
-  const reviews=[...new Set([...WEEKLY_REVIEW_DAYS.map(Number).filter(d=>d<start),start-1,D.length-1])].sort((a,b)=>a-b);
+  const reviews=[...new Set([...WEEKLY_REVIEW_DAYS.map(Number).filter(d=>d<start),D.length-1])].sort((a,b)=>a-b);
   WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,...reviews);
 
   function ensure(){
