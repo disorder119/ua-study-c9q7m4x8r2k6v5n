@@ -1,30 +1,57 @@
 (async()=>{
+  const VERSION='23';
+  const coreErrorKey='__UKRAINIAN_COURSE_CORE_ERROR__';
+  const coreDoneKey='__UKRAINIAN_COURSE_CORE_DONE__';
+  function runCore(code){
+    window[coreErrorKey]=null;window[coreDoneKey]=false;
+    const script=document.createElement('script');script.type='text/javascript';
+    script.textContent=`try{\n${code}\n}catch(error){window.${coreErrorKey}=error;}finally{window.${coreDoneKey}=true;}\n//# sourceURL=ukrainischkurs-v2-core.js`;
+    document.head.append(script);script.remove();
+    const error=window[coreErrorKey],done=window[coreDoneKey];delete window[coreErrorKey];delete window[coreDoneKey];
+    if(!done)throw new Error('Kernlogik konnte nicht als klassisches Skript ausgeführt werden');
+    if(error)throw error;
+  }
+  function loadScript(path,label){
+    return new Promise((resolve,reject)=>{
+      const script=document.createElement('script');script.src=path;script.async=false;
+      let settled=false;
+      const filename=path.split('?')[0].split('/').pop();
+      const cleanup=()=>window.removeEventListener('error',onRuntimeError);
+      const fail=error=>{if(settled)return;settled=true;cleanup();script.remove();reject(error instanceof Error?error:new Error(label+' konnte nicht geladen werden'))};
+      const onRuntimeError=event=>{if(String(event.filename||'').includes(filename))fail(event.error||new Error(label+' meldet einen Laufzeitfehler'))};
+      window.addEventListener('error',onRuntimeError);
+      script.onerror=()=>fail(new Error(label+' fehlt'));
+      script.onload=()=>setTimeout(()=>{if(settled)return;settled=true;cleanup();resolve()},0);
+      document.head.append(script);
+    });
+  }
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=22`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=${VERSION}`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
-    const code=(await Promise.all(responses.map(response=>response.text()))).join('');
-    eval(code);
-    const load=async(path,label)=>{const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error(label+' fehlt');eval(await r.text())};
-    await load('./ukrainischkurs-native-audio.js?v=3','Native Audio-Referenzen');
-    await load('./ukrainischkurs-pronunciation.js?v=4','Aussprache-Coach');
-    await load('./ukrainischkurs-pronunciation-mastery.js?v=4','Aussprache-Festigung');
-    await load('./ukrainischkurs-quality-hardening.js?v=6','Qualitäts-Härtung');
-    await load('./ukrainischkurs-adaptive-alphabet.js?v=2','Adaptive Alphabet-Mastery');
-    await load('./ukrainischkurs-alphabet-proof.js?v=2','Alphabet-Proof');
-    await load('./ukrainischkurs-reading-bridge.js?v=1','Lese-Brücke');
-    await load('./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer');
-    await load('./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS');
-    await load('./ukrainischkurs-foundation-expansion.js?v=1','Grundkurs-Erweiterung');
-    await load('./ukrainischkurs-a1-expansion-2.js?v=1','A1-Erweiterung 2');
-    await load('./ukrainischkurs-comprehension-lab.js?v=2','Verständnis-Labor');
-    await load('./ukrainischkurs-active-production.js?v=2','Aktive Produktion');
-    await load('./ukrainischkurs-grammar-spiral.js?v=2','Grammatik-Spirale');
-    await load('./ukrainischkurs-story-lab.js?v=3','Mini-Geschichten');
-    await load('./ukrainischkurs-dictation.js?v=2','Hör-Diktat');
-    await load('./ukrainischkurs-a1-cando.js?v=2','A1 Can-do-Abschluss');
-    await load('./ukrainischkurs-uk-keyboard.js?v=1','Ukrainische Eingabehilfe');
-    await load('./ukrainischkurs-selftest.js?v=11','Selbsttest');
+    runCore((await Promise.all(responses.map(response=>response.text()))).join(''));
+    const modules=[
+      ['./ukrainischkurs-native-audio.js?v=3','Native Audio-Referenzen'],
+      ['./ukrainischkurs-pronunciation.js?v=4','Aussprache-Coach'],
+      ['./ukrainischkurs-pronunciation-mastery.js?v=4','Aussprache-Festigung'],
+      ['./ukrainischkurs-quality-hardening.js?v=6','Qualitäts-Härtung'],
+      ['./ukrainischkurs-adaptive-alphabet.js?v=2','Adaptive Alphabet-Mastery'],
+      ['./ukrainischkurs-alphabet-proof.js?v=2','Alphabet-Proof'],
+      ['./ukrainischkurs-reading-bridge.js?v=1','Lese-Brücke'],
+      ['./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer'],
+      ['./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS'],
+      ['./ukrainischkurs-foundation-expansion.js?v=1','Grundkurs-Erweiterung'],
+      ['./ukrainischkurs-a1-expansion-2.js?v=1','A1-Erweiterung 2'],
+      ['./ukrainischkurs-comprehension-lab.js?v=2','Verständnis-Labor'],
+      ['./ukrainischkurs-active-production.js?v=2','Aktive Produktion'],
+      ['./ukrainischkurs-grammar-spiral.js?v=2','Grammatik-Spirale'],
+      ['./ukrainischkurs-story-lab.js?v=3','Mini-Geschichten'],
+      ['./ukrainischkurs-dictation.js?v=2','Hör-Diktat'],
+      ['./ukrainischkurs-a1-cando.js?v=2','A1 Can-do-Abschluss'],
+      ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
+      ['./ukrainischkurs-selftest.js?v=12','Selbsttest']
+    ];
+    for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
     const toast=document.getElementById('toast');
