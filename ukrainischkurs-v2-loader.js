@@ -1,6 +1,6 @@
 (async()=>{
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=21`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=22`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
     const code=(await Promise.all(responses.map(response=>response.text()))).join('');
@@ -9,7 +9,7 @@
     await load('./ukrainischkurs-native-audio.js?v=3','Native Audio-Referenzen');
     await load('./ukrainischkurs-pronunciation.js?v=4','Aussprache-Coach');
     await load('./ukrainischkurs-pronunciation-mastery.js?v=4','Aussprache-Festigung');
-    await load('./ukrainischkurs-quality-hardening.js?v=3','Qualitäts-Härtung');
+    await load('./ukrainischkurs-quality-hardening.js?v=6','Qualitäts-Härtung');
     await load('./ukrainischkurs-adaptive-alphabet.js?v=2','Adaptive Alphabet-Mastery');
     await load('./ukrainischkurs-alphabet-proof.js?v=2','Alphabet-Proof');
     await load('./ukrainischkurs-reading-bridge.js?v=1','Lese-Brücke');
@@ -20,10 +20,11 @@
     await load('./ukrainischkurs-comprehension-lab.js?v=2','Verständnis-Labor');
     await load('./ukrainischkurs-active-production.js?v=2','Aktive Produktion');
     await load('./ukrainischkurs-grammar-spiral.js?v=2','Grammatik-Spirale');
-    await load('./ukrainischkurs-story-lab.js?v=2','Mini-Geschichten');
+    await load('./ukrainischkurs-story-lab.js?v=3','Mini-Geschichten');
     await load('./ukrainischkurs-dictation.js?v=2','Hör-Diktat');
     await load('./ukrainischkurs-a1-cando.js?v=2','A1 Can-do-Abschluss');
-    await load('./ukrainischkurs-selftest.js?v=10','Selbsttest');
+    await load('./ukrainischkurs-uk-keyboard.js?v=1','Ukrainische Eingabehilfe');
+    await load('./ukrainischkurs-selftest.js?v=11','Selbsttest');
   }catch(error){
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
     const toast=document.getElementById('toast');
