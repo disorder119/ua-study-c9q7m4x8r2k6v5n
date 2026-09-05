@@ -1,12 +1,13 @@
-/* Ukrainischkurs für Joel · Dictation v1
-   Hör-Abruf auf Review-Tagen: hören, selbst tippen, erst danach Feedback. */
+/* Ukrainischkurs für Joel · Dictation v2
+   Hör-Abruf auf gezielten Review-Tagen: hören, selbst tippen, erst danach Feedback. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2;
   const ITEMS=[
     {min:42,uk:'Скільки це коштує?',critical:true},
     {min:43,uk:'Де зупинка?',critical:true},
     {min:44,uk:'Мені потрібна допомога',critical:true},
     {min:46,uk:'Я не знаю'},
+    {min:48,uk:'Я розумію'},
     {min:49,uk:'Я не розумію',critical:true},
     {min:50,uk:'Ти розумієш?'},
     {min:53,uk:'Я хочу їсти'},
@@ -15,12 +16,12 @@
     {min:56,uk:'Я з Німеччини'},
     {min:56,uk:'Я вивчаю українську'},
     {min:56,uk:'Я живу в готелі'},
-    {min:56,uk:'Це моя сім’я'},
-    {min:56,uk:'Я можу говорити українською'}
+    {min:56,uk:'Це моя сім’я'}
   ];
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
   const norm=x=>String(x||'').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/[’']/g,'’').replace(/\s+/g,' ').trim();
-  const reviewDay=()=>Number(s.day)>=43&&(WEEKLY_REVIEW_DAYS.includes(Number(s.day))||Number(s.day)===D.length-1);
+  const lateReviews=()=>[...new Set(WEEKLY_REVIEW_DAYS.map(Number))].filter(d=>d>=43&&d<D.length-1).sort((a,b)=>a-b);
+  const reviewDay=()=>{const i=lateReviews().indexOf(Number(s.day));return i>=0&&i%2===1};
   function ensure(){if(!s.dictation||typeof s.dictation!=='object')s.dictation={version:VERSION,days:{}};s.dictation.version=VERSION;s.dictation.days=s.dictation.days||{};return s.dictation}
   function state(){const k=String(s.day),st=ensure();return st.days[k]||(st.days[k]={passed:false,best:0,attempts:0,date:''})}
   let session=null;
