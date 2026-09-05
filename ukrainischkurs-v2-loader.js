@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='27';
+  const VERSION='28';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'classic-script',evalFree:true};
   const coreErrorKey='__UKRAINIAN_COURSE_CORE_ERROR__';
   const coreDoneKey='__UKRAINIAN_COURSE_CORE_DONE__';
@@ -54,7 +54,8 @@
       ['./ukrainischkurs-dictation.js?v=3','Hör-Diktat'],
       ['./ukrainischkurs-a1-cando.js?v=3','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
-      ['./ukrainischkurs-selftest.js?v=16','Selbsttest']
+      ['./ukrainischkurs-dynamic-course-ui.js?v=1','Dynamische Kursanzeige'],
+      ['./ukrainischkurs-selftest.js?v=17','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
