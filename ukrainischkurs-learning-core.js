@@ -52,7 +52,7 @@
     if(previous===chosen&&ranked[1]){const p=profile(),gap=Math.abs((p[ranked[1]].score??100)-(p[chosen].score??100));if(gap<=Number(opts.rotateGap??6))chosen=ranked[1]}
     root.focusHistory[key]=chosen;const keys=Object.keys(root.focusHistory).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(keys.length>30)keys.slice(0,keys.length-30).forEach(x=>delete root.focusHistory[String(x)]);if(typeof save==='function'&&opts.persist!==false)save();return chosen
   }
-  function reviewFocus(){return focusForDay(Number(s.day),{minSessions:1,rotateGap:6})}
+  function reviewFocus(){const day=Number(s.day);if(!Array.isArray(WEEKLY_REVIEW_DAYS)||!WEEKLY_REVIEW_DAYS.includes(day)||day>=D.length-1)return null;return focusForDay(day,{minSessions:1,rotateGap:6})}
   function passedMap(map,expected){const vals=Object.values(map||{});return vals.length>=expected&&vals.filter(x=>x?.passed).length>=expected}
   function speakingComplete(){const days=Object.values(s.speakingBridge?.days||{}),done=days.reduce((n,x)=>n+(Array.isArray(x?.completed)?x.completed.length:0),0);return done>=12}
   const MILESTONES={
