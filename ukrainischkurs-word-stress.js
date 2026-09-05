@@ -1,30 +1,40 @@
-/* Ukrainischkurs für Joel · Wortbetonung v1
-   Verifizierte Betonungen für häufige A1-Wörter. Akzentzeichen sind Lernhilfe,
-   keine normale Schreibpflicht im Ukrainischen. */
+/* Ukrainischkurs für Joel · Wortbetonung v2
+   Verifizierte Betonungen für häufige A1-Wortformen. Die Freischaltung wird
+   dynamisch aus den echten Kurskarten ermittelt, damit spätere Verschiebungen
+   keine Betonungsaufgabe vor den Lernstoff ziehen. Akzentzeichen sind Lernhilfe. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2;
   const ENTRIES=[
-    {plain:'потяг',marked:'по́тяг',min:43,source:'https://uk.wiktionary.org/wiki/потяг'},
-    {plain:'автобус',marked:'авто́бус',min:43,source:'https://uk.wiktionary.org/wiki/автобус'},
-    {plain:'зупинка',marked:'зупи́нка',min:43,source:'https://slovnyk.me/dict/sum/зупинка'},
-    {plain:'лікар',marked:'лі́кар',min:44,source:'https://uk.wiktionary.org/wiki/лікар'},
-    {plain:'аптека',marked:'апте́ка',min:44,source:'https://uk.wiktionary.org/wiki/аптека'},
-    {plain:'допомога',marked:'допомо́га',min:44,source:'https://uk.wiktionary.org/wiki/допомога'},
-    {plain:'Україна',marked:'Украї́на',min:45,source:'https://uk.wiktionary.org/wiki/Україна'},
-    {plain:'мама',marked:'ма́ма',min:47,source:'https://uk.wiktionary.org/wiki/мама'},
-    {plain:'сестра',marked:'сестра́',min:47,source:'https://uk.wiktionary.org/wiki/сестра'},
-    {plain:'батьки',marked:'батьки́',min:47,source:'https://uk.wiktionary.org/wiki/батьки'},
-    {plain:'розумію',marked:'розумі́ю',min:48,source:'https://uk.wiktionary.org/wiki/розуміти'},
-    {plain:'магазин',marked:'магази́н',min:54,source:'https://uk.wiktionary.org/wiki/магазин'}
+    {plain:'потяг',marked:'по́тяг',source:'https://uk.wiktionary.org/wiki/потяг'},
+    {plain:'автобус',marked:'авто́бус',source:'https://uk.wiktionary.org/wiki/автобус'},
+    {plain:'зупинка',marked:'зупи́нка',source:'https://slovnyk.me/dict/sum/зупинка'},
+    {plain:'лікар',marked:'лі́кар',source:'https://uk.wiktionary.org/wiki/лікар'},
+    {plain:'аптека',marked:'апте́ка',source:'https://uk.wiktionary.org/wiki/аптека'},
+    {plain:'допомога',marked:'допомо́га',source:'https://uk.wiktionary.org/wiki/допомога'},
+    {plain:'Україні',marked:'Украї́ні',source:'https://uk.wiktionary.org/wiki/Україна'},
+    {plain:'мама',marked:'ма́ма',source:'https://uk.wiktionary.org/wiki/мама'},
+    {plain:'сестра',marked:'сестра́',source:'https://uk.wiktionary.org/wiki/сестра'},
+    {plain:'батьки',marked:'батьки́',source:'https://uk.wiktionary.org/wiki/батьки'},
+    {plain:'розумію',marked:'розумі́ю',source:'https://uk.wiktionary.org/wiki/розуміти'},
+    {plain:'магазин',marked:'магази́н',source:'https://uk.wiktionary.org/wiki/магазин'}
   ];
   const VOWELS='аеєиіїоуюяАЕЄИІЇОУЮЯ';
   const strip=x=>String(x||'').normalize('NFD').replace(/\u0301/g,'').normalize('NFC');
+  const canon=x=>strip(x).toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[^а-щьюяєіїґ’]+/giu,' ').replace(/\s+/g,' ').trim();
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
   function ensure(){if(!s.wordStress||typeof s.wordStress!=='object')s.wordStress={version:VERSION,days:{},best:0};s.wordStress.version=VERSION;s.wordStress.days=s.wordStress.days||{};return s.wordStress}
+  function introDay(entry){
+    const needle=canon(entry.plain);
+    for(let di=0;di<D.length;di++){
+      const cards=D[di]?.[3]||[];
+      if(cards.some(card=>(' '+canon(card?.[0])+' ').includes(' '+needle+' ')))return di;
+    }
+    return -1;
+  }
   function key(){return String(s.day)}
   function state(){const st=ensure();return st.days[key()]||(st.days[key()]={passed:false,best:0,attempts:0,date:''})}
-  function eligible(){return ENTRIES.filter(x=>x.min<=Number(s.day))}
-  function newToday(){return ENTRIES.filter(x=>x.min===Number(s.day))}
+  function eligible(){return ENTRIES.filter(x=>{const d=introDay(x);return d>=0&&d<=Number(s.day)})}
+  function newToday(){return ENTRIES.filter(x=>introDay(x)===Number(s.day))}
   function reviewDay(){return WEEKLY_REVIEW_DAYS.includes(Number(s.day))&&Number(s.day)>=43&&Number(s.day)<D.length-1}
   function required(){return newToday().length>0||reviewDay()}
   function options(entry){
@@ -46,7 +56,7 @@
     box.hidden=false;const st=state(),fresh=newToday();
     if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">Betonung · '+(session.idx+1)+' / '+session.items.length+'</div><h2>Welche Schreibweise zeigt die richtige Betonung?</h2><div class="ws-plain" lang="uk">'+strip(q.plain)+'</div><div class="ws-grid">'+options(q).map(x=>'<button class="answer" data-ws="'+x+'" lang="uk">'+x+'</button>').join('')+'</div><p class="small">Der Akzentstrich ist hier nur Lernmarkierung.</p>';box.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>answer(b.dataset.ws));return}
     const pool=fresh.length?fresh:eligible();
-    box.innerHTML='<div class="label">'+(fresh.length?'Neue Wortbetonung':'Review · Wortbetonung')+'</div><h2>Betonung nicht dem Zufall überlassen</h2><p class="small">Ukrainischer Wortakzent ist beweglich. Deshalb werden nur verifizierte Formen trainiert. Die Akzentzeichen musst du im normalen Schreiben nicht setzen.</p><div class="ws-known">'+(st.passed?'✓ Für heute bestanden.':'Heute: '+(fresh.length?fresh.length+' neue verifizierte Wörter':'6 gemischte Wörter; höchstens ein Fehler')+'.')+'</div><div class="small">'+sourceSummary(pool)+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="wsStart">'+(st.passed?'noch einmal':'Betonung starten')+'</button></div>';
+    box.innerHTML='<div class="label">'+(fresh.length?'Neue Wortbetonung':'Review · Wortbetonung')+'</div><h2>Betonung nicht dem Zufall überlassen</h2><p class="small">Trainiert werden ausschließlich bereits eingeführte Wortformen mit geprüftem Akzent. Verschiebt sich der Kurs später, verschiebt sich diese Aufgabe automatisch mit.</p><div class="ws-known">'+(st.passed?'✓ Für heute bestanden.':'Heute: '+(fresh.length?fresh.length+' neue verifizierte Wortformen':'6 gemischte Wortformen; höchstens ein Fehler')+'.')+'</div><div class="small">'+sourceSummary(pool)+' · Akzentzeichen sind Lernhilfe und keine normale Schreibpflicht.</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="wsStart">'+(st.passed?'noch einmal':'Betonung starten')+'</button></div>';
     document.getElementById('wsStart').onclick=start;
   }
   const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(required()&&!state().passed){renderBox();document.getElementById('wordStressBox')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Kurstag erst die heutige Wortbetonung sicher abrufen.');return}return oldNext?.call(this,e)};
