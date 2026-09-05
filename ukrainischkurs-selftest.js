@@ -1,11 +1,11 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v21 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v22 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
     const intro=alphabetItems();ok(intro.length===33,'Alphabet enthält nicht 33 Zeichen');
     const order=intro.map(x=>x.c?.[0]?.[0]).join(' ');ok(order==='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я','Alphabet-Reihenfolge stimmt nicht');
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
-    ok(window.UKRAINIAN_COURSE_LOADER?.version===32,'Loader ist nicht auf v32');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='classic-script','Loader nutzt nicht den klassischen Skriptmodus');
+    ok(window.UKRAINIAN_COURSE_LOADER?.version===33,'Loader ist nicht auf v33');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='classic-script','Loader nutzt nicht den klassischen Skriptmodus');
     ok(window.UKRAINIAN_PRONUNCIATION_AUDIO&&Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO).length===33,'33 menschliche Alphabet-Audioquellen fehlen');
     ok(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.version>=3,'Menschliches Kursaudio ist nicht auf v3');ok(Number(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.count)>=12,'Weniger als zwölf verifizierte Human-Audios aktiv');ok(typeof window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.has==='function','Human-Audio kann Zieltexte nicht prüfen');
     ok(!!s.humanListening,'Human-Audio-Diktat fehlt');ok(Number(s.humanListening.version)>=1,'Human-Audio-Diktat ist nicht auf v1');ok(Number.isFinite(Number(s.humanListening.start)),'Start des Human-Audio-Diktats fehlt');ok(window.UKRAINIAN_HUMAN_LISTENING?.version>=1,'Human-Listening-Laufzeitinfo fehlt');ok(Number(window.UKRAINIAN_HUMAN_LISTENING?.count)===12,'Human-Listening enthält nicht 12 Diktate');ok(Number(window.UKRAINIAN_HUMAN_LISTENING?.days)===3,'Human-Listening enthält nicht drei Tage');
@@ -16,6 +16,8 @@
     ok(!!s.genitiveBridge,'A1-Genitiv-Brücke fehlt');ok(Number(s.genitiveBridge.version)>=1,'A1-Genitiv-Brücke ist nicht auf v1');ok(Number.isFinite(Number(s.genitiveBridge.start)),'Start der A1-Genitiv-Brücke fehlt');
     ok(!!s.speakingBridge,'Satz-Sprechbrücke fehlt');ok(Number(s.speakingBridge.version)>=1,'Satz-Sprechbrücke ist nicht auf v1');ok(Number.isFinite(Number(s.speakingBridge.start)),'Start der Satz-Sprechbrücke fehlt');
     ok(window.UKRAINIAN_SENTENCE_SPEAKING?.version>=1,'Satz-A/B-Vergleich fehlt');ok(Number(window.UKRAINIAN_SENTENCE_SPEAKING?.count)===12,'Satz-Sprechbrücke enthält nicht 12 Zieläußerungen');ok(Number(window.UKRAINIAN_SENTENCE_SPEAKING?.days)===3,'Satz-Sprechbrücke enthält nicht drei aktive Sprechtage');
+    ok(!!s.immersionTransfer,'Immersionsphase fehlt');ok(Number(s.immersionTransfer.version)>=1,'Immersionsphase ist nicht auf v1');ok(Number.isFinite(Number(s.immersionTransfer.start)),'Start der Immersionsphase fehlt');
+    ok(window.UKRAINIAN_IMMERSION_TRANSFER?.version>=1,'Immersions-Laufzeitinfo fehlt');ok(Number(window.UKRAINIAN_IMMERSION_TRANSFER?.activeDays)===6,'Immersionsphase enthält nicht sechs aktive Tage');ok(Number(window.UKRAINIAN_IMMERSION_TRANSFER?.totalDays)===7,'Separater Abschluss-Review der Immersionsphase fehlt');ok(Number(window.UKRAINIAN_IMMERSION_TRANSFER?.maxTurns)>=8,'Immersion enthält kein 8-Zug-Gespräch');ok(window.UKRAINIAN_IMMERSION_TRANSFER?.audioFirst===true,'Audio-first-Immersion fehlt');ok(window.UKRAINIAN_IMMERSION_TRANSFER?.memory===true,'Gedächtnis-Immersion fehlt');ok(window.UKRAINIAN_IMMERSION_TRANSFER?.germanSolutionHintsAfterDay1===false,'Deutsche Lösungshinweise bleiben nach Immersionstag 1 aktiv');
     ok(!!s.wordStress,'Wortbetonungs-Modul fehlt');ok(Number(s.wordStress.version)>=2,'Wortbetonung ist nicht auf v2');
     ok(!!s.openDialogue,'Offene Dialoge fehlen');ok(Number(s.openDialogue.version)>=2,'Offene Dialoge sind nicht auf v2');
     ok(!!s.conversationChain,'Gesprächsketten fehlen');ok(Number(s.conversationChain.version)>=2,'Gesprächsketten sind nicht auf v2');ok(Number(window.UKRAINIAN_CONVERSATION_CHAIN?.maxTurns)>=6,'Keine Gesprächskette mit mindestens sechs Zügen aktiv');
@@ -29,7 +31,7 @@
     ok(!!s.ukKeyboard,'Ukrainische Eingabehilfe fehlt');ok(Number(s.ukKeyboard.version)>=2,'Eingabehilfe ist nicht auf v2');
     ok(window.UKRAINIAN_DYNAMIC_COURSE_UI?.version>=1,'Dynamische Kursanzeige fehlt');ok(Number(window.UKRAINIAN_DYNAMIC_COURSE_UI?.length)===D.length,'Dynamische Kursanzeige kennt nicht die echte Kurslänge');
     const description=document.querySelector('meta[name="description"]')?.content||'';ok(description.includes(String(D.length)),'Meta-Beschreibung zeigt nicht die echte Kurslänge');
-    ok(typeof scheduleMeta==='function'&&typeof dueCards==='function','Adaptives SRS fehlt');ok(D.length>=83,'Grundkurs enthält weniger als 83 geführte Tage');ok(WEEKLY_REVIEW_DAYS.includes(D.length-1),'Letzter Kurstag ist nicht als Review markiert');ok(document.getElementById('next'),'Weiter-Button fehlt');
+    ok(typeof scheduleMeta==='function'&&typeof dueCards==='function','Adaptives SRS fehlt');ok(D.length>=90,'Grundkurs enthält weniger als 90 geführte Tage');ok(WEEKLY_REVIEW_DAYS.includes(D.length-1),'Letzter Kurstag ist nicht als Review markiert');ok(document.getElementById('next'),'Weiter-Button fehlt');
   }catch(e){problems.push('Selbsttest-Ausnahme: '+e.message)}
   window.UKRAINIAN_COURSE_SELFTEST={ok:problems.length===0,problems,checkedAt:new Date().toISOString()};
   if(problems.length)console.error('Ukrainischkurs Selbsttest:',problems);else console.info('Ukrainischkurs Selbsttest: OK');
