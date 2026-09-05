@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const file='ukrainischkurs-a1-exam.js';
+const before="  const options=(answer,others,r)=>[...new Set([answer,...others])].sort(()=>r()-.5).slice(0,4);";
+const after="  const options=(answer,others,r)=>{const distractors=[...new Set(others.filter(x=>x!==answer))].sort(()=>r()-.5).slice(0,3);return [answer,...distractors].sort(()=>r()-.5)};";
+const src=fs.readFileSync(file,'utf8');
+if(!src.includes(before))throw new Error('Erwartete unsichere options()-Implementierung nicht gefunden');
+const out=src.replace(before,after);
+if(out===src)throw new Error('A1-Options-Hotfix hat nichts geändert');
+fs.writeFileSync(file,out);
+console.log('A1-Prüfungsoptionen garantieren jetzt die richtige Antwort.');
