@@ -23,7 +23,7 @@
   let session=null;
   function startSet(){session={items:[...(TARGETS[Number(s.day)]||[])].sort(()=>Math.random()-.5),idx:0,correct:0,human:0,listened:false,source:'',misses:[]};renderBox()}
   function current(){return session?.items?.[session.idx]||''}
-  function play(button){const text=current();if(!text)return;session.listened=false;session.source='loading';renderBox();setTimeout(()=>speak(text,button),0)}
+  function play(button){const text=current();if(!text)return;session.listened=false;session.source='loading';const label=document.querySelector('#humanListeningBox .hl-source');if(label)label.textContent='Audio wird geladen …';speak(text,button)}
   function sourceLabel(){if(!session)return '';if(session.source==='human')return 'Menschliche Aufnahme';if(session.source==='tts-fallback')return 'System-TTS-Fallback';if(session.source==='loading')return 'Audio wird geladen …';return 'Noch nicht angehört'}
   window.addEventListener('ukrainian-audio-source',e=>{if(!session||norm(e.detail?.text)!==norm(current()))return;session.source=e.detail?.source||'';session.listened=true;renderBox()});
   function answer(value){
