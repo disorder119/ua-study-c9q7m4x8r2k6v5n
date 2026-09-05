@@ -1,17 +1,6 @@
 (async()=>{
-  const VERSION='36';
-  window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'classic-script',evalFree:true};
-  const coreErrorKey='__UKRAINIAN_COURSE_CORE_ERROR__';
-  const coreDoneKey='__UKRAINIAN_COURSE_CORE_DONE__';
-  function runCore(code){
-    window[coreErrorKey]=null;window[coreDoneKey]=false;
-    const script=document.createElement('script');script.type='text/javascript';
-    script.textContent=`try{\n${code}\n}catch(error){window.${coreErrorKey}=error;}finally{window.${coreDoneKey}=true;}\n//# sourceURL=ukrainischkurs-v2-core.js`;
-    document.head.append(script);script.remove();
-    const error=window[coreErrorKey],done=window[coreDoneKey];delete window[coreErrorKey];delete window[coreDoneKey];
-    if(!done)throw new Error('Kernlogik konnte nicht als klassisches Skript ausgeführt werden');
-    if(error)throw error;
-  }
+  const VERSION='37';
+  window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
       const script=document.createElement('script');script.src=path;script.async=false;
@@ -24,10 +13,7 @@
     });
   }
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=${VERSION}`);
-    const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
-    if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
-    runCore((await Promise.all(responses.map(response=>response.text()))).join(''));
+    await loadScript(`./ukrainischkurs-v2-core.js?v=${VERSION}`,'Statischer Kurskern');
     const modules=[
       ['./ukrainischkurs-native-audio.js?v=3','Native Audio-Referenzen'],
       ['./ukrainischkurs-pronunciation.js?v=4','Aussprache-Coach'],
@@ -62,7 +48,7 @@
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=1','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=2','Adaptives Skill-Profil'],
-      ['./ukrainischkurs-selftest.js?v=25','Selbsttest']
+      ['./ukrainischkurs-selftest.js?v=26','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
