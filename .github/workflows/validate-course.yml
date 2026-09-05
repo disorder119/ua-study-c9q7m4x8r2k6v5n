@@ -22,3 +22,5 @@ jobs:
         run: node scripts/build-app-shell.mjs
       - name: Kurs vollständig validieren
         run: node tests/validate-v42.mjs
+      - name: A1-Auswahloptionen validieren
+        run: node tests/validate-a1-options.mjs
