@@ -17,68 +17,72 @@ Alle 33 Alphabetzeichen besitzen eine menschliche ukrainische Referenz auf Wikim
 Nach der Alphabetphase folgen zwei Pflichtstufen:
 
 1. **Lese- und Aussprachebrücke** für Betonung, weiche Konsonanten, І/Я/Ю/Є/Ь, Apostroph und Ї.
-2. **Variabler Lese-Transfer**: Pro Versuch werden 20 Aufgaben zufällig aus einem Pool von mehr als 30 Silben, kontrollierten Nicht-Vokabel-Zeichenketten und einfachen unbekannten Wörtern gezogen. Bedeutung soll beim Dekodieren nicht helfen. Bestehen ab 18/20 im ersten Durchgang; Fehler werden danach repariert.
-
-Später kommt zusätzlich ein **Verständnis-Labor**: kurze neue Lesetexte sowie ukrainische Aussagen, die zunächst ohne sichtbares Transkript gehört werden. Auf Review-Tagen müssen beide Mini-Sets bestanden werden. So soll vertrautes Kartenmaterial nicht mit echtem Lesen oder Hörverstehen verwechselt werden.
+2. **Variabler Lese-Transfer**: Pro Versuch werden 20 Aufgaben zufällig aus einem größeren Pool von Silben, kontrollierten Nicht-Vokabel-Zeichenketten und einfachen unbekannten Wörtern gezogen. Bedeutung soll beim Dekodieren nicht helfen. Bestehen ab 18/20 im ersten Durchgang; Fehler werden danach repariert.
 
 ## Adaptives Wiederholen
 
 Das SRS speichert Lerntage, Intervall, Ease, Rückfälle und Problemstatus. Neue oder fehlerhafte Karten kommen eng zurück; stabile Karten erhalten wachsende Abstände bis maximal 90 Tage. Wiederholte Problemkarten werden als **Schwierig** priorisiert.
 
-Wichtig: Eine richtige Antwort unmittelbar nach einem Fehler ist nur **Reparatur**. Sie erhöht die Langzeitstufe nicht und muss am Folgetag erneut aus dem Gedächtnis bewiesen werden. Damit kann unmittelbares Feedback keine echte Retention vortäuschen.
+Eine richtige Antwort unmittelbar nach einem Fehler ist nur **Reparatur**. Sie erhöht die Langzeitstufe nicht und muss am Folgetag erneut aus dem Gedächtnis bewiesen werden.
 
-## Grundkurs
+## A1-Grundkurs
 
-Nach der ursprünglichen Wortphase folgen inzwischen **zwei A1-Grundstufen mit zusammen 20 zusätzlichen Lektionen und 100 Lernobjekten**.
+Die frühere Wortphase wurde in zwei Stufen um insgesamt **20 zusätzliche Grundlagenlektionen mit 100 Lernobjekten** erweitert. Themen sind unter anderem:
 
-Erste Stufe:
-- Menschen vorstellen
+- Menschen und Familie
 - мій / моя / моє / мої
-- zentrale Я-Verbchunks
-- Fragewörter
-- Zahlen 6–10
+- zentrale Ich- und Du-Verbchunks
+- Verneinung
+- Fragewörter und echte Fragen
+- Zahlen bis 20
 - Einkaufen und Preis
 - Bus, Zug und Haltestelle
 - Gesundheit und Hilfe
-- häufige Ortsmuster
-- flexible Satzrahmen
-
-Zweite Stufe:
-- Familie
-- können / wissen / verstehen / mögen
-- Verneinung mit не
-- häufige Du-Fragen
-- Zahlen 11–20
 - Essen und Trinken als Bedürfnisse
 - wichtige Orte
-- gehen / fahren / essen / trinken / schlafen
-- persönliche Angaben und kleine Selbstvorstellung
+- Gehen, Fahren, Essen und Trinken
+- persönliche Angaben und Selbstvorstellung
+- flexible Satzrahmen für konkrete Bedürfnisse
 
-Wichtige Sprachmuster werden in kleinen 3-Fragen-Gates geprüft. Alle drei müssen in einem frischen Durchgang korrekt sein. Grammatik wird zunächst als verwendbares Muster aufgebaut und nicht als isolierte Tabelle.
+Wichtige Sprachmuster werden zunächst in kleinen 3-Fragen-Gates geprüft. Alle drei müssen in einem frischen Durchgang korrekt sein.
 
 ## Freie Produktion
 
-Ab der Wortphase gibt es einen eigenen **Deutsch→Ukrainisch-Abruf**. Hier existieren keine Antwortbuttons: Die ukrainische Form muss selbst getippt werden. Auf Review-Tagen ist ein 5er-Set Pflicht. Bestehen: mindestens 4/5 plus die kritische Alltagssituation im ersten Versuch korrekt. Reparaturen nach einem Fehler helfen beim Lernen, ändern aber die ursprüngliche Punktzahl nicht.
+Auf späteren Review-Tagen reicht Wiedererkennen nicht. Die App zeigt deutsche Absichten und verlangt die **freie ukrainische Eingabe ohne Antwortbuttons**. Kritische Alltagssätze dürfen nicht durch Raten bestanden werden.
+
+## Verständnis-Labor
+
+Kurze neue Lese- und Hörsituationen prüfen Transfer auf Material, das nicht einfach als Karte wiedererkannt werden kann. Inhalte erscheinen erst, nachdem die dafür nötigen Wörter und Muster eingeführt wurden.
+
+## Grammatik-Spirale
+
+Ab den späteren Review-Tagen werden bereits gelernte Muster **ohne Themenhinweis gemischt**. Die Aufgabe verrät nicht, ob gerade Besitz, Verneinung, Fragebildung, Bedürfnis oder Ortsfrage gebraucht wird. Antworten müssen frei auf Ukrainisch erzeugt werden.
+
+Pro Review werden bis zu sechs gemischte Aufgaben gezogen. Höchstens ein unkritischer Fehler ist erlaubt; wichtige Sätze zu Preis, Orientierung, Hilfe und Nichtverstehen müssen korrekt sein.
+
+## Mini-Geschichten
+
+Das Story Lab verbindet einzelne Sätze zu kurzen zusammenhängenden Texten. Der Text wird einmal gelesen und anschließend **ausgeblendet**. Danach folgen drei Verständnisfragen. Bestehen nur mit 3/3. Damit wird Inhalt über Satzgrenzen hinweg verarbeitet statt nur einzelne Karten zu erkennen.
+
+## Hör-Diktat
+
+Auf Review-Tagen werden bereits eingeführte ukrainische Sätze **ohne sichtbare Vorlage** abgespielt und anschließend frei getippt. Erst nach der Eingabe erscheint die Lösung. Die derzeitige Satzwiedergabe nutzt System-TTS und ist transparent als technischer Hörkanal gekennzeichnet; sie wird nicht als Ersatz für echtes Muttersprachler-Audio ausgegeben.
 
 ## Handlungsorientierter Abschluss
 
-Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check**:
+Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check**. Er enthält freie Eingaben, Hörfragen und Verständnis-/Situationsaufgaben. Nichtverstehen, Preis, Haltestelle und Hilfe sind kritische Pflichtsituationen.
 
-- 8 freie ukrainische Eingaben
-- 4 Höraufgaben
-- 4 situationsbezogene Verständnisaufgaben
-
-Kritische Aufgaben prüfen Nichtverstehen, Preis, Haltestelle und Hilfe. Bestehen: mindestens 13/16 im ersten Durchgang und alle vier kritischen Aufgaben korrekt.
+Bestehen: mindestens 13/16 im ersten Durchgang und alle kritischen Aufgaben korrekt. Fehler werden anschließend repariert.
 
 ## Lernprinzipien
 
-Die App kombiniert aktive Erinnerung, Spacing, Interleaving, Fehler-Reparatur, Mastery Learning, Dekodier-Transfer, unbekannte Kurztexte, Hörverstehen ohne Mitlesen, freie Produktion und handlungsorientierte Aufgaben. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
+Die App kombiniert aktive Erinnerung, Spacing, Interleaving, Fehler-Reparatur, Mastery Learning, Dekodier-Transfer, freie Produktion, gemischte Grammatik, zusammenhängendes Lesen und Hör-Diktat. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
 
 Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht automatisch empirische Lernwirkung. Die reale Lernwirkung muss langfristig zusätzlich mit echten Anfängern und verzögerten Retentionstests gemessen werden.
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft u. a. Syntax, Loader/Cache, Alphabet-Mastery, 33 Audioquellen, Lese-Transfer, adaptives SRS, beide A1-Erweiterungen, Verständnis-Labor, freie Produktion und den Can-do-Abschluss.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft Syntax, Loader/Cache, Alphabet-Mastery, Audioquellen, Lese-Transfer, SRS, A1-Erweiterungen, freie Produktion, Grammatik-Spirale, Mini-Geschichten, Hör-Diktat und Can-do-Abschluss.
 
 Aktuelle Kernmodule:
 
@@ -95,6 +99,9 @@ Aktuelle Kernmodule:
 - `ukrainischkurs-a1-expansion-2.js`
 - `ukrainischkurs-comprehension-lab.js`
 - `ukrainischkurs-active-production.js`
+- `ukrainischkurs-grammar-spiral.js`
+- `ukrainischkurs-story-lab.js`
+- `ukrainischkurs-dictation.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
 
