@@ -1,4 +1,4 @@
-const VERSION='39';
+const VERSION='40';
 const CACHE=`ukrainischkurs-joel-v${VERSION}`;
 const ASSETS=[
   './','./index.html','./ukrainischkurs-app.html','./ukrainisch-lernen.html','./ukrainisch-lernen.webmanifest',
@@ -30,6 +30,13 @@ async function navigationResponse(request,url){
     return (await cache.match(request))||(await cache.match(canonical))||(await cache.match('./ukrainischkurs-app.html'))||offlineApp();
   }
 }
+async function freshAssetResponse(request,url){
+  const canonical=canonicalRequest(url);
+  try{return await remember(request,await fetch(request),canonical)}catch{
+    const cache=await caches.open(CACHE);
+    return (await cache.match(request))||(await cache.match(canonical))||offlineAsset();
+  }
+}
 async function versionedResponse(request,url){
   const requestedVersion=url.searchParams.get('v'),canonical=canonicalRequest(url);
   try{return await remember(request,await fetch(request),canonical)}catch{
@@ -46,7 +53,9 @@ async function assetResponse(request,url){
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);if(url.origin!==location.origin)return;
+  const stableLoader=url.pathname.endsWith('/ukrainischkurs-v2-loader.js')&&!url.searchParams.has('v');
   if(event.request.mode==='navigate'||event.request.destination==='document')event.respondWith(navigationResponse(event.request,url));
+  else if(stableLoader)event.respondWith(freshAssetResponse(event.request,url));
   else if(url.searchParams.has('v'))event.respondWith(versionedResponse(event.request,url));
   else event.respondWith(assetResponse(event.request,url));
 });
