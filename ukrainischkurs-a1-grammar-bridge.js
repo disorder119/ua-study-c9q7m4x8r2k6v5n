@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · A1 Grammar Bridge v1
+/* Ukrainischkurs für Joel · A1 Grammar Bridge v2
    Systematisiert bereits bekannte Chunks: Ort vs. Richtung, einfacher Akkusativ,
-   Präsensformen und Bewegung. Fokus bleibt auf anwendbaren Mustern statt Tabellen. */
+   Präsensformen und Bewegung. Bewertung läuft über den zentralen Lernkern. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
   const start=D.length;
   const LESSONS=[
     ['Ort oder Richtung?','Де? und Куди? bewusst unterscheiden.','Bei в/у und на entscheidet die Bedeutung: Ort (де?) nutzt bei diesen Ortsmustern den Lokativ, Richtung (куди?) den Akkusativ.',[
@@ -25,7 +25,8 @@
     ]],
     ['Transfer-Review: Ort, Richtung, Verb','Keine neuen Karten. Alte Muster werden in neuen Kombinationen geprüft.','Heute zählt, ob du selbst entscheidest: де oder куди, welche Verbperson und welche Objektform gebraucht wird.',[]]
   ];
-  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const fallbackNorm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const same=(value,answers)=>core?core.accepts(value,answers):answers.map(fallbackNorm).includes(fallbackNorm(value));
   const RULES={};
   const rule=(offset,title,note,items)=>RULES[start+offset]={title,note,items};
   rule(0,'Де? oder Куди?','Ort und Richtung müssen ohne Antwortbuttons auseinandergehalten werden.',[
@@ -56,7 +57,7 @@
   function state(day){const st=ensure();return st.rules[String(day)]||(st.rules[String(day)]={passed:false,best:0,attempts:0,date:''})}
   let session=null;
   function startRule(){const r=RULES[s.day];if(!r)return;session={items:[...r.items].sort(()=>Math.random()-.5),idx:0,correct:0,misses:[]};renderBox()}
-  function answer(value){const q=session.items[session.idx],good=q.a.map(norm).includes(norm(value));if(good)session.correct++;else session.misses.push(q);toast(good?'Richtig.':'Muster: '+q.a[0]);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),perfect=session.correct===session.items.length,score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=perfect;save();session=null;toast(perfect?'Grammatik-Transfer bestanden.':'Noch nicht stabil: für diese Brücke ist ein frischer fehlerfreier Durchgang nötig.');render();return}renderBox()}
+  function answer(value){const q=session.items[session.idx],good=same(value,q.a);if(good)session.correct++;else session.misses.push(q);toast(good?'Richtig.':'Muster: '+q.a[0]);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),perfect=session.correct===session.items.length,score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=perfect;if(core)core.recordSession({skills:['grammar','writing'],correct:session.correct,total:session.items.length,passed:perfect,module:'a1-grammar-bridge',day:s.day});else save();session=null;toast(perfect?'Grammatik-Transfer bestanden.':'Noch nicht stabil: für diese Brücke ist ein frischer fehlerfreier Durchgang nötig.');render();return}renderBox()}
   function renderBox(){let box=document.getElementById('a1GrammarBridge');const r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='a1GrammarBridge';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state(s.day);if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">A1-Grammatik · '+(session.idx+1)+' / '+session.items.length+'</div><h2>'+r.title+'</h2><p class="agb-q">'+q.q+'</p><input id="agbInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="Ukrainisch selbst bilden …"><div class="actions"><button class="primary" id="agbCheck">Prüfen</button></div>';const inp=document.getElementById('agbInput');document.getElementById('agbCheck').onclick=()=>answer(inp.value);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answer(inp.value)}};setTimeout(()=>inp.focus(),0)}else box.innerHTML='<div class="label">A1-System · aktive Grammatik</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Heute fehlerfrei produziert.':'Freigabe erst nach einem fehlerfreien Durchgang. Reparaturen helfen beim Lernen, zählen aber nicht rückwirkend.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="agbStart">'+(st.passed?'noch einmal':'Aktiven Test starten')+'</button></div>';const startBtn=document.getElementById('agbStart');if(startBtn)startBtn.onclick=startRule}
   const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(RULES[s.day]&&!state(s.day).passed){renderBox();document.getElementById('a1GrammarBridge')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Tag erst den heutigen Grammatik-Transfer fehlerfrei produzieren.');return}return oldNext?.call(this,e)};
   const css=document.createElement('style');css.textContent='.agb-q{font-size:1.08rem;font-weight:850;margin:14px 0}';document.head.append(css);
