@@ -45,12 +45,12 @@
   }
   function required(){return Array.isArray(TARGETS[Number(s.day)])}
   function allDone(){const list=TARGETS[Number(s.day)]||[],st=dayState();return list.length>0&&list.every(x=>st.completed.includes(x))}
-  let session={phrase:'',heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false};
+  let session={phrase:'',heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false,fallbackMode:false};
   let rec={media:null,stream:null,chunks:[],url:''};
   function resetPhrase(phrase){
     if(rec.url){URL.revokeObjectURL(rec.url);rec.url=''}
     rec.media=null;rec.stream?.getTracks?.().forEach(t=>t.stop());rec.stream=null;rec.chunks=[];
-    session={phrase,heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false};
+    session={phrase,heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false,fallbackMode:false};
   }
   function currentPhrase(){
     const list=TARGETS[Number(s.day)]||[],st=dayState();
@@ -63,9 +63,10 @@
     renderBox();
   }
   function micAvailable(){return !!(navigator.mediaDevices?.getUserMedia&&window.MediaRecorder)}
+  function usingMic(){return micAvailable()&&!session.fallbackMode}
   async function recordStart(){
     const phrase=session.phrase||currentPhrase();if(!phrase)return;
-    if(!micAvailable()){toast('Lokale Aufnahme ist auf diesem Gerät nicht verfügbar. Nutze den transparenten Sprech-Fallback.');renderBox();return}
+    if(!micAvailable()){session.fallbackMode=true;toast('Lokale Aufnahme ist auf diesem Gerät nicht verfügbar. Nutze den transparenten Sprech-Fallback.');renderBox();return}
     try{
       if(rec.url){URL.revokeObjectURL(rec.url);rec.url=''}
       rec.stream=await navigator.mediaDevices.getUserMedia({audio:true});rec.chunks=[];rec.media=new MediaRecorder(rec.stream);
@@ -75,7 +76,7 @@
         rec.stream?.getTracks().forEach(t=>t.stop());rec.stream=null;session.recorded=true;session.replayed=false;session.heardAfter=0;dayState().attempts++;save();renderBox();
       };
       rec.media.start();renderBox();
-    }catch{toast('Mikrofon nicht verfügbar oder nicht erlaubt. Du kannst den transparenten Fallback nutzen.');renderBox()}
+    }catch{session.fallbackMode=true;rec.stream?.getTracks?.().forEach(t=>t.stop());rec.stream=null;toast('Mikrofon nicht verfügbar oder nicht erlaubt. Der transparente Sprech-Fallback ist jetzt aktiv.');renderBox()}
   }
   function recordStop(){if(rec.media&&rec.media.state!=='inactive')rec.media.stop()}
   function replay(){
@@ -84,12 +85,12 @@
   function manualSpeak(){session.manualSpoken=true;dayState().attempts++;save();renderBox();toast('Lautes Sprechen markiert. Höre die Referenz jetzt noch einmal zum Vergleich.')}
   function readyToConfirm(){
     if(session.heardBefore<1||session.heardAfter<1)return false;
-    return micAvailable()?session.recorded&&session.replayed:session.manualSpoken;
+    return usingMic()?session.recorded&&session.replayed:session.manualSpoken;
   }
   function confirm(){
     if(!readyToConfirm()){toast('Erst Referenz, eigene Produktion und den zweiten Vergleich vollständig durchführen.');return}
     const st=dayState(),phrase=session.phrase;if(!st.completed.includes(phrase))st.completed.push(phrase);
-    if(!micAvailable()&&!st.fallback.includes(phrase))st.fallback.push(phrase);
+    if(!usingMic()&&!st.fallback.includes(phrase))st.fallback.push(phrase);
     save();const next=currentPhrase();resetPhrase(next);toast(allDone()?'Sprechbrücke für heute abgeschlossen.':'Satz bestätigt. Nächster Satz.');render();
   }
   function retry(){resetPhrase(session.phrase||currentPhrase());renderBox();toast('Gut: lieber neu aufnehmen als zu früh bestätigen.')}
@@ -98,12 +99,12 @@
     const cards=document.getElementById('cards');if(!cards)return;
     if(!box){box=document.createElement('section');box.id='speakingBridgeBox';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;
     const st=dayState(),list=TARGETS[Number(s.day)]||[],phrase=currentPhrase();if(session.phrase!==phrase)resetPhrase(phrase);
-    const done=st.completed.length,total=list.length,finished=allDone(),mic=micAvailable(),recording=rec.media?.state==='recording';
+    const done=st.completed.length,total=list.length,finished=allDone(),mic=usingMic(),recording=rec.media?.state==='recording';
     const production=mic
       ?'<button class="'+(session.recorded?'secondary':'primary')+'" id="sbRecord">'+(recording?'⏹ Aufnahme stoppen':session.recorded?'✓ neu aufnehmen':'● Satz aufnehmen')+'</button>'+(session.recorded?'<button class="'+(session.replayed?'secondary':'primary')+'" id="sbReplay">'+(session.replayed?'✓ eigene Aufnahme gehört':'▶ eigene Aufnahme hören')+'</button>':'')
       :'<button class="'+(session.manualSpoken?'secondary':'primary')+'" id="sbManual">'+(session.manualSpoken?'✓ laut gesprochen':'Satz 3× laut sprechen')+'</button>';
     box.innerHTML='<div class="sb-head"><div><div class="label">Satz-Aussprache · '+done+' / '+total+'</div><h2>Hören → sprechen → rückhören → vergleichen</h2></div><div class="pill">'+(finished?'✓':done+'/'+total)+'</div></div>'+
-      '<p class="small">Keine automatische Akzentnote. Entscheidend ist ein echter A/B-Vergleich. '+(mic?'Die Aufnahme bleibt nur lokal in dieser Sitzung.':'Auf diesem Gerät ist keine lokale Aufnahme verfügbar; deshalb wird transparent auf lautes Sprechen + Doppelreferenz ausgewichen.')+'</p>'+
+      '<p class="small">Keine automatische Akzentnote. Entscheidend ist ein echter A/B-Vergleich. '+(mic?'Die Aufnahme bleibt nur lokal in dieser Sitzung.':'Lokale Aufnahme ist nicht verfügbar oder wurde nicht erlaubt; deshalb läuft transparent der schwächere Fallback mit lautem Sprechen + Doppelreferenz.')+'</p>'+
       (finished?'<div class="tip">✓ Alle vier heutigen Sätze wurden vollständig verglichen.</div>':'<div class="sb-phrase" lang="uk">'+phrase+'</div><div class="sb-steps">'+
       '<button class="'+(session.heardBefore?'secondary':'primary')+'" id="sbHear1">'+(session.heardBefore?'✓ Referenz gehört':'1 · Referenz hören')+'</button>'+production+
       '<button class="'+(session.heardAfter?'secondary':'primary')+'" id="sbHear2">'+(session.heardAfter?'✓ erneut verglichen':'4 · Referenz erneut hören')+'</button></div>'+
@@ -113,7 +114,7 @@
     const rb=document.getElementById('sbRecord');if(rb)rb.onclick=()=>recording?recordStop():recordStart();
     const rp=document.getElementById('sbReplay');if(rp)rp.onclick=replay;
     const man=document.getElementById('sbManual');if(man)man.onclick=manualSpeak;
-    const retry=document.getElementById('sbRetry');if(retry)retry.onclick=retry;
+    const retryBtn=document.getElementById('sbRetry');if(retryBtn)retryBtn.onclick=retry;
     const conf=document.getElementById('sbConfirm');if(conf)conf.onclick=confirm;
   }
   const oldNext=document.getElementById('next')?.onclick;
