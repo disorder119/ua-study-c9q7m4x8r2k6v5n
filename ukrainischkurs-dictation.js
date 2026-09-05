@@ -1,7 +1,7 @@
-/* Ukrainischkurs für Joel · Dictation v2
+/* Ukrainischkurs für Joel · Dictation v3
    Hör-Abruf auf gezielten Review-Tagen: hören, selbst tippen, erst danach Feedback. */
 (()=>{
-  const VERSION=2;
+  const VERSION=3;
   const ITEMS=[
     {min:42,uk:'Скільки це коштує?',critical:true},
     {min:43,uk:'Де зупинка?',critical:true},
@@ -19,7 +19,7 @@
     {min:56,uk:'Це моя сім’я'}
   ];
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
-  const norm=x=>String(x||'').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/[’']/g,'’').replace(/\s+/g,' ').trim();
+  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/[ʼ’‘'`]/g,'’').replace(/\s+/g,' ').trim();
   const lateReviews=()=>[...new Set(WEEKLY_REVIEW_DAYS.map(Number))].filter(d=>d>=43&&d<D.length-1).sort((a,b)=>a-b);
   const reviewDay=()=>{const i=lateReviews().indexOf(Number(s.day));return i>=0&&i%2===1};
   function ensure(){if(!s.dictation||typeof s.dictation!=='object')s.dictation={version:VERSION,days:{}};s.dictation.version=VERSION;s.dictation.days=s.dictation.days||{};return s.dictation}
