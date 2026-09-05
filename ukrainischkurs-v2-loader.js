@@ -1,6 +1,6 @@
 (async()=>{
   try{
-    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=19`);
+    const urls=[1,2,3,4,5].map(n=>`./ukrainischkurs-v2.part${n}?v=20`);
     const responses=await Promise.all(urls.map(url=>fetch(url,{cache:'no-store'})));
     if(responses.some(response=>!response.ok))throw new Error('Upgrade-Teile fehlen');
     const code=(await Promise.all(responses.map(response=>response.text()))).join('');
@@ -19,8 +19,11 @@
     await load('./ukrainischkurs-a1-expansion-2.js?v=1','A1-Erweiterung 2');
     await load('./ukrainischkurs-comprehension-lab.js?v=2','Verständnis-Labor');
     await load('./ukrainischkurs-active-production.js?v=2','Aktive Produktion');
+    await load('./ukrainischkurs-grammar-spiral.js?v=1','Grammatik-Spirale');
+    await load('./ukrainischkurs-story-lab.js?v=1','Mini-Geschichten');
+    await load('./ukrainischkurs-dictation.js?v=1','Hör-Diktat');
     await load('./ukrainischkurs-a1-cando.js?v=2','A1 Can-do-Abschluss');
-    await load('./ukrainischkurs-selftest.js?v=8','Selbsttest');
+    await load('./ukrainischkurs-selftest.js?v=9','Selbsttest');
   }catch(error){
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
     const toast=document.getElementById('toast');
