@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='38';
+  const VERSION='39';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -31,9 +31,9 @@
       ['./ukrainischkurs-time-bridge.js?v=3','A1 Zeit-Brücke'],
       ['./ukrainischkurs-genitive-bridge.js?v=3','A1 Genitiv-Brücke'],
       ['./ukrainischkurs-word-stress.js?v=3','Verifizierte Wortbetonung'],
-      ['./ukrainischkurs-human-sentence-audio.js?v=3','Menschliche A1-Audios'],
+      ['./ukrainischkurs-human-sentence-audio.js?v=4','Menschliche A1-Audios'],
       ['./ukrainischkurs-human-listening.js?v=3','Human-Audio-Diktat'],
-      ['./ukrainischkurs-speaking-bridge.js?v=2','Satz-Sprechbrücke'],
+      ['./ukrainischkurs-speaking-bridge.js?v=3','Satz-Sprechbrücke'],
       ['./ukrainischkurs-immersion-transfer.js?v=3','Späte A1-Immersionsphase'],
       ['./ukrainischkurs-open-dialogue.js?v=4','Offene Dialoge'],
       ['./ukrainischkurs-conversation-chain.js?v=4','Gesprächsketten'],
@@ -48,7 +48,7 @@
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=1','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=2','Adaptives Skill-Profil'],
-      ['./ukrainischkurs-selftest.js?v=27','Selbsttest']
+      ['./ukrainischkurs-selftest.js?v=28','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
