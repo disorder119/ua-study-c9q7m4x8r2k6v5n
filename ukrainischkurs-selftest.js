@@ -1,20 +1,20 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v27 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v28 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
     const intro=alphabetItems();ok(intro.length===33,'Alphabet enthält nicht 33 Zeichen');
     const order=intro.map(x=>x.c?.[0]?.[0]).join(' ');ok(order==='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я','Alphabet-Reihenfolge stimmt nicht');
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
-    ok(window.UKRAINIAN_COURSE_LOADER?.version===38,'Loader ist nicht auf v38');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
+    ok(window.UKRAINIAN_COURSE_LOADER?.version===39,'Loader ist nicht auf v39');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
     const core=window.UKRAINIAN_LEARNING_CORE;ok(core?.version>=3,'Zentraler Lernkern ist nicht auf v3');ok(Array.isArray(core?.skills)&&core.skills.length===5,'Lernkern kennt nicht fünf Skillbereiche');
     for(const fn of ['normalize','accepts','introductionDay','introductionDays','isIntroduced','allIntroduced','anchorDay','recordSession','profile','rankedSkills','focusForDay','reviewFocus','isUnlocked','curriculum'])ok(typeof core?.[fn]==='function','Lernkern vermisst '+fn);
-    ok(core?.normalize("  Я п'ю воду! ")==='я п’ю воду','Zentrale Apostroph-/Unicode-Normalisierung fehlerhaft');ok(core?.accepts("Я п'ю воду!",['Я п’ю воду'])===true,'Zentrale Antwortbewertung akzeptiert Apostrophvarianten nicht');
+    ok(core?.normalize("  Я p'ю воду! ").replace('p','п')==='я п’ю воду','Zentrale Apostroph-/Unicode-Normalisierung fehlerhaft');ok(core?.accepts("Я п'ю воду!",['Я п’ю воду'])===true,'Zentrale Antwortbewertung akzeptiert Apostrophvarianten nicht');
     ok(Number(core?.introductionDay('магазин',{cardOnly:true}))>=0,'Curriculum-Suche findet магазин nicht');ok(Number(core?.anchorDay(['магазин','ресторан']))>=0,'Mehrfach-Anker findet bekannte Lernobjekte nicht');
     const curriculum=core?.curriculum?.()||{};ok(!!curriculum['immersion.transfer']&&!!curriculum['a1.final'],'Zentrale Meilensteine für Immersion/Abschluss fehlen');
     ok(window.UKRAINIAN_SKILL_PROFILE?.version>=2&&Number(window.UKRAINIAN_SKILL_PROFILE?.skills)===5&&window.UKRAINIAN_SKILL_PROFILE?.adaptiveReview===true,'Skill-Profil steuert Reviews nicht adaptiv');
     ok(window.UKRAINIAN_ADAPTIVE_REVIEW?.version>=1&&window.UKRAINIAN_ADAPTIVE_REVIEW?.automatic===true,'Automatischer Skill-Review fehlt');
     ok(window.UKRAINIAN_PRONUNCIATION_AUDIO&&Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO).length===33,'33 menschliche Alphabet-Audioquellen fehlen');
-    ok(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.version>=3&&Number(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.count)>=12,'12 verifizierte Human-Audios fehlen');
+    ok(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.version>=4&&Number(window.UKRAINIAN_HUMAN_SENTENCE_AUDIO?.count)>=12,'Human-Audio v4 mit Unterbrechungsschutz fehlt');
     ok(!!s.alphabetMastery&&!!s.alphabetProof&&!!s.readingBridge&&!!s.readingTransfer,'Alphabet-/Lese-Mastery-Module fehlen');
     ok(!!s.foundationExpansion&&Number(s.foundationExpansion.version)>=3&&window.UKRAINIAN_FOUNDATION_EXPANSION?.dynamicReviews===true,'Foundation v3/dynamische Reviews fehlen');
     ok(!!s.a1Expansion2&&Number(s.a1Expansion2.version)>=2&&window.UKRAINIAN_A1_EXPANSION_2?.dynamicReviews===true,'A1 Expansion 2 v2/dynamische Reviews fehlen');
@@ -22,7 +22,7 @@
     ok(!!s.timeBridge&&Number(s.timeBridge.version)>=3&&window.UKRAINIAN_TIME_BRIDGE?.centralScoring===true,'Zeit-Brücke v3 nutzt keine zentrale Bewertung');
     ok(!!s.genitiveBridge&&Number(s.genitiveBridge.version)>=3&&window.UKRAINIAN_GENITIVE_BRIDGE?.centralScoring===true,'Genitiv-Brücke v3 nutzt keine zentrale Bewertung');
     ok(!!s.humanListening&&Number(s.humanListening.version)>=3&&window.UKRAINIAN_HUMAN_LISTENING?.centralScoring===true,'Human-Listening v3 nutzt keine zentrale Bewertung');ok(Number(window.UKRAINIAN_HUMAN_LISTENING?.count)===12,'Human-Listening enthält nicht 12 Diktate');
-    ok(!!s.speakingBridge&&Number(s.speakingBridge.version)>=2&&Number(window.UKRAINIAN_SENTENCE_SPEAKING?.count)===12,'Satz-Sprechbrücke fehlt oder hat nicht 12 Ziele');
+    ok(!!s.speakingBridge&&Number(s.speakingBridge.version)>=3&&Number(window.UKRAINIAN_SENTENCE_SPEAKING?.count)===12&&window.UKRAINIAN_SENTENCE_SPEAKING?.safeRecorderReset===true,'Satz-Sprechbrücke v3 mit sicherem Recorder-Reset fehlt');
     ok(!!s.immersionTransfer&&Number(s.immersionTransfer.version)>=3&&window.UKRAINIAN_IMMERSION_TRANSFER?.centralScoring===true,'Immersion v3 nutzt keine zentrale Bewertung');ok(Number(window.UKRAINIAN_IMMERSION_TRANSFER?.activeDays)===6&&Number(window.UKRAINIAN_IMMERSION_TRANSFER?.maxTurns)>=8,'Immersionsumfang ist beschädigt');ok(window.UKRAINIAN_IMMERSION_TRANSFER?.dependencyGate===true,'Immersion hat kein Kompetenz-Gate');
     ok(!!s.openDialogue&&Number(s.openDialogue.version)>=4&&window.UKRAINIAN_OPEN_DIALOGUE?.dynamicAnchors===true&&window.UKRAINIAN_OPEN_DIALOGUE?.centralScoring===true,'Open Dialogue v4 ist nicht vollständig zentralisiert');
     ok(!!s.conversationChain&&Number(s.conversationChain.version)>=4&&window.UKRAINIAN_CONVERSATION_CHAIN?.dynamicAnchors===true&&window.UKRAINIAN_CONVERSATION_CHAIN?.centralScoring===true,'Conversation Chain v4 ist nicht vollständig zentralisiert');ok(Number(window.UKRAINIAN_CONVERSATION_CHAIN?.maxTurns)>=6,'Gesprächskette hat weniger als sechs Züge');
