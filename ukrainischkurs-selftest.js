@@ -1,11 +1,11 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v26 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v27 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
     const intro=alphabetItems();ok(intro.length===33,'Alphabet enthält nicht 33 Zeichen');
     const order=intro.map(x=>x.c?.[0]?.[0]).join(' ');ok(order==='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я','Alphabet-Reihenfolge stimmt nicht');
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
-    ok(window.UKRAINIAN_COURSE_LOADER?.version===37,'Loader ist nicht auf v37');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
+    ok(window.UKRAINIAN_COURSE_LOADER?.version===38,'Loader ist nicht auf v38');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
     const core=window.UKRAINIAN_LEARNING_CORE;ok(core?.version>=3,'Zentraler Lernkern ist nicht auf v3');ok(Array.isArray(core?.skills)&&core.skills.length===5,'Lernkern kennt nicht fünf Skillbereiche');
     for(const fn of ['normalize','accepts','introductionDay','introductionDays','isIntroduced','allIntroduced','anchorDay','recordSession','profile','rankedSkills','focusForDay','reviewFocus','isUnlocked','curriculum'])ok(typeof core?.[fn]==='function','Lernkern vermisst '+fn);
     ok(core?.normalize("  Я п'ю воду! ")==='я п’ю воду','Zentrale Apostroph-/Unicode-Normalisierung fehlerhaft');ok(core?.accepts("Я п'ю воду!",['Я п’ю воду'])===true,'Zentrale Antwortbewertung akzeptiert Apostrophvarianten nicht');
