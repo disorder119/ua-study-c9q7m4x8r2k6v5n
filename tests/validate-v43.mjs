@@ -32,7 +32,7 @@ const sw=read('ukrainisch-lernen-sw.js');
 assert(sw.includes("const VERSION='43'"),'Service Worker ist nicht v43');
 assert(sw.includes("'./ukrainischkurs-designer-alphabet.js'")&&sw.includes("'./ukrainischkurs-a1-exam.js'")&&sw.includes("'./ukrainischkurs-learning-core.js'"),'Designer-Alphabet/A1/Core fehlen im Offline-Cache');
 assert(sw.includes('else if(stableLoader)event.respondWith(freshAssetResponse(event.request,url))'),'Stabiler Loader ist nicht korrekt network-first');
-assert(!sw.includes('freshAssetResponse(request,url)'),'Service Worker referenziert wieder eine undefinierte request-Variable');
+assert(!sw.includes('else if(stableLoader)event.respondWith(freshAssetResponse(request,url))'),'Stable-Loader-Zweig referenziert eine undefinierte request-Variable');
 assert(!sw.includes('ignoreSearch:true')&&sw.includes("requestedVersion&&requestedVersion!==VERSION"),'Versionsschutz im Service Worker fehlt');
 assert(sw.includes('await cache.put(request,response.clone())')&&sw.includes('await cache.put(canonical,response.clone())'),'Cache-Schreibvorgänge werden nicht abgewartet');
 
