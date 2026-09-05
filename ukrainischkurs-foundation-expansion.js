@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Foundation Expansion v1
+/* Ukrainischkurs für Joel · Foundation Expansion v2
    Erweitert den bisherigen Minikurs um A1-nahe Kernbereiche und kleine Grammatikmuster.
    Fokus: konkrete Bedürfnisse, Fragen, Familie, Verben, Einkaufen, Verkehr, Gesundheit. */
 (() => {
-  const VERSION=1;
+  const VERSION=2;
   const start=D.length;
   const LESSONS=[
     ['Menschen benennen','Wer ist wer?','Lerne Personen nicht isoliert, sondern direkt in kleinen Aussagen.',[['він','er','win'],['вона','sie','wo-na'],['вони','sie (Plural)','wo-ny'],['Хто це?','Wer ist das?','chto ze'],['Це мій друг','Das ist mein Freund','ze mij druh']]],
@@ -12,8 +12,8 @@
     ['Zahlen 6 bis 10','Jetzt kannst du bis zehn zählen.','Sprich die Zahlen laut und mische sie mit 1–5 aus der früheren Lektion.',[['шість','sechs','schist'],['сім','sieben','sim'],['вісім','acht','wi-sim'],['дев’ять','neun','de-wjat'],['десять','zehn','de-sjat']]],
     ['Einkaufen','Preis verstehen und etwas nehmen.','Diese Chunks sind wichtiger als eine lange Produktliste.',[['Скільки це коштує?','Wie viel kostet das?','skil-ky ze kosch-tu-je'],['дорого','teuer','do-ro-ho'],['дешево','günstig','de-sche-wo'],['Я беру це','Ich nehme das','ja be-ru ze'],['карткою','mit Karte','kart-ko-ju']]],
     ['Bus, Zug und Haltestelle','Unterwegs selbstständig bleiben.','Trainiere die Wörter direkt mit den Fragen, die du unterwegs wirklich brauchst.',[['вокзал','Bahnhof','wok-sal'],['зупинка','Haltestelle','su-pyn-ka'],['автобус','Bus','aw-to-bus'],['потяг','Zug','po-tjah'],['Де зупинка?','Wo ist die Haltestelle?','de su-pyn-ka']]],
-    ['Gesundheit und Hilfe','Wenige Sätze, die im Ernstfall nützlich sind.','Hier zählt Verständlichkeit mehr als elegante Grammatik.',[['лікар','Arzt / Ärztin','li-kar'],['аптека','Apotheke','ap-te-ka'],['Мені погано','Mir geht es schlecht','me-ni po-ha-no'],['У мене болить…','Mir tut … weh','u me-ne bo-lyt'],['Мені потрібна допомога','Ich brauche Hilfe','me-ni po-trib-na do-po-mo-ha']]],
-    ['Wo bist du?','Ortsmuster als fertige Chunks.','Kasusformen werden später systematisch erklärt. Jetzt erkennst und benutzt du häufige Ortsmuster.',[['в Україні','in der Ukraine','w ukra-ji-ni'],['у Києві','in Kyjiw','u ky-je-wi'],['в готелі','im Hotel','w ho-te-li'],['вдома','zu Hause','wdo-ma'],['Я зараз вдома','Ich bin jetzt zu Hause','ja sa-ras wdo-ma']]],
+    ['Gesundheit und Hilfe','Wenige Sätze, die im Ernstfall nützlich sind.','Achte auf Мені = „mir“: Ukrainisch baut Gefühle und Bedarf häufig anders als Deutsch auf. Du lernst die Form zunächst über echte Sätze.',[['лікар','Arzt / Ärztin','li-kar'],['аптека','Apotheke','ap-te-ka'],['Мені погано','Mir geht es schlecht','me-ni po-ha-no'],['У мене болить…','Mir tut … weh','u me-ne bo-lyt'],['Мені потрібна допомога','Ich brauche Hilfe','me-ni po-trib-na do-po-mo-ha']]],
+    ['Wo bist du?','Erster bewusster Ortsfall.','Nach Де? („wo?“) stehen Ortsangaben mit в/у in einer Ortsform. Du lernst zunächst drei häufige komplette Muster statt einer Endungstabelle.',[['в Україні','in der Ukraine','w ukra-ji-ni'],['у Києві','in Kyjiw','u ky-je-wi'],['в готелі','im Hotel','w ho-te-li'],['вдома','zu Hause','wdo-ma'],['Я зараз вдома','Ich bin jetzt zu Hause','ja sa-ras wdo-ma']]],
     ['Flexible Überlebensmuster','Aus bekannten Teilen neue Aussagen bauen.','Diese fünf Satzrahmen lassen sich später mit vielen neuen Wörtern kombinieren.',[['Я хочу …','Ich möchte …','ja cho-tschu'],['Мені потрібно …','Ich brauche …','me-ni po-trib-no'],['Де …?','Wo ist / sind …?','de'],['У мене є …','Ich habe …','u me-ne je'],['Я не знаю','Ich weiß nicht','ja ne sna-ju']]]
   ];
   const RULES={};
@@ -30,8 +30,11 @@
   rule(5,'Einkaufsdialog','Baue kleine funktionale Sequenzen.',[
     {q:'Du willst den Preis wissen.',a:'Скільки це коштує?',o:['Скільки це коштує?','Де зупинка?','Я не знаю']},{q:'Du entscheidest dich dafür.',a:'Я беру це',o:['Я беру це','Мені погано','Я живу…']},{q:'Du willst mit Karte zahlen.',a:'карткою',o:['карткою','дорого','вдома']}
   ]);
-  rule(7,'Hilfe ausdrücken','Erkenne drei verschiedene Bedürfnisse.',[
-    {q:'Dir geht es schlecht.',a:'Мені погано',o:['Мені погано','Я не знаю','Я беру це']},{q:'Du brauchst Hilfe.',a:'Мені потрібна допомога',o:['Мені потрібна допомога','У мене є допомога','Де допомога?']},{q:'Etwas tut weh.',a:'У мене болить…',o:['У мене болить…','Я говорю…','Мені потрібно…']}
+  rule(7,'Мені: Gefühl und Bedarf','Мені ist die Dativform von „ich“ und entspricht hier ungefähr „mir“. In ukrainischen Gefühls- und Bedarfsmustern ist diese Perspektive sehr häufig.',[
+    {q:'Dir geht es schlecht.',a:'Мені погано',o:['Мені погано','Я погано','У мене погано']},{q:'Du brauchst Hilfe.',a:'Мені потрібна допомога',o:['Мені потрібна допомога','Я потрібна допомога','У мене потрібна допомога']},{q:'Welcher Baustein bedeutet in diesen Sätzen „mir“?',a:'Мені',o:['Мені','Я','Мене']}
+  ]);
+  rule(8,'Де? → Ortsform','Bei einer statischen Ortsangabe nach Де? lernst du в/у + Ortsform als Einheit. Noch keine Endungstabelle: zuerst sichere Muster.',[
+    {q:'Wo? — in der Ukraine',a:'в Україні',o:['в Україні','в Україна','Україні']},{q:'Wo? — in Kyjiw',a:'у Києві',o:['у Києві','у Київ','Києві']},{q:'Wo? — im Hotel',a:'в готелі',o:['в готелі','в готель','готелі']}
   ]);
   rule(9,'Satzrahmen kombinieren','Wähle den Rahmen nach deiner Absicht.',[
     {q:'Du möchtest etwas.',a:'Я хочу …',o:['Я хочу …','Де …?','Я не знаю']},{q:'Du suchst einen Ort.',a:'Де …?',o:['У мене є …','Де …?','Мені потрібно …']},{q:'Du weißt die Antwort nicht.',a:'Я не знаю',o:['Я не знаю','Я хочу …','У мене є …']}
