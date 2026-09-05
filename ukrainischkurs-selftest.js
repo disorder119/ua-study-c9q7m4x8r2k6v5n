@@ -1,15 +1,15 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v14 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v15 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
     const intro=alphabetItems();ok(intro.length===33,'Alphabet enthält nicht 33 Zeichen');
     const order=intro.map(x=>x.c?.[0]?.[0]).join(' ');ok(order==='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я','Alphabet-Reihenfolge stimmt nicht');
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
-    ok(window.UKRAINIAN_COURSE_LOADER?.version===25,'Loader ist nicht auf v25');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='classic-script','Loader nutzt nicht den klassischen Skriptmodus');
+    ok(window.UKRAINIAN_COURSE_LOADER?.version===26,'Loader ist nicht auf v26');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='classic-script','Loader nutzt nicht den klassischen Skriptmodus');
     ok(window.UKRAINIAN_PRONUNCIATION_AUDIO&&Object.keys(window.UKRAINIAN_PRONUNCIATION_AUDIO).length===33,'33 menschliche Audioquellen fehlen');
     ok(!!s.alphabetMastery,'Adaptive Alphabet-Mastery fehlt');ok(!!s.alphabetProof,'Alphabet-Proof fehlt');ok(!!s.readingBridge,'Lese-Brücke fehlt');ok(!!s.readingTransfer,'Lese-Transfer fehlt');
-    ok(!!s.foundationExpansion,'Grundkurs-Erweiterung fehlt');ok(!!s.a1Expansion2,'A1-Erweiterung 2 fehlt');
-    ok(!!s.wordStress,'Wortbetonungs-Modul fehlt');ok(Number(s.wordStress.version)>=1,'Wortbetonung ist nicht auf v1');
+    ok(!!s.foundationExpansion,'Grundkurs-Erweiterung fehlt');ok(Number(s.foundationExpansion.version)>=2,'Grundkurs-Erweiterung ist nicht auf v2');ok(!!s.a1Expansion2,'A1-Erweiterung 2 fehlt');
+    ok(!!s.wordStress,'Wortbetonungs-Modul fehlt');ok(Number(s.wordStress.version)>=2,'Wortbetonung ist nicht auf v2');
     ok(!!s.comprehensionLab,'Verständnis-Labor fehlt');ok(Number(s.comprehensionLab.version)>=2,'Verständnis-Labor ist nicht auf v2');
     ok(!!s.activeProduction,'Aktive Produktion fehlt');ok(Number(s.activeProduction.version)>=2,'Aktive Produktion ist nicht auf v2');
     ok(!!s.grammarSpiral,'Grammatik-Spirale fehlt');ok(Number(s.grammarSpiral.version)>=3,'Grammatik-Spirale ist nicht auf v3');
