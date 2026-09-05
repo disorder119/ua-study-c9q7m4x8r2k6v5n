@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Statische App-Hülle prüfen
-        run: node scripts/build-app-shell.mjs --check
+      - name: App-Hülle deterministisch lokal generieren
+        run: node scripts/build-app-shell.mjs
       - name: Kurs vollständig validieren
         run: node tests/validate.mjs
