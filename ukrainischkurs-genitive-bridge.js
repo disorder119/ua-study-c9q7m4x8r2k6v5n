@@ -1,0 +1,58 @@
+/* Ukrainischkurs für Joel · Genitive Bridge v1
+   Praktischer A1-Genitiv: Fehlen mit немає, Herkunft mit з/із und Mengen 5+.
+   Keine Volltabelle; Formen werden in bereits nutzbaren Alltagssätzen produziert. */
+(()=>{
+  const VERSION=1;
+  const start=D.length;
+  const LESSONS=[
+    ['Wenn etwas fehlt: немає','Das bekannte У мене немає… bekommt jetzt ein System.','Nach немає steht das fehlende Ding im Genitiv. Lerne zuerst wenige sehr häufige Formen als ganze Sätze.',[
+      ['У мене немає води','Ich habe kein Wasser','u me-ne ne-ma-je wo-dy'],['У мене немає кави','Ich habe keinen Kaffee','u me-ne ne-ma-je ka-wy'],['У мене немає квитка','Ich habe kein Ticket','u me-ne ne-ma-je kwyt-ka'],['У мене немає грошей','Ich habe kein Geld','u me-ne ne-ma-je hro-schej'],['У мене немає часу','Ich habe keine Zeit','u me-ne ne-ma-je tscha-su']
+    ]],
+    ['Чого немає?','Die Frage passt sich an den Genitiv an.','Чого? fragt hier nach dem, was fehlt. Antworte möglichst mit einem vollständigen Satz.',[
+      ['Чого немає?','Was fehlt / wovon gibt es nichts?','tscho-ho ne-ma-je'],['Немає води','Es gibt kein Wasser','ne-ma-je wo-dy'],['Немає кави','Es gibt keinen Kaffee','ne-ma-je ka-wy'],['Немає квитка','Es gibt kein Ticket','ne-ma-je kwyt-ka'],['Немає часу','Es gibt keine Zeit','ne-ma-je tscha-su']
+    ]],
+    ['Woher? з + Genitiv','Herkunft ist ein zweites sehr nützliches Genitivmuster.','Звідки? bedeutet „Woher?“. Nach з/із stehen Herkunftsorte in diesen Antworten im Genitiv.',[
+      ['Звідки ти?','Woher kommst du?','swid-ky ty'],['Я з Німеччини','Ich komme aus Deutschland','ja s ni-met-schyny'],['Я з України','Ich komme aus der Ukraine','ja s ukra-ji-ny'],['Він з Києва','Er kommt aus Kyjiw','win s ky-je-wa'],['Вона з України','Sie kommt aus der Ukraine','wo-na s ukra-ji-ny']
+    ]],
+    ['Fünf und mehr: гривень','Bei 5–20 begegnet dir der Genitiv Plural ständig bei Preisen.','Für die bereits bekannten Zahlen 5–20 lernst du zunächst das praktische Geldmuster: п’ять/десять/двадцять гривень.',[
+      ['п’ять гривень','fünf Hrywnja','pjat hry-wen'],['десять гривень','zehn Hrywnja','de-sjat hry-wen'],['двадцять гривень','zwanzig Hrywnja','dwa-zjat hry-wen'],['Скільки це коштує?','Wie viel kostet das?','skil-ky ze kosch-tu-je'],['Це десять гривень','Das kostet zehn Hrywnja','ze de-sjat hry-wen']
+    ]],
+    ['Fünf und mehr: квитків','Dasselbe Mengenmuster mit einem bereits bekannten Reiseobjekt.','Bei 5+ steht квиток hier als квитків. Ziel ist nicht Deklinationstheorie, sondern sichere Mengenproduktion.',[
+      ['п’ять квитків','fünf Tickets','pjat kwyt-kiw'],['десять квитків','zehn Tickets','de-sjat kwyt-kiw'],['У мене немає квитка','Ich habe kein Ticket','u me-ne ne-ma-je kwyt-ka'],['Я беру квиток','Ich nehme ein Ticket','ja be-ru kwy-tok'],['Скільки?','Wie viele / wie viel?','skil-ky']
+    ]],
+    ['Genitiv-Transfer','Fehlen, Herkunft und Mengen ohne Grammatiküberschrift unterscheiden.','Heute entscheidet nur die Bedeutung, ob du води, Німеччини, гривень, квитка oder квитків brauchst.',[]]
+  ];
+  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
+  const RULES={};
+  const rule=(offset,title,note,items)=>RULES[start+offset]={title,note,items};
+  rule(0,'немає + Genitiv','Bilde vollständige Sätze selbst.',[
+    {q:'Ich habe kein Wasser.',a:['У мене немає води']},{q:'Ich habe kein Ticket.',a:['У мене немає квитка']},{q:'Ich habe kein Geld.',a:['У мене немає грошей']}
+  ]);
+  rule(1,'Чого немає?','Antworte auf die Fehlensfrage.',[
+    {q:'Es gibt kein Wasser.',a:['Немає води']},{q:'Es gibt keinen Kaffee.',a:['Немає кави']},{q:'Frage: „Was fehlt?“',a:['Чого немає?']}
+  ]);
+  rule(2,'Звідки?','Produziere Herkunft mit з + Genitiv.',[
+    {q:'Woher kommst du?',a:['Звідки ти?']},{q:'Ich komme aus Deutschland.',a:['Я з Німеччини']},{q:'Ich komme aus der Ukraine.',a:['Я з України']}
+  ]);
+  rule(3,'Preis mit 5+','Geldmengen selbst bilden.',[
+    {q:'fünf Hrywnja',a:['п’ять гривень',"п'ять гривень"]},{q:'zehn Hrywnja',a:['десять гривень']},{q:'Das kostet zehn Hrywnja.',a:['Це десять гривень']}
+  ]);
+  rule(4,'Ticketmenge','Singular und 5+-Menge nicht verwechseln.',[
+    {q:'Ich habe kein Ticket.',a:['У мене немає квитка']},{q:'fünf Tickets',a:['п’ять квитків',"п'ять квитків"]},{q:'zehn Tickets',a:['десять квитків']}
+  ]);
+  rule(5,'Gemischter Genitiv-Transfer','Kein Hinweis mehr, welches Teilmuster gebraucht wird.',[
+    {q:'Ich habe keine Zeit.',a:['У мене немає часу']},{q:'Sie kommt aus der Ukraine.',a:['Вона з України']},{q:'zwanzig Hrywnja',a:['двадцять гривень']},{q:'Ich habe keinen Kaffee.',a:['У мене немає кави']},{q:'fünf Tickets',a:['п’ять квитків',"п'ять квитків"]}
+  ]);
+  LESSONS.forEach(x=>D.push(x));
+  const reviews=[...new Set([...WEEKLY_REVIEW_DAYS.map(Number).filter(d=>d<start),start-1,D.length-1])].sort((a,b)=>a-b);
+  WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,...reviews);
+  function ensure(){if(!s.genitiveBridge||typeof s.genitiveBridge!=='object')s.genitiveBridge={version:VERSION,start,rules:{}};s.genitiveBridge.version=VERSION;s.genitiveBridge.start=start;s.genitiveBridge.rules=s.genitiveBridge.rules||{};return s.genitiveBridge}
+  function state(day){const st=ensure();return st.rules[String(day)]||(st.rules[String(day)]={passed:false,best:0,attempts:0,date:''})}
+  let session=null;
+  function startRule(){const r=RULES[s.day];if(!r)return;session={items:[...r.items].sort(()=>Math.random()-.5),idx:0,correct:0};renderBox()}
+  function answer(value){const q=session.items[session.idx],good=q.a.map(norm).includes(norm(value));if(good)session.correct++;toast(good?'Richtig.':'Muster: '+q.a[0]);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),perfect=session.correct===session.items.length,score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=perfect;save();session=null;toast(perfect?'Genitiv-Transfer bestanden.':'Noch nicht stabil: starte einen neuen fehlerfreien Durchgang.');render();return}renderBox()}
+  function renderBox(){let box=document.getElementById('genitiveBridgeBox');const r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='genitiveBridgeBox';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state(s.day);if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">Genitiv-Transfer · '+(session.idx+1)+' / '+session.items.length+'</div><h2>'+r.title+'</h2><p class="gb-q">'+q.q+'</p><input id="gbInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="Ukrainisch selbst bilden …"><div class="actions"><button class="primary" id="gbCheck">Prüfen</button></div>';const inp=document.getElementById('gbInput');document.getElementById('gbCheck').onclick=()=>answer(inp.value);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answer(inp.value)}};setTimeout(()=>inp.focus(),0)}else box.innerHTML='<div class="label">A1-Genitiv · aktiv</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Heute fehlerfrei produziert.':'Freigabe erst nach einem frischen fehlerfreien Durchgang.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="gbStart">'+(st.passed?'noch einmal':'Aktiven Test starten')+'</button></div>';const btn=document.getElementById('gbStart');if(btn)btn.onclick=startRule}
+  const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(RULES[s.day]&&!state(s.day).passed){renderBox();document.getElementById('genitiveBridgeBox')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Tag erst den heutigen Genitiv-Transfer fehlerfrei produzieren.');return}return oldNext?.call(this,e)};
+  const css=document.createElement('style');css.textContent='.gb-q{font-size:1.08rem;font-weight:850;margin:14px 0}';document.head.append(css);
+  const previousRender=render;render=function(){previousRender();renderBox()};ensure();renderBox();
+})();
