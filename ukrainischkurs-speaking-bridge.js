@@ -1,8 +1,9 @@
-/* Ukrainischkurs für Joel · Speaking Bridge v2
+/* Ukrainischkurs für Joel · Speaking Bridge v3
    Ganze bekannte Sätze aktiv sprechen: Referenz hören -> aufnehmen -> eigene Aufnahme
-   rückhören -> Referenz erneut hören -> selbst vergleichen. Skill-Evidenz zentral. */
+   rückhören -> Referenz erneut hören -> selbst vergleichen. Skill-Evidenz zentral.
+   Aufnahme/Playback werden bei Reset oder Tagwechsel sicher beendet. */
 (()=>{
-  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
+  const VERSION=3,core=window.UKRAINIAN_LEARNING_CORE;
   const start=D.length;
   const LESSONS=[
     ['Sprechen: wichtige Hilfe-Sätze','Nicht nur Wörter korrekt lesen, sondern einen ganzen Satz flüssig produzieren.','Sprich in Sinnblöcken. Die Aufnahme dient deinem A/B-Vergleich; die App behauptet nicht, Akzentqualität automatisch messen zu können.',[
@@ -46,10 +47,21 @@
   function required(){return Array.isArray(TARGETS[Number(s.day)])}
   function allDone(){const list=TARGETS[Number(s.day)]||[],st=dayState();return list.length>0&&list.every(x=>st.completed.includes(x))}
   let session={phrase:'',heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false,fallbackMode:false};
-  let rec={media:null,stream:null,chunks:[],url:''};
+  let rec={media:null,stream:null,chunks:[],url:'',playback:null};
+  function disposeRecorder(){
+    const media=rec.media;rec.media=null;
+    if(media){
+      media.ondataavailable=null;media.onstop=null;media.onerror=null;
+      try{if(media.state!=='inactive')media.stop()}catch{}
+    }
+    rec.stream?.getTracks?.().forEach(t=>t.stop());rec.stream=null;rec.chunks=[];
+  }
+  function disposePlayback(){
+    if(rec.playback){try{rec.playback.pause()}catch{}rec.playback.onended=null;rec.playback=null}
+  }
   function resetPhrase(phrase){
+    disposeRecorder();disposePlayback();
     if(rec.url){URL.revokeObjectURL(rec.url);rec.url=''}
-    rec.media=null;rec.stream?.getTracks?.().forEach(t=>t.stop());rec.stream=null;rec.chunks=[];
     session={phrase,heardBefore:0,heardAfter:0,recorded:false,replayed:false,manualSpoken:false,fallbackMode:false};
   }
   function currentPhrase(){
@@ -68,19 +80,29 @@
     const phrase=session.phrase||currentPhrase();if(!phrase)return;
     if(!micAvailable()){session.fallbackMode=true;toast('Lokale Aufnahme ist auf diesem Gerät nicht verfügbar. Nutze den transparenten Sprech-Fallback.');renderBox();return}
     try{
+      disposeRecorder();disposePlayback();
       if(rec.url){URL.revokeObjectURL(rec.url);rec.url=''}
-      rec.stream=await navigator.mediaDevices.getUserMedia({audio:true});rec.chunks=[];rec.media=new MediaRecorder(rec.stream);
-      rec.media.ondataavailable=e=>{if(e.data?.size)rec.chunks.push(e.data)};
-      rec.media.onstop=()=>{
-        const blob=new Blob(rec.chunks,{type:rec.media.mimeType||'audio/webm'});rec.url=URL.createObjectURL(blob);
-        rec.stream?.getTracks().forEach(t=>t.stop());rec.stream=null;session.recorded=true;session.replayed=false;session.heardAfter=0;dayState().attempts++;save();renderBox();
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const media=new MediaRecorder(stream);rec.stream=stream;rec.media=media;rec.chunks=[];
+      media.ondataavailable=e=>{if(rec.media===media&&e.data?.size)rec.chunks.push(e.data)};
+      media.onstop=()=>{
+        if(rec.media!==media)return;
+        const chunks=[...rec.chunks],mime=media.mimeType||'audio/webm';rec.media=null;
+        rec.stream?.getTracks().forEach(t=>t.stop());rec.stream=null;rec.chunks=[];
+        if(!chunks.length){session.recorded=false;renderBox();return}
+        const blob=new Blob(chunks,{type:mime});rec.url=URL.createObjectURL(blob);
+        session.recorded=true;session.replayed=false;session.heardAfter=0;dayState().attempts++;save();renderBox();
       };
-      rec.media.start();renderBox();
-    }catch{session.fallbackMode=true;rec.stream?.getTracks?.().forEach(t=>t.stop());rec.stream=null;toast('Mikrofon nicht verfügbar oder nicht erlaubt. Der transparente Sprech-Fallback ist jetzt aktiv.');renderBox()}
+      media.onerror=()=>{if(rec.media!==media)return;disposeRecorder();session.recorded=false;toast('Die lokale Aufnahme wurde abgebrochen. Bitte erneut versuchen.');renderBox()};
+      media.start();renderBox();
+    }catch{disposeRecorder();session.fallbackMode=true;toast('Mikrofon nicht verfügbar oder nicht erlaubt. Der transparente Sprech-Fallback ist jetzt aktiv.');renderBox()}
   }
   function recordStop(){if(rec.media&&rec.media.state!=='inactive')rec.media.stop()}
   function replay(){
-    if(!rec.url)return;const a=new Audio(rec.url);a.onended=()=>{session.replayed=true;renderBox()};a.play().catch(()=>toast('Die lokale Aufnahme konnte nicht abgespielt werden.'));
+    if(!rec.url)return;disposePlayback();
+    const a=new Audio(rec.url);rec.playback=a;
+    a.onended=()=>{if(rec.playback===a)rec.playback=null;session.replayed=true;renderBox()};
+    a.play().catch(()=>{if(rec.playback===a)rec.playback=null;toast('Die lokale Aufnahme konnte nicht abgespielt werden.')});
   }
   function manualSpeak(){session.manualSpoken=true;dayState().attempts++;save();renderBox();toast('Lautes Sprechen markiert. Höre die Referenz jetzt noch einmal zum Vergleich.')}
   function readyToConfirm(){
@@ -94,7 +116,10 @@
     const finished=allDone();if(finished&&!st.skillRecorded){st.skillRecorded=true;if(core)core.recordSession({skills:['speaking'],correct:st.completed.length,total:(TARGETS[Number(s.day)]||[]).length,passed:true,assisted:st.fallback.length>0,module:'speaking-bridge',day:s.day});else save()}else save();
     const next=currentPhrase();resetPhrase(next);toast(finished?'Sprechbrücke für heute abgeschlossen.':'Satz bestätigt. Nächster Satz.');render();
   }
-  function retry(){resetPhrase(session.phrase||currentPhrase());renderBox();toast('Gut: lieber neu aufnehmen als zu früh bestätigen.')}
+  function retry(){
+    if(rec.media?.state==='recording'){toast('Stoppe zuerst die laufende Aufnahme.');return}
+    resetPhrase(session.phrase||currentPhrase());renderBox();toast('Gut: lieber neu aufnehmen als zu früh bestätigen.')
+  }
   function renderBox(){
     let box=document.getElementById('speakingBridgeBox');if(!required()){if(box)box.hidden=true;return}
     const cards=document.getElementById('cards');if(!cards)return;
@@ -109,7 +134,7 @@
       (finished?'<div class="tip">✓ Alle vier heutigen Sätze wurden vollständig verglichen.</div>':'<div class="sb-phrase" lang="uk">'+phrase+'</div><div class="sb-steps">'+
       '<button class="'+(session.heardBefore?'secondary':'primary')+'" id="sbHear1">'+(session.heardBefore?'✓ Referenz gehört':'1 · Referenz hören')+'</button>'+production+
       '<button class="'+(session.heardAfter?'secondary':'primary')+'" id="sbHear2">'+(session.heardAfter?'✓ erneut verglichen':'4 · Referenz erneut hören')+'</button></div>'+
-      '<div class="tip">Vergleiche: Sind alle Wörter vollständig? Stimmen die deutlichsten Betonungen? Vermeidest du offensichtliche deutsche Buchstaben-Lesefehler?</div><div class="actions"><button class="secondary" id="sbRetry">Noch einmal</button><button class="primary" id="sbConfirm" '+(readyToConfirm()?'':'disabled')+'>Vergleich bestätigen</button></div>');
+      '<div class="tip">Vergleiche: Sind alle Wörter vollständig? Stimmen die deutlichsten Betonungen? Vermeidest du offensichtliche deutsche Buchstaben-Lesefehler?</div><div class="actions"><button class="secondary" id="sbRetry" '+(recording?'disabled':'')+'>Noch einmal</button><button class="primary" id="sbConfirm" '+(readyToConfirm()?'':'disabled')+'>Vergleich bestätigen</button></div>');
     const h1=document.getElementById('sbHear1');if(h1)h1.onclick=e=>listenReference(false,e.currentTarget);
     const h2=document.getElementById('sbHear2');if(h2)h2.onclick=e=>listenReference(true,e.currentTarget);
     const rb=document.getElementById('sbRecord');if(rb)rb.onclick=()=>recording?recordStop():recordStart();
@@ -124,6 +149,6 @@
     return oldNext?.call(this,e)
   };
   const css=document.createElement('style');css.textContent='.sb-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.sb-phrase{font-size:1.65rem;font-weight:850;margin:15px 0}.sb-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sb-steps button{min-height:48px}@media(max-width:520px){.sb-steps{grid-template-columns:1fr}}';document.head.append(css);
-  window.UKRAINIAN_SENTENCE_SPEAKING={version:VERSION,start,count:Object.values(TARGETS).reduce((n,x)=>n+x.length,0),days:Object.keys(TARGETS).length};
+  window.UKRAINIAN_SENTENCE_SPEAKING={version:VERSION,start,count:Object.values(TARGETS).reduce((n,x)=>n+x.length,0),days:Object.keys(TARGETS).length,safeRecorderReset:true};
   const previousRender=render;render=function(){previousRender();renderBox()};ensure();resetPhrase(currentPhrase());renderBox();
 })();
