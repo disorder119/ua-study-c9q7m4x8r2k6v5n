@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Speaking Bridge v1
+/* Ukrainischkurs für Joel · Speaking Bridge v2
    Ganze bekannte Sätze aktiv sprechen: Referenz hören -> aufnehmen -> eigene Aufnahme
-   rückhören -> Referenz erneut hören -> selbst vergleichen. Keine automatische Akzentnote. */
+   rückhören -> Referenz erneut hören -> selbst vergleichen. Skill-Evidenz zentral. */
 (()=>{
-  const VERSION=1;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
   const start=D.length;
   const LESSONS=[
     ['Sprechen: wichtige Hilfe-Sätze','Nicht nur Wörter korrekt lesen, sondern einen ganzen Satz flüssig produzieren.','Sprich in Sinnblöcken. Die Aufnahme dient deinem A/B-Vergleich; die App behauptet nicht, Akzentqualität automatisch messen zu können.',[
@@ -39,8 +39,8 @@
   function dayState(){
     const root=ensure(),key=String(s.day),today=date();
     let st=root.days[key];
-    if(!st||st.date!==today)st=root.days[key]={date:today,completed:[],fallback:[],attempts:0};
-    st.completed=Array.isArray(st.completed)?st.completed:[];st.fallback=Array.isArray(st.fallback)?st.fallback:[];
+    if(!st||st.date!==today)st=root.days[key]={date:today,completed:[],fallback:[],attempts:0,skillRecorded:false};
+    st.completed=Array.isArray(st.completed)?st.completed:[];st.fallback=Array.isArray(st.fallback)?st.fallback:[];st.skillRecorded=!!st.skillRecorded;
     return st;
   }
   function required(){return Array.isArray(TARGETS[Number(s.day)])}
@@ -91,7 +91,8 @@
     if(!readyToConfirm()){toast('Erst Referenz, eigene Produktion und den zweiten Vergleich vollständig durchführen.');return}
     const st=dayState(),phrase=session.phrase;if(!st.completed.includes(phrase))st.completed.push(phrase);
     if(!usingMic()&&!st.fallback.includes(phrase))st.fallback.push(phrase);
-    save();const next=currentPhrase();resetPhrase(next);toast(allDone()?'Sprechbrücke für heute abgeschlossen.':'Satz bestätigt. Nächster Satz.');render();
+    const finished=allDone();if(finished&&!st.skillRecorded){st.skillRecorded=true;if(core)core.recordSession({skills:['speaking'],correct:st.completed.length,total:(TARGETS[Number(s.day)]||[]).length,passed:true,assisted:st.fallback.length>0,module:'speaking-bridge',day:s.day});else save()}else save();
+    const next=currentPhrase();resetPhrase(next);toast(finished?'Sprechbrücke für heute abgeschlossen.':'Satz bestätigt. Nächster Satz.');render();
   }
   function retry(){resetPhrase(session.phrase||currentPhrase());renderBox();toast('Gut: lieber neu aufnehmen als zu früh bestätigen.')}
   function renderBox(){
