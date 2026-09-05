@@ -1,4 +1,4 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v10 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v11 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
@@ -10,9 +10,11 @@
     ok(!!s.foundationExpansion,'Grundkurs-Erweiterung fehlt');ok(!!s.a1Expansion2,'A1-Erweiterung 2 fehlt');ok(!!s.comprehensionLab,'Verständnis-Labor fehlt');ok(Number(s.comprehensionLab.version)>=2,'Verständnis-Labor ist nicht auf v2');
     ok(!!s.activeProduction,'Aktive Produktion fehlt');ok(Number(s.activeProduction.version)>=2,'Aktive Produktion ist nicht auf v2');
     ok(!!s.grammarSpiral,'Grammatik-Spirale fehlt');ok(Number(s.grammarSpiral.version)>=2,'Grammatik-Spirale ist nicht auf v2');
-    ok(!!s.storyLab,'Mini-Geschichten fehlen');ok(Number(s.storyLab.version)>=2,'Story Lab ist nicht auf v2');
+    ok(!!s.storyLab,'Mini-Geschichten fehlen');ok(Number(s.storyLab.version)>=3,'Story Lab ist nicht auf v3');
     ok(!!s.dictation,'Hör-Diktat fehlt');ok(Number(s.dictation.version)>=2,'Hör-Diktat ist nicht auf v2');
     ok(!!s.a1CanDo,'A1-Can-do-Abschluss fehlt');ok(Number(s.a1CanDo.version)>=2,'Can-do ist nicht auf v2');
+    ok(!!s.ukKeyboard&&Number(s.ukKeyboard.version)>=1,'Ukrainische Eingabehilfe fehlt');
+    const qg=s.pronunciation?.qualityGate;if(qg)ok(Array.isArray(qg.confirmedTargets),'Aussprache-Gate hat keine per-Laut-Bestätigung');
     ok(typeof scheduleMeta==='function'&&typeof dueCards==='function','Adaptives SRS fehlt');ok(D.length>=57,'Grundkurs enthält weniger als 57 geführte Tage');ok(WEEKLY_REVIEW_DAYS.includes(D.length-1),'Letzter Kurstag ist nicht als Review markiert');ok(document.getElementById('next'),'Weiter-Button fehlt');
   }catch(e){problems.push('Selbsttest-Ausnahme: '+e.message)}
   window.UKRAINIAN_COURSE_SELFTEST={ok:problems.length===0,problems,checkedAt:new Date().toISOString()};
