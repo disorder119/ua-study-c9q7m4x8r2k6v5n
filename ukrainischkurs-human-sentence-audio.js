@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Human Course Audio v2
+/* Ukrainischkurs für Joel · Human Course Audio v3
    Verifizierte menschliche Wort-/Phrasenaufnahmen außerhalb des Alphabets.
-   Nur Dateien mit nachvollziehbarer CC-BY-3.0-US-Quelle; sonst fällt speak() auf TTS zurück. */
+   Die Laufzeit meldet transparent, ob die menschliche Datei oder TTS-Fallback lief. */
 (()=>{
-  const VERSION=2;
+  const VERSION=3;
   const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
   const commonsFile=file=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file);
   const commonsPage=file=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(file);
@@ -24,26 +24,34 @@
     {text:'Україна',file:'Uk-Україна.ogg',...ZHENIA}
   ].map(x=>({...x,url:commonsFile(x.file),source:commonsPage(x.file)}));
   const MAP=new Map(ITEMS.map(x=>[norm(x.text),x]));
-  window.UKRAINIAN_HUMAN_SENTENCE_AUDIO={version:VERSION,count:ITEMS.length,items:ITEMS.map(x=>({...x}))};
   const baseSpeak=speak;
   let current=null;
+  function announce(item,source){
+    try{window.dispatchEvent(new CustomEvent('ukrainian-audio-source',{detail:{text:item.text,source,speaker:item.speaker,license:item.license}}))}catch{}
+  }
+  function fallback(item,button){
+    if(button){button.dataset.audioSource='tts-fallback';button.title='System-TTS-Fallback · menschliche Datei konnte nicht geladen werden'}
+    announce(item,'tts-fallback');baseSpeak(item.text,button);
+  }
   function humanSpeak(item,button){
     try{
       if(current){current.pause();current=null}
       const audio=new Audio(item.url);current=audio;
-      if(button){button.disabled=true;button.dataset.humanAudio='1';button.title='Menschliche Aufnahme · '+item.speaker}
+      if(button){button.disabled=true;button.dataset.humanAudio='1';button.dataset.audioSource='loading';button.title='Menschliche Aufnahme wird geladen · '+item.speaker}
       const done=()=>{if(button)button.disabled=false;if(current===audio)current=null};
       audio.onended=done;
-      audio.onerror=()=>{done();baseSpeak(item.text,button)};
+      audio.onerror=()=>{done();fallback(item,button)};
       const p=audio.play();
-      if(p&&typeof p.catch==='function')p.catch(()=>{done();baseSpeak(item.text,button)});
-    }catch(e){baseSpeak(item.text,button)}
+      if(p&&typeof p.then==='function')p.then(()=>{if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(()=>{done();fallback(item,button)});
+      else{if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}
+    }catch{fallback(item,button)}
   }
   speak=function(text,button){const item=MAP.get(norm(text));if(item)return humanSpeak(item,button);return baseSpeak(text,button)};
+  window.UKRAINIAN_HUMAN_SENTENCE_AUDIO={version:VERSION,count:ITEMS.length,items:ITEMS.map(x=>({...x})),has:text=>MAP.has(norm(text))};
   function credits(){
     if(document.getElementById('humanAudioCredits'))return;
     const details=document.createElement('details');details.id='humanAudioCredits';details.className='human-audio-credits';
-    details.innerHTML='<summary>Audioquellen · '+ITEMS.length+' verifizierte menschliche Aufnahmen</summary><div class="small">'+ITEMS.map(x=>'<div><span lang="uk">'+x.text+'</span> — '+x.credit+', '+x.license+' · <a href="'+x.source+'" target="_blank" rel="noopener">Dateiquelle</a></div>').join('')+'<div>Andere spätere Wörter und Sätze verwenden weiterhin System-TTS; sie werden nicht als menschliche Aufnahme ausgegeben.</div></div>';
+    details.innerHTML='<summary>Audioquellen · '+ITEMS.length+' verifizierte menschliche Aufnahmen</summary><div class="small">'+ITEMS.map(x=>'<div><span lang="uk">'+x.text+'</span> — '+x.credit+', '+x.license+' · <a href="'+x.source+'" target="_blank" rel="noopener">Dateiquelle</a></div>').join('')+'<div>Andere spätere Wörter und Sätze verwenden weiterhin System-TTS. Wenn eine menschliche Datei technisch nicht lädt, wird der Fallback ausdrücklich als TTS gekennzeichnet.</div></div>';
     document.body.append(details)
   }
   const css=document.createElement('style');css.textContent='.human-audio-credits{max-width:760px;margin:14px auto 28px;padding:0 18px;font-size:.82rem;opacity:.78}.human-audio-credits summary{cursor:pointer;font-weight:700}.human-audio-credits a{color:inherit}';document.head.append(css);credits();
