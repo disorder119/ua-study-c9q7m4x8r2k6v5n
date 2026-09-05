@@ -1,11 +1,11 @@
-/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v28 */
+/* Ukrainischkurs für Joel · Laufzeit-Selbsttest v29 */
 (() => {
   const problems=[];const ok=(cond,msg)=>{if(!cond)problems.push(msg)};
   try{
     const intro=alphabetItems();ok(intro.length===33,'Alphabet enthält nicht 33 Zeichen');
     const order=intro.map(x=>x.c?.[0]?.[0]).join(' ');ok(order==='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я','Alphabet-Reihenfolge stimmt nicht');
     const oldDay=s.day;s.day=0;ok(gameLetters().length===3,'Tag-1-Buchstaben-Jagd zeigt nicht exakt 3 Zeichen');s.day=oldDay;
-    ok(window.UKRAINIAN_COURSE_LOADER?.version===39,'Loader ist nicht auf v39');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
+    ok(window.UKRAINIAN_COURSE_LOADER?.version===40,'Loader ist nicht auf v40');ok(window.UKRAINIAN_COURSE_LOADER?.evalFree===true,'Loader meldet keinen eval-freien Modus');ok(window.UKRAINIAN_COURSE_LOADER?.mode==='external-core-script','Loader nutzt keinen externen statischen Kern');ok(window.UKRAINIAN_COURSE_LOADER?.staticCore===true,'Loader meldet den statischen Kern nicht');
     const core=window.UKRAINIAN_LEARNING_CORE;ok(core?.version>=3,'Zentraler Lernkern ist nicht auf v3');ok(Array.isArray(core?.skills)&&core.skills.length===5,'Lernkern kennt nicht fünf Skillbereiche');
     for(const fn of ['normalize','accepts','introductionDay','introductionDays','isIntroduced','allIntroduced','anchorDay','recordSession','profile','rankedSkills','focusForDay','reviewFocus','isUnlocked','curriculum'])ok(typeof core?.[fn]==='function','Lernkern vermisst '+fn);
     ok(core?.normalize("  Я p'ю воду! ").replace('p','п')==='я п’ю воду','Zentrale Apostroph-/Unicode-Normalisierung fehlerhaft');ok(core?.accepts("Я п'ю воду!",['Я п’ю воду'])===true,'Zentrale Antwortbewertung akzeptiert Apostrophvarianten nicht');
@@ -34,8 +34,9 @@
     ok(!!s.dictation&&Number(s.dictation.version)>=5&&window.UKRAINIAN_DICTATION?.centralScoring===true,'Dictation v5 ist nicht zentralisiert');
     ok(!!s.a1CanDo&&Number(s.a1CanDo.version)>=7&&window.UKRAINIAN_A1_CANDO?.centralScoring===true,'Can-do v7 ist nicht zentralisiert');
     ok(!!s.ukKeyboard&&Number(s.ukKeyboard.version)>=2,'Ukrainische Eingabehilfe fehlt');ok(typeof scheduleMeta==='function'&&typeof dueCards==='function','Adaptives SRS fehlt');
-    ok(window.UKRAINIAN_DYNAMIC_COURSE_UI?.version>=1&&Number(window.UKRAINIAN_DYNAMIC_COURSE_UI?.length)===D.length,'Dynamische Kursanzeige kennt nicht die echte Kurslänge');
+    ok(window.UKRAINIAN_DYNAMIC_COURSE_UI?.version>=2&&window.UKRAINIAN_DYNAMIC_COURSE_UI?.staleCopyFixed===true&&Number(window.UKRAINIAN_DYNAMIC_COURSE_UI?.length)===D.length,'Dynamische Kursanzeige v2 fehlt oder kennt nicht die echte Kurslänge');
     const description=document.querySelector('meta[name="description"]')?.content||'';ok(description.includes(String(D.length)),'Meta-Beschreibung zeigt nicht die echte Kurslänge');
+    const courseTitle=document.querySelector('#course h2')?.textContent||'';const courseInfo=document.querySelector('#course p.small')?.textContent||'';ok(!/Monat|30\s*Tage/i.test(courseTitle+courseInfo)&&!courseInfo.includes('Wähle einen Tag'),'Veralteter Monats-/30-Tage-Text ist noch sichtbar');
     ok(D.length>=90,'Grundkurs enthält weniger als 90 geführte Tage');ok(WEEKLY_REVIEW_DAYS.includes(D.length-1),'Letzter Kurstag ist nicht als Review markiert');ok(document.getElementById('next'),'Weiter-Button fehlt');
   }catch(e){problems.push('Selbsttest-Ausnahme: '+e.message)}
   window.UKRAINIAN_COURSE_SELFTEST={ok:problems.length===0,problems,checkedAt:new Date().toISOString()};
