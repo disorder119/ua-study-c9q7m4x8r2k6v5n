@@ -36,13 +36,14 @@
   function humanSpeak(item,button){
     try{
       if(current){current.pause();current=null}
-      const audio=new Audio(item.url);current=audio;
+      const audio=new Audio(item.url);current=audio;let failed=false;
       if(button){button.disabled=true;button.dataset.humanAudio='1';button.dataset.audioSource='loading';button.title='Menschliche Aufnahme wird geladen · '+item.speaker}
       const done=()=>{if(button)button.disabled=false;if(current===audio)current=null};
+      const failOnce=()=>{if(failed)return;failed=true;done();fallback(item,button)};
       audio.onended=done;
-      audio.onerror=()=>{done();fallback(item,button)};
+      audio.onerror=failOnce;
       const p=audio.play();
-      if(p&&typeof p.then==='function')p.then(()=>{if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(()=>{done();fallback(item,button)});
+      if(p&&typeof p.then==='function')p.then(()=>{if(failed)return;if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(failOnce);
       else{if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}
     }catch{fallback(item,button)}
   }
