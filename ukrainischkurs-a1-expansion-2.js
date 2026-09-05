@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · A1 Expansion 2 v1
-   Zweite Kernstufe nach dem bisherigen Grundkurs: Familie, Modalität, Verneinung,
-   echte Fragen, Zahlen 11–20, Essen, Orte, Alltag und persönliche Angaben. */
+/* Ukrainischkurs für Joel · A1 Expansion 2 v2
+   Zweite Kernstufe: Familie, Modalität, Verneinung, Fragen, Zahlen 11–20, Essen,
+   Orte, Alltag und persönliche Angaben. Reviews folgen der echten Kursposition. */
 (() => {
-  const VERSION=1;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;if(!core)return;
   const start=D.length;
   const LESSONS=[
     ['Familie im Alltag','Fünf sehr häufige Personenwörter.','Lerne Personen zusammen mit kleinen Aussagen; so werden sie später direkt verwendbar.',[['мама','Mutter / Mama','ma-ma'],['тато','Vater / Papa','ta-to'],['брат','Bruder','brat'],['сестра','Schwester','ses-tra'],['батьки','Eltern','bat-ky']]],
@@ -16,55 +16,25 @@
     ['Was machst du gerade?','Fünf häufige Tätigkeiten als Ich-Form.','Die Formen sind wichtiger als abstrakte Infinitive. Sprich sie mit einem Ort oder Objekt weiter.',[['Я йду…','Ich gehe …','ja jdu'],['Я їду…','Ich fahre …','ja ji-du'],['Я їм…','Ich esse …','ja jim'],['Я п’ю…','Ich trinke …','ja pju'],['Я сплю','Ich schlafe','ja splju']]],
     ['Über dich sprechen','Fünf Angaben für echte erste Gespräche.','Diese Aussagen bilden zusammen eine kleine Selbstvorstellung. Ersetze die Punkte später mit deinen echten Angaben.',[['Я з Німеччини','Ich komme aus Deutschland','ja s ni-met-schyny'],['Я живу в…','Ich wohne in …','ja schy-wu w'],['Я працюю в…','Ich arbeite in / bei …','ja pra-zu-ju w'],['Я вивчаю українську','Ich lerne Ukrainisch','ja wyw-tscha-ju ukra-jin-sku'],['Мені … років','Ich bin … Jahre alt','me-ni ro-kiw']]]
   ];
-
-  const RULES={};
-  const rule=(offset,title,note,items)=>RULES[start+offset]={title,note,items};
-  rule(1,'Ich-Formen als Werkzeug','Wähle die Aussage nach deiner Absicht, nicht nach einem isolierten Verb.',[
-    {q:'Du willst sagen: „Ich kann …“',a:'Я можу…',o:['Я можу…','Я знаю…','Я люблю…']},
-    {q:'Du willst sagen: „Ich verstehe …“',a:'Я розумію…',o:['Я розумію…','Мені треба…','Я можу…']},
-    {q:'Du brauchst / musst etwas.',a:'Мені треба…',o:['Я знаю…','Мені треба…','Я люблю…']}
-  ]);
-  rule(2,'Verneinung mit не','Bei diesen Grundmustern steht не direkt vor dem Verb.',[
-    {q:'Ich kann nicht …',a:'Я не можу…',o:['Я не можу…','Я можу не…','Не я можу…']},
-    {q:'Ich verstehe nicht.',a:'Я не розумію',o:['Я не розумію','Я розумію не','Не я розумію']},
-    {q:'Ich weiß nicht.',a:'Я не знаю',o:['Я знаю не','Я не знаю','Не знаю я']}
-  ]);
-  rule(3,'Du-Fragen','Erkenne die häufigsten Formen als ganze Fragebausteine.',[
-    {q:'Kannst du …?',a:'Ти можеш…?',o:['Ти можеш…?','Я можу…','Ти хочеш…?']},
-    {q:'Verstehst du?',a:'Ти розумієш?',o:['Ти розумієш?','Я розумію','Ти знаєш…?']},
-    {q:'Wo wohnst du?',a:'Де ти живеш?',o:['Де ти живеш?','Де я живу?','Ти де?']}
-  ]);
-  rule(6,'Bedürfnis statt Vokabelliste','Wähle die Aussage, die du in der Situation wirklich brauchst.',[
-    {q:'Du hast Hunger und möchtest essen.',a:'Я хочу їсти',o:['Я хочу їсти','Я хочу пити','Я їду']},
-    {q:'Du möchtest trinken.',a:'Я хочу пити',o:['Я хочу пити','Я п’ю…','Я сплю']},
-    {q:'Du suchst ein Restaurant.',a:'Де ресторан?',o:['Де ресторан?','Я ресторан','Ресторан де я']}
-  ]);
-  rule(8,'Gehen, fahren, essen, trinken','Ordne die Tätigkeit zur Aussage.',[
-    {q:'Du fährst irgendwohin.',a:'Я їду…',o:['Я їду…','Я йду…','Я їм…']},
-    {q:'Du gehst zu Fuß.',a:'Я йду…',o:['Я п’ю…','Я йду…','Я сплю']},
-    {q:'Du isst.',a:'Я їм…',o:['Я їм…','Я їду…','Я п’ю…']}
-  ]);
-  rule(9,'Mini-Selbstvorstellung','Baue persönliche Angaben aus fertigen, korrekten Mustern.',[
-    {q:'Ich komme aus Deutschland.',a:'Я з Німеччини',o:['Я з Німеччини','Я в Німеччина','Мені Німеччина']},
-    {q:'Ich lerne Ukrainisch.',a:'Я вивчаю українську',o:['Я вивчаю українську','Я українська','Мені українську']},
-    {q:'Ich bin … Jahre alt.',a:'Мені … років',o:['Мені … років','Я … років','У мене … років']}
-  ]);
-
+  const RULES={};const rule=(offset,title,note,items)=>RULES[start+offset]={title,note,items};
+  rule(1,'Ich-Formen als Werkzeug','Wähle die Aussage nach deiner Absicht, nicht nach einem isolierten Verb.',[{q:'Du willst sagen: „Ich kann …“',a:'Я можу…',o:['Я можу…','Я знаю…','Я люблю…']},{q:'Du willst sagen: „Ich verstehe …“',a:'Я розумію…',o:['Я розумію…','Мені треба…','Я можу…']},{q:'Du brauchst / musst etwas.',a:'Мені треба…',o:['Я знаю…','Мені треба…','Я люблю…']}]);
+  rule(2,'Verneinung mit не','Bei diesen Grundmustern steht не direkt vor dem Verb.',[{q:'Ich kann nicht …',a:'Я не можу…',o:['Я не можу…','Я можу не…','Не я можу…']},{q:'Ich verstehe nicht.',a:'Я не розумію',o:['Я не розумію','Я розумію не','Не я розумію']},{q:'Ich weiß nicht.',a:'Я не знаю',o:['Я знаю не','Я не знаю','Не знаю я']}]);
+  rule(3,'Du-Fragen','Erkenne die häufigsten Formen als ganze Fragebausteine.',[{q:'Kannst du …?',a:'Ти можеш…?',o:['Ти можеш…?','Я можу…','Ти хочеш…?']},{q:'Verstehst du?',a:'Ти розумієш?',o:['Ти розумієш?','Я розумію','Ти знаєш…?']},{q:'Wo wohnst du?',a:'Де ти живеш?',o:['Де ти живеш?','Де я живу?','Ти де?']}]);
+  rule(6,'Bedürfnis statt Vokabelliste','Wähle die Aussage, die du in der Situation wirklich brauchst.',[{q:'Du hast Hunger und möchtest essen.',a:'Я хочу їсти',o:['Я хочу їсти','Я хочу пити','Я їду']},{q:'Du möchtest trinken.',a:'Я хочу пити',o:['Я хочу пити','Я п’ю…','Я сплю']},{q:'Du suchst ein Restaurant.',a:'Де ресторан?',o:['Де ресторан?','Я ресторан','Ресторан де я']}]);
+  rule(8,'Gehen, fahren, essen, trinken','Ordne die Tätigkeit zur Aussage.',[{q:'Du fährst irgendwohin.',a:'Я їду…',o:['Я їду…','Я йду…','Я їм…']},{q:'Du gehst zu Fuß.',a:'Я йду…',o:['Я п’ю…','Я йду…','Я сплю']},{q:'Du isst.',a:'Я їм…',o:['Я їм…','Я їду…','Я п’ю…']}]);
+  rule(9,'Mini-Selbstvorstellung','Baue persönliche Angaben aus fertigen, korrekten Mustern.',[{q:'Ich komme aus Deutschland.',a:'Я з Німеччини',o:['Я з Німеччини','Я в Німеччина','Мені Німеччина']},{q:'Ich lerne Ukrainisch.',a:'Я вивчаю українську',o:['Я вивчаю українську','Я українська','Мені українську']},{q:'Ich bin … Jahre alt.',a:'Мені … років',o:['Мені … років','Я … років','У мене … років']}]);
   LESSONS.forEach(x=>D.push(x));
-  WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,20,27,36,43,50,D.length-1);
+  const extensionReviews=[];for(let d=start+6;d<D.length-1;d+=7)extensionReviews.push(d);const reviews=[...new Set([...WEEKLY_REVIEW_DAYS.map(Number).filter(d=>d<start),Math.max(0,start-1),...extensionReviews,D.length-1])].sort((a,b)=>a-b);WEEKLY_REVIEW_DAYS.splice(0,WEEKLY_REVIEW_DAYS.length,...reviews);
   DIALOGS[start+1]={title:'Was kannst du?',situation:'Jemand fragt, ob du ein bisschen Ukrainisch sprichst.',prompt:'Sag: Ich kann ein bisschen Ukrainisch sprechen.',answer:'Я можу трохи говорити українською.<br><span class="small">Ich kann ein bisschen Ukrainisch sprechen.</span>'};
   DIALOGS[start+2]={title:'Nicht verstanden',situation:'Du hast einen Satz nicht verstanden.',prompt:'Sag klar, dass du nicht verstehst.',answer:'Я не розумію.<br><span class="small">Ich verstehe nicht.</span>'};
   DIALOGS[start+3]={title:'Nachfragen',situation:'Du willst prüfen, ob dein Gegenüber dich versteht.',prompt:'Frag: Verstehst du?',answer:'Ти розумієш?<br><span class="small">Verstehst du?</span>'};
   DIALOGS[start+7]={title:'Ort finden',situation:'Du suchst eine Toilette.',prompt:'Frag direkt danach.',answer:'Де туалет?<br><span class="small">Wo ist die Toilette?</span>'};
   DIALOGS[start+9]={title:'Dich vorstellen',situation:'Du erzählst kurz etwas über dich.',prompt:'Sag zwei bekannte Sätze nacheinander.',answer:'Я з Німеччини. Я вивчаю українську.<br><span class="small">Ich komme aus Deutschland. Ich lerne Ukrainisch.</span>'};
-
   function ensure(){if(!s.a1Expansion2||typeof s.a1Expansion2!=='object')s.a1Expansion2={version:VERSION,rules:{}};s.a1Expansion2.version=VERSION;s.a1Expansion2.rules=s.a1Expansion2.rules||{};return s.a1Expansion2}
-  let session=null;
-  function state(day){const st=ensure();return st.rules[day]||(st.rules[day]={passed:false,best:0,attempts:0,date:''})}
+  let session=null;function state(day){const st=ensure();return st.rules[day]||(st.rules[day]={passed:false,best:0,attempts:0,date:''})}
   function startRule(){const r=RULES[s.day];if(!r)return;session={items:[...r.items].sort(()=>Math.random()-.5),idx:0,correct:0};renderRule()}
-  function answer(v){const r=RULES[s.day],q=session.items[session.idx],good=v===q.a;if(good)session.correct++;toast(good?'Richtig.':'Richtig ist: '+q.a);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),score=Math.round(session.correct/session.items.length*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=session.correct===session.items.length;save();session=null;toast(st.passed?'Sprachmuster sitzt.':'Noch nicht stabil: alle drei Aufgaben müssen in einem frischen Durchgang stimmen.');render();return}renderRule()}
-  function renderRule(){let box=document.getElementById('a1Expansion2Rule'),r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='a1Expansion2Rule';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state(s.day);if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">Sprachmuster · '+(session.idx+1)+' / '+session.items.length+'</div><h2>'+r.title+'</h2><div class="a12-q">'+q.q+'</div><div class="a12-grid">'+[...q.o].sort(()=>Math.random()-.5).map(x=>'<button class="answer" data-a12="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div>'}else box.innerHTML='<div class="label">Grammatik durch Anwendung</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Dieses Muster wurde fehlerfrei abgerufen.':'3/3 im ersten Durchgang. Fehler werden erklärt, aber die Freigabe verlangt einen neuen sauberen Versuch.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="a12Start">'+(st.passed?'noch einmal':'3 Fragen starten')+'</button></div>';box.querySelectorAll('[data-a12]').forEach(b=>b.onclick=()=>answer(b.dataset.a12));const btn=document.getElementById('a12Start');if(btn)btn.onclick=startRule}
+  function answer(v){const q=session.items[session.idx],good=v===q.a;if(good)session.correct++;toast(good?'Richtig.':'Richtig ist: '+q.a);session.idx++;if(session.idx>=session.items.length){const st=state(s.day),total=session.items.length,passed=session.correct===total,score=Math.round(session.correct/total*100);st.best=Math.max(st.best||0,score);st.attempts++;st.date=date();st.passed=passed;core.recordSession({skills:['grammar'],correct:session.correct,total,passed,assisted:true,weight:.5,module:'a1-expansion-pattern',day:s.day});session=null;toast(st.passed?'Sprachmuster sitzt.':'Noch nicht stabil: alle drei Aufgaben müssen in einem frischen Durchgang stimmen.');render();return}renderRule()}
+  function renderRule(){let box=document.getElementById('a1Expansion2Rule'),r=RULES[s.day];if(!r){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='a1Expansion2Rule';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state(s.day);if(session){const q=session.items[session.idx];box.innerHTML='<div class="label">Sprachmuster · '+(session.idx+1)+' / '+session.items.length+'</div><h2>'+r.title+'</h2><div class="a12-q">'+q.q+'</div><div class="a12-grid">'+[...q.o].sort(()=>Math.random()-.5).map(x=>'<button class="answer" data-a12="'+x.replace(/"/g,'&quot;')+'">'+x+'</button>').join('')+'</div>'}else box.innerHTML='<div class="label">Grammatik durch Anwendung</div><h2>'+r.title+'</h2><p class="small">'+r.note+'</p><div class="tip">'+(st.passed?'✓ Dieses Muster wurde fehlerfrei abgerufen.':'3/3 im ersten Durchgang. Auswahl-Evidenz zählt im Skill-Profil bewusst schwächer als freie Produktion.')+'</div><div class="actions"><button class="'+(st.passed?'secondary':'primary')+'" id="a12Start">'+(st.passed?'noch einmal':'3 Fragen starten')+'</button></div>';box.querySelectorAll('[data-a12]').forEach(b=>b.onclick=()=>answer(b.dataset.a12));const btn=document.getElementById('a12Start');if(btn)btn.onclick=startRule}
   const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){const r=RULES[s.day];if(r&&!state(s.day).passed){renderRule();document.getElementById('a1Expansion2Rule')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Vor dem nächsten Kurstag erst das heutige Sprachmuster sicher anwenden.');return}return oldNext?.call(this,e)};
-  const css=document.createElement('style');css.textContent='.a12-q{font-weight:800;font-size:1.05rem;margin:12px 0}.a12-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.a12-grid .answer{text-align:center}@media(max-width:520px){.a12-grid{grid-template-columns:1fr}}';document.head.append(css);
-  const previousRender=render;render=function(){previousRender();renderRule()};ensure();renderRule();
+  const css=document.createElement('style');css.textContent='.a12-q{font-weight:800;font-size:1.05rem;margin:12px 0}.a12-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.a12-grid .answer{text-align:center}@media(max-width:520px){.a12-grid{grid-template-columns:1fr}}';document.head.append(css);window.UKRAINIAN_A1_EXPANSION_2={version:VERSION,dynamicReviews:true};const previousRender=render;render=function(){previousRender();renderRule()};ensure();renderRule();
 })();
