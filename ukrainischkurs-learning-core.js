@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Learning Core v3
+/* Ukrainischkurs für Joel · Learning Core v4
    Gemeinsame Normalisierung, Curriculum-Abhängigkeiten, dynamische Freischaltung
    und skillbasierte Evidenz mit automatischem Review-Fokus. */
 (()=>{
-  const VERSION=3;
+  const VERSION=4;
   const SKILLS=['reading','listening','writing','speaking','grammar'];
   const LABELS={reading:'Lesen',listening:'Hören',writing:'Schreiben',speaking:'Sprechen',grammar:'Grammatik'};
   function ensure(){
@@ -59,6 +59,7 @@
   function reviewFocus(){if(!WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return null;return focusForDay(Number(s.day),{minSessions:1,rotateGap:6})}
   function passedMap(map,expected){const vals=Object.values(map||{});return vals.length>=expected&&vals.filter(x=>x?.passed).length>=expected}
   function speakingComplete(){const days=Object.values(s.speakingBridge?.days||{}),done=days.reduce((n,x)=>n+(Array.isArray(x?.completed)?x.completed.length:0),0);return done>=12}
+  function a1ExamComplete(){return ['reading','listening','writing','speaking'].every(k=>!!s.a1Exam?.domains?.[k]?.passed&&!!s.a1Exam?.domains?.[k]?.confirmed)}
   const MILESTONES={
     'alphabet.mastery':{requires:[],complete:()=>!!s.alphabetPhase?.checkpointPassed},
     'grammar.location-direction':{requires:['alphabet.mastery'],complete:()=>passedMap(s.a1GrammarBridge?.rules,7)},
@@ -67,7 +68,8 @@
     'listening.human':{requires:['grammar.genitive'],complete:()=>passedMap(s.humanListening?.days,3)},
     'speaking.sentences':{requires:['listening.human'],complete:speakingComplete},
     'immersion.transfer':{requires:['speaking.sentences'],complete:()=>passedMap(s.immersionTransfer?.days,6)},
-    'a1.final':{requires:['immersion.transfer'],complete:()=>!!s.a1CanDo?.passed}
+    'a1.exam':{requires:['immersion.transfer'],complete:a1ExamComplete},
+    'a1.final':{requires:['a1.exam'],complete:()=>!!s.a1CanDo?.passed}
   };
   function registerMilestone(id,spec){if(!id||!spec||typeof spec.complete!=='function')return false;MILESTONES[id]={requires:Array.isArray(spec.requires)?[...spec.requires]:[],complete:spec.complete};return true}
   function isComplete(id){const m=MILESTONES[id];if(!m)return false;try{return !!m.complete()}catch{return false}}
