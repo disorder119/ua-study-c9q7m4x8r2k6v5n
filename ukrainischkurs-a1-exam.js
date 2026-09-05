@@ -28,7 +28,7 @@
   const hash=s=>{let h=2166136261;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
   const rng=seed=>{let x=seed>>>0;return()=>{x+=0x6D2B79F5;let t=x;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
   const pick=(a,r)=>a[Math.floor(r()*a.length)];
-  const options=(answer,others,r)=>[...new Set([answer,...others])].sort(()=>r()-.5).slice(0,4);
+  const options=(answer,others,r)=>{const distractors=[...new Set(others.filter(x=>x!==answer))].sort(()=>r()-.5).slice(0,3);return [answer,...distractors].sort(()=>r()-.5)};
   function attemptRng(domain){const st=state(domain),stage=st.qualified?'confirmation':'qualification';return rng(hash(`${domain}|${stage}|${st.attempts}|a1v2`))}
 
   function readingForm(){
