@@ -1,7 +1,7 @@
-/* Ukrainischkurs für Joel · Grammar Spiral v2
+/* Ukrainischkurs für Joel · Grammar Spiral v3
    Gemischter aktiver Abruf bereits gelernter A1-Muster, ohne Review-Tage zu überladen. */
 (()=>{
-  const VERSION=2;
+  const VERSION=3;
   const BANK=[
     {min:39,q:'Schreibe auf Ukrainisch: „mein Freund“',a:['мій друг']},
     {min:39,q:'Schreibe auf Ukrainisch: „meine Familie“',a:['моя сім’я','моя сім\'я']},
@@ -25,7 +25,7 @@
     {min:56,q:'Schreibe das Altersmuster: „Ich bin … Jahre alt.“',a:['мені років','мені … років']}
   ];
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
-  const norm=x=>String(x||'').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/[’']/g,'’').replace(/\s+/g,' ').trim();
+  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[.!?,…]/g,'').replace(/[ʼ’‘'`]/g,'’').replace(/\s+/g,' ').trim();
   const lateReviews=()=>[...new Set(WEEKLY_REVIEW_DAYS.map(Number))].filter(d=>d>=43&&d<D.length-1).sort((a,b)=>a-b);
   const reviewDay=()=>{const i=lateReviews().indexOf(Number(s.day));return i>=0&&i%2===0};
   const eligible=()=>BANK.filter(x=>x.min<=Number(s.day));
