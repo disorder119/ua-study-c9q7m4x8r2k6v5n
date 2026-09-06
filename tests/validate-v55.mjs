@@ -19,6 +19,7 @@ const replacements=[
   ["const VERSION=1,FORMAT='ukrainischkurs-handoff-v1'","const VERSION=2,FORMAT='ukrainischkurs-handoff-v1'"],
   ['UKRAINIAN_COURSE_LOADER:{version:54}','UKRAINIAN_COURSE_LOADER:{version:55}'],
   ['env.courseVersion===54','env.courseVersion===55'],
+  ['exportBtn.onclick=exportHandoff','exportBtn.onclick=quickHandoff'],
   ['VALIDIERUNG OK: v54','VALIDIERUNG OK: v55']
 ];
 for(const [from,to] of replacements){assert(inherited.includes(from),`v54-Basisschutz enthält erwarteten Marker nicht: ${from}`);inherited=inherited.split(from).join(to)}
