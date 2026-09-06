@@ -1,14 +1,14 @@
-/* Ukrainischkurs für Joel · Grammar Decoder v1
-   Erklärt ausgewählte A1-Fehler kurz und konkret. Keine neue Prüfungslogik:
-   Die eigentliche Bewertung bleibt vollständig im zentralen Lernkern. */
+/* Ukrainischkurs für Joel · Grammar Decoder v2
+   Erklärt ausgewählte A1-Fehler kurz und konkret und kann den Fehlertyp an das
+   Fehlergedächtnis melden. Die eigentliche Bewertung bleibt im zentralen Lernkern. */
 (()=>{
-  const VERSION=1,core=window.UKRAINIAN_LEARNING_CORE;if(!core)return;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;if(!core)return;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=v=>core.normalize(v,{stripStress:true});
   const any=(text,parts)=>parts.some(x=>text.includes(x));
   function explain(input,answers,prompt=''){
     const expected=Array.isArray(answers)?answers:[answers],target=norm(expected[0]||''),given=norm(input),q=String(prompt||'').toLocaleLowerCase('de');
-    const base={expected:expected[0]||'',given:String(input||'').trim()||'—'};
+    const base={expected:expected[0]||'',given:String(input||'').trim()||'—',errorType:window.UKRAINIAN_ERROR_MEMORY?.classify?.({input,answers:expected,prompt})?.id||'chunk'};
     if(any(target,['немає']))return {...base,title:'Verneinung mit „немає“',reason:'Bei „nicht haben / es gibt nicht“ steht im Ukrainischen häufig „немає“; das folgende Nomen bekommt dabei die passende Genitivform.',tips:['„У мене є …“ = ich habe …','„У мене немає …“ = ich habe kein …','Nicht einfach nur „не“ vor den positiven Satz setzen.']};
     if(any(target,['буду ','будеш ','буде ']))return {...base,title:'Zukunft: Person steckt in буду / будеш / буде',reason:'Bei der einfachen Zukunft bleibt das Vollverb im Infinitiv. Die Person wird durch „буду / будеш / буде“ ausgedrückt.',tips:['я буду працювати','ти будеш працювати','він / вона буде працювати']};
     if(any(target,['був','була','працював','працювала','говорив','говорила','хотів','хотіла']))return {...base,title:'Vergangenheit: auf Person und Geschlecht achten',reason:'In diesen A1-Mustern zeigt die Vergangenheitsform das Geschlecht der Person. Für Joel als männlichen Sprecher stehen z. B. „я був“ und „я працював“.',tips:['männlich: був / працював','weiblich: була / працювала','Zeitwort wie вчора kann zusätzlich davor oder danach stehen.']};
@@ -18,14 +18,15 @@
     if(target.startsWith('ти ')&&given.startsWith('я '))return {...base,title:'Person verwechselt: Ти statt Я',reason:'Die Aufgabe fragt nach „du“. Deshalb muss auch Verb oder Satzanfang zur zweiten Person passen.',tips:['Я хочу → Ти хочеш','Я можу → Ти можеш','Я живу → Ти живеш']};
     if(target.startsWith('я ')&&given.startsWith('ти '))return {...base,title:'Person verwechselt: Я statt Ти',reason:'Die Aufgabe verlangt eine eigene Aussage mit „ich“. Verwende deshalb die Ich-Form.',tips:['Ти хочеш → Я хочу','Ти можеш → Я можу','Ти живеш → Я живу']};
     if(any(target,['не розумію','не можу','не знаю']))return {...base,title:'Verneinung mit „не“',reason:'Bei diesen gelernten Verben steht „не“ direkt vor dem Verb.',tips:['Я розумію → Я не розумію','Я можу → Я не можу','Я знаю → Я не знаю']};
+    const type=base.errorType,labels={orthography:'Schreibung genauer vergleichen',ending:'Endung genauer vergleichen','word-order':'Wortstellung prüfen'};if(labels[type])return {...base,title:labels[type],reason:type==='orthography'?'Die Antwort ist dem Ziel sehr ähnlich, unterscheidet sich aber in der Schreibung. Prüfe Buchstaben, Apostroph und ukrainische Zeichen genau.':type==='ending'?'Der Satzbau passt weitgehend, aber mindestens eine Wortendung weicht vom erwarteten Muster ab.': 'Du verwendest weitgehend die richtigen Wörter, aber ihre Reihenfolge entspricht noch nicht dem gelernten ukrainischen Muster.',tips:['Vergleiche deine Antwort Wort für Wort.','Korrigiere nur den konkreten Unterschied und sprich den ganzen Satz noch einmal.','Die Reparatur zählt nicht sofort als neuer Langzeitbeweis.']};
     return {...base,title:'Form noch einmal vergleichen',reason:'Die Bedeutung passt noch nicht exakt zur erwarteten A1-Form. Vergleiche besonders Person, Endung, Verneinung und die Unterscheidung Ort/Richtung.',tips:['Nicht Wort für Wort aus dem Deutschen übertragen.','Prüfe zuerst: Wer? Wann? Wo oder wohin?','Danach die ukrainische Satzform als ganzen Chunk abrufen.']};
   }
   function show(meta={}){
-    const e=explain(meta.input,meta.answers,meta.prompt),cards=document.getElementById('cards');if(!cards)return e;
+    const e=explain(meta.input,meta.answers,meta.prompt),cards=document.getElementById('cards');if(meta.record!==false)window.UKRAINIAN_ERROR_MEMORY?.record?.({input:meta.input,answers:meta.answers,prompt:meta.prompt,correct:false,module:meta.module||'grammar-decoder',day:meta.day??s.day});if(!cards)return e;
     let box=document.getElementById('grammarDecoderFeedback');if(!box){box=document.createElement('section');box.id='grammarDecoderFeedback';box.className='card';cards.insertAdjacentElement('afterend',box)}
-    box.hidden=false;box.innerHTML='<div class="gd-head"><div><div class="label">Warum war das falsch?</div><h2>'+esc(e.title)+'</h2></div><button class="ghost" id="gdClose">Schließen</button></div><p>'+esc(e.reason)+'</p><div class="gd-compare"><div><span>Deine Antwort</span><strong lang="uk">'+esc(e.given)+'</strong></div><div><span>Passendes Muster</span><strong lang="uk">'+esc(e.expected)+'</strong></div></div><ul>'+e.tips.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+    box.hidden=false;box.innerHTML='<div class="gd-head"><div><div class="label">Warum war das falsch?</div><h2>'+esc(e.title)+'</h2></div><button class="ghost" id="gdClose">Schließen</button></div><p>'+esc(e.reason)+'</p><div class="gd-compare"><div><span>Deine Antwort</span><strong lang="uk">'+esc(e.given)+'</strong></div><div><span>Passendes Muster</span><strong lang="uk">'+esc(e.expected)+'</strong></div></div><div class="small">Fehlertyp: <strong>'+esc(window.UKRAINIAN_ERROR_MEMORY?.labels?.[e.errorType]||e.errorType)+'</strong></div><ul>'+e.tips.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
     document.getElementById('gdClose').onclick=()=>{box.hidden=true};box.scrollIntoView({behavior:'smooth',block:'nearest'});return e;
   }
   const css=document.createElement('style');css.textContent='.gd-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.gd-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.gd-compare>div{padding:11px;border-radius:12px;background:#f4f8fc}.gd-compare span{display:block;font-size:.76rem;color:#526b87;margin-bottom:4px}.gd-compare strong{font-size:1.05rem}@media(max-width:560px){.gd-compare{grid-template-columns:1fr}}';document.head.append(css);
-  window.UKRAINIAN_GRAMMAR_DECODER={version:VERSION,explain,show,centralScoringUntouched:true};
+  window.UKRAINIAN_GRAMMAR_DECODER={version:VERSION,explain,show,errorMemoryAware:true,centralScoringUntouched:true};
 })();
