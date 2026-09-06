@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='50';
+  const VERSION='51';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -27,7 +27,8 @@
       ['./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer'],
       ['./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS'],
       ['./ukrainischkurs-learning-core.js?v=5','Zentraler Lernkern mit Aktualitätsgewichtung'],
-      ['./ukrainischkurs-grammar-decoder.js?v=1','Später Grammar Decoder'],
+      ['./ukrainischkurs-error-memory.js?v=1','Intelligentes Fehlergedächtnis'],
+      ['./ukrainischkurs-grammar-decoder.js?v=2','Grammar Decoder mit Fehlertypen'],
       ['./ukrainischkurs-fashion-bridge.js?v=1','Personalisierte Fashion-Brücke'],
       ['./ukrainischkurs-resale-practice.js?v=1','Zusätzliche Disorder119 Resale-Praxis'],
       ['./ukrainischkurs-foundation-expansion.js?v=3','Grundkurs-Erweiterung'],
@@ -35,6 +36,7 @@
       ['./ukrainischkurs-a1-grammar-bridge.js?v=3','A1 Grammatik-Brücke'],
       ['./ukrainischkurs-time-bridge.js?v=3','A1 Zeit-Brücke'],
       ['./ukrainischkurs-genitive-bridge.js?v=3','A1 Genitiv-Brücke'],
+      ['./ukrainischkurs-competency-mastery.js?v=1','Musterbasierte Kompetenz-Mastery'],
       ['./ukrainischkurs-word-stress.js?v=3','Verifizierte Wortbetonung'],
       ['./ukrainischkurs-human-sentence-audio.js?v=4','Menschliche A1-Audios'],
       ['./ukrainischkurs-human-listening.js?v=3','Human-Audio-Diktat'],
@@ -44,23 +46,23 @@
       ['./ukrainischkurs-conversation-chain.js?v=4','Gesprächsketten'],
       ['./ukrainischkurs-free-reading-transfer.js?v=3','Freier Lese-Transfer'],
       ['./ukrainischkurs-comprehension-lab.js?v=5','Verständnis-Labor'],
-      ['./ukrainischkurs-active-production.js?v=5','Aktive Produktion'],
-      ['./ukrainischkurs-grammar-spiral.js?v=5','Grammatik-Spirale mit Fehler-Decoder'],
+      ['./ukrainischkurs-active-production.js?v=6','Aktive Produktion mit Fehlergedächtnis'],
+      ['./ukrainischkurs-grammar-spiral.js?v=6','Fehleradaptive Grammatik-Spirale'],
       ['./ukrainischkurs-story-lab.js?v=4','Mini-Geschichten'],
-      ['./ukrainischkurs-dictation.js?v=5','Hör-Diktat'],
+      ['./ukrainischkurs-dictation.js?v=6','Hör-Diktat mit Fehlertypen'],
       ['./ukrainischkurs-adaptive-review.js?v=1','Automatischer Skill-Review'],
       ['./ukrainischkurs-spoken-transfer.js?v=1','Spontaner Audio-first Sprechtransfer'],
       ['./ukrainischkurs-personal-words.js?v=1','Spätere persönliche Flashcards'],
       ['./ukrainischkurs-real-conversation.js?v=1','Später Real Conversation Mode'],
-      ['./ukrainischkurs-weekly-evaluator.js?v=1','Später 10-Fragen-Wochencheck'],
+      ['./ukrainischkurs-weekly-evaluator.js?v=2','10-Fragen-Check mit später Fehleranalyse'],
       ['./ukrainischkurs-immersion-textlab.js?v=1','Später Immersion Text Lab'],
       ['./ukrainischkurs-a1-exam.js?v=2','Doppelt bestätigte CEFR-A1-Prüfung'],
       ['./ukrainischkurs-a1-cando.js?v=7','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
-      ['./ukrainischkurs-daily-coach.js?v=1','Später dynamischer Tagesplan'],
-      ['./ukrainischkurs-selftest.js?v=39','Selbsttest']
+      ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
+      ['./ukrainischkurs-selftest.js?v=40','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
