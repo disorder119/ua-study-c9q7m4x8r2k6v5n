@@ -20,7 +20,27 @@ jobs:
           node-version: '22'
       - name: App-Hülle deterministisch lokal generieren
         run: node scripts/build-app-shell.mjs
-      - name: Kurs, Lernampel und Prüfungssimulationen vollständig validieren
-        run: node tests/validate-v58.mjs
+      - name: Vollständigen v59 Qualitätsaudit inklusive aller alten Regressionen ausführen
+        run: node tests/validate-v59.mjs
       - name: A1-Auswahloptionen validieren
         run: node tests/validate-a1-options.mjs
+
+  browser-smoke:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: App-Hülle deterministisch lokal generieren
+        run: node scripts/build-app-shell.mjs
+      - name: Playwright für echten Chromium-/WebKit-Lauf installieren
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Desktop- und iPhone-WebKit-Smoke-Tests ausführen
+        run: npx playwright test tests/browser-smoke.spec.mjs
