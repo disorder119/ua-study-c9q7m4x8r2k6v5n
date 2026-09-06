@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='57';
+  const VERSION='58';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -68,6 +68,7 @@
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
+      ['./ukrainischkurs-exam-dashboard.js?v=1','Lernampel und häufige Übungsprüfungen'],
       ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
       ['./ukrainischkurs-selftest.js?v=45','Basis-Selbsttest v45']
     ];
@@ -77,7 +78,10 @@
       await loadScript(path,label);
       if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     }
+    window.UKRAINIAN_COURSE_LOADER.version=57;
     await loadScript('./ukrainischkurs-selftest-v57.js?v=1','v57 Zusatz-Selbsttest');
+    window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
+    await loadScript('./ukrainischkurs-selftest-v58.js?v=1','v58 Zusatz-Selbsttest');
   }catch(error){
     window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
