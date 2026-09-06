@@ -71,17 +71,31 @@ Der „Daily Lesson Creator“ wurde bewusst nicht als Zufallsgenerator umgesetz
 
 `ukrainischkurs-immersion-textlab.js` nimmt später echte ukrainische Texte entgegen, misst die Wortabdeckung anhand des bereits eingeführten Kursmaterials, markiert bekannte/unbekannte Wörter, liest den Text vor und kann unbekannte Wörter zu „Meine Wörter“ weitergeben. Es behauptet bewusst **keine automatische Übersetzung**, wenn keine verlässliche Übersetzungsengine vorhanden ist. Das Textlabor ist freiwillig und A1-neutral.
 
-## Zusätzlicher später A1/A1+ Input ab v52/v53
+## Zusätzlicher später A1/A1+ Input ab v52–v55
 
-Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **24 weitere geführte Lektionen mit insgesamt 120 zusätzlichen Lernobjekten**. Sie verlängern nicht die frühe Anfängerphase, sondern geben erst nach der vorhandenen Grammatik-, Hör-, Sprech- und Transferbasis deutlich mehr reale Sprachmenge.
+Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **48 weitere geführte Lektionen mit insgesamt 240 zusätzlichen Lernobjekten**. Sie verlängern nicht die frühe Alphabet-/Anfängerphase, sondern geben erst nach der vorhandenen Grammatik-, Hör-, Sprech- und Transferbasis deutlich mehr reale Sprachmenge.
 
-`ukrainischkurs-late-input-expansion.js` bringt die ersten 12 Lektionen zu Tagesablauf, Plänen, Restaurant, Kleidung/Größe, Bahn/Tickets, Wegbeschreibung, Wetter, Unterkunft, Arbeit/Schicht, Nachrichten, Terminen und Verabredungen. Dazu kommen sechs Dialogsituationen und drei freie 5-Satz-Transferchecks.
+`ukrainischkurs-late-input-expansion.js` bringt die ersten 12 Lektionen zu Tagesablauf, Plänen, Restaurant, Kleidung/Größe, Bahn/Tickets, Wegbeschreibung, Wetter, Unterkunft, Arbeit/Schicht, Nachrichten, Terminen und Verabredungen.
 
-`ukrainischkurs-natural-input-expansion.js` ergänzt weitere 12 Lektionen zu natürlicher Satzverknüpfung, Meinung/Vorlieben, Essen, Rückgabe/Umtausch, Reisestörungen, Apotheke, Problemen in Wohnung/Hotel, Arbeitskoordination, Treffen per Nachricht, Personenbeschreibung, Vergangenheit und einfachen Begründungen/Plänen.
+`ukrainischkurs-natural-input-expansion.js` ergänzt 12 Lektionen zu natürlicher Satzverknüpfung, Meinung/Vorlieben, Essen, Rückgabe/Umtausch, Reisestörungen, Apotheke, Problemen in Wohnung/Hotel, Arbeitskoordination, Treffen per Nachricht, Personenbeschreibung, Vergangenheit und einfachen Begründungen/Plänen.
 
-Der zweite Block enthält zusätzlich **sechs kurze zusammenhängende ukrainische Texte**. Auf diesen Input-Tagen muss der Text als Ganzes verstanden werden; danach folgen jeweils zwei Verständnisfragen. Audio kann als zusätzliche Exposition abgespielt werden, wird aber nicht fälschlich als Hörprüfung gewertet. Drei weitere freie Transferchecks speisen Fehlergedächtnis und Kompetenz-Mastery.
+`ukrainischkurs-bridge-input-expansion.js` ergänzt weitere 12 Lektionen zu Einkauf, Café, Stadtverkehr, Ortsangaben, Apotheke, Hotel, Arbeit, Smalltalk sowie zusammenhängenden Aussagen über gestern und morgen.
 
-Beide Inputblöcke bleiben vor der Prüfung angesiedelt und verändern **weder die A1-Prüfungsschwellen noch die bestehenden A1-Milestones**.
+`ukrainischkurs-interaction-input-expansion.js` bringt weitere 12 Lektionen zu Rückfragen, Verabredungsänderungen, Mengen/Bezahlen, Restaurant-Reklamation, Umsteigen/Aussteigen, Hotelankunft, Haushalt, Arbeitskoordination, Telefon, Smalltalk, einfachen Begründungen und einem zusammenhängenden Tagesplan.
+
+Die späteren Blöcke enthalten zusammen zusätzliche kurze ukrainische Lesetexte, Dialogsituationen und freie 5-Satz-Transferchecks. Lesen wird getrennt erfasst; optionales Vorlesen zählt nicht fälschlich als Hörprüfung. Freie Antworten speisen Fehlergedächtnis und Kompetenz-Mastery.
+
+Alle Inputblöcke bleiben vor der Prüfung angesiedelt und verändern **weder die A1-Prüfungsschwellen noch die bestehenden A1-Milestones**.
+
+## Laptop ↔ iPhone: Lernstand sicher wechseln
+
+`ukrainischkurs-device-continuity.js` schützt den lokalen Lernstand beim Gerätewechsel. Seit v54 enthalten Backup-Pakete Kursversion und Prüfsumme; vor Import oder Reset wird ein lokaler Rettungspunkt angelegt und offensichtlich ältere Sicherungen werden nicht still über einen neueren Stand geschrieben.
+
+Ab v55 kann die App zusätzlich einen **Schnelltransfer-Link** erzeugen. Der Lernstand wird – wenn der Browser es unterstützt – komprimiert in das URL-Fragment geschrieben. URL-Fragmente werden bei einer normalen HTTP-Anfrage nicht an GitHub Pages übertragen. Öffnet man den Link auf dem anderen Gerät, erkennt die App den enthaltenen Stand, entfernt das Fragment aus der sichtbaren URL und zeigt vor dem Übernehmen weiterhin die Konflikt-/Versionsprüfung.
+
+Falls der Link zu groß wird oder die Browser-Funktionen fehlen, bleibt die geprüfte JSON-Datei als Fallback erhalten. Bis zu drei lokale Rettungspunkte werden getrennt vom eigentlichen Lernstand gehalten. Ein Schnelltransfer-Link kann persönliche Lernwörter enthalten und sollte deshalb nur an das eigene Gerät geschickt werden.
+
+**Vollautomatischer Cloud-Sync ist weiterhin nicht aktiviert.** Dafür wäre ein externer Speicher- und Authentifizierungsdienst nötig; die statische App behauptet keinen Sync, den sie technisch nicht besitzt.
 
 ## Handlungsorientierter Abschluss
 
@@ -97,7 +111,7 @@ Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v53.mjs` übernimmt die vollständigen v52/v51-Regressionsregeln und prüft zusätzlich den zweiten späten Inputblock: 12 Lektionen, 60 Lernobjekte, sechs zusammenhängende Kurztexte, sechs Dialogsituationen, drei freie Transferchecks, Loader-Reihenfolge, Offline-Cache sowie die Unverändertheit der A1-Prüfung. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v55.mjs` übernimmt die vollständigen v54/v53/v52/v51-Regressionsregeln und prüft zusätzlich Device Continuity v2, den URL-Fragment-Schnelltransfer mit Plain-Fallback, Loader/Offline-Cache sowie den vierten späten Inputblock mit 12 Lektionen, 60 Lernobjekten, sechs Lesetexten, sechs Dialogsituationen und drei freien Transferchecks. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
 
 Aktuelle Kernmodule umfassen unter anderem:
 
@@ -105,6 +119,7 @@ Aktuelle Kernmodule umfassen unter anderem:
 - `ukrainischkurs-alphabet-proof.js`
 - `ukrainischkurs-adaptive-srs.js`
 - `ukrainischkurs-learning-core.js`
+- `ukrainischkurs-device-continuity.js`
 - `ukrainischkurs-skill-profile.js`
 - `ukrainischkurs-error-memory.js`
 - `ukrainischkurs-competency-mastery.js`
@@ -124,8 +139,10 @@ Aktuelle Kernmodule umfassen unter anderem:
 - `ukrainischkurs-immersion-textlab.js`
 - `ukrainischkurs-late-input-expansion.js`
 - `ukrainischkurs-natural-input-expansion.js`
+- `ukrainischkurs-bridge-input-expansion.js`
+- `ukrainischkurs-interaction-input-expansion.js`
 - `ukrainischkurs-daily-coach.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
 
-Unter **Fortschritt** kann der lokale Lernstand exportiert und wieder importiert werden.
+Unter **Fortschritt** kann der lokale Lernstand als Schnelltransfer-Link oder geprüfte Backup-Datei auf ein anderes Gerät übertragen werden.
