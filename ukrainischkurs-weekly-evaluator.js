@@ -1,0 +1,78 @@
+/* Ukrainischkurs für Joel · Weekly Evaluator v1
+   Später 10-Fragen-Diagnosecheck: 2 Lesen, 2 Hören, 2 Schreiben,
+   2 Grammatik und 2 spontane Sprechreaktionen. Lösungen erst ganz am Ende. */
+(()=>{
+  const VERSION=1,core=window.UKRAINIAN_LEARNING_CORE;if(!core)return;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const BANK={
+    reading:[
+      {requires:['Я не розумію'],prompt:'Я не розумію.',answer:'Ich verstehe nicht.',options:['Ich verstehe nicht.','Ich weiß nicht.','Ich kann nicht.']},
+      {requires:['Мені потрібна допомога'],prompt:'Мені потрібна допомога.',answer:'Ich brauche Hilfe.',options:['Ich brauche Hilfe.','Ich möchte essen.','Ich bin zu Hause.']},
+      {requires:['Де зупинка?'],prompt:'Де зупинка?',answer:'Wo ist die Haltestelle?',options:['Wo ist die Haltestelle?','Wo ist der Bahnhof?','Wo ist die Apotheke?']},
+      {requires:['Скільки це коштує?'],prompt:'Скільки це коштує?',answer:'Wie viel kostet das?',options:['Wie viel kostet das?','Wo ist das?','Was möchtest du?']},
+      {requires:['Я з Німеччини'],prompt:'Я з Німеччини.',answer:'Ich komme aus Deutschland.',options:['Ich komme aus Deutschland.','Ich fahre nach Deutschland.','Ich wohne in der Ukraine.']},
+      {requires:['Я буду працювати'],prompt:'Завтра я буду працювати.',answer:'Morgen werde ich arbeiten.',options:['Morgen werde ich arbeiten.','Gestern habe ich gearbeitet.','Heute arbeite ich nicht.']}
+    ],
+    listening:[
+      {requires:['Я хочу каву'],prompt:'Я хочу каву.',answer:'Die Person möchte Kaffee.',options:['Die Person möchte Kaffee.','Die Person möchte Wasser.','Die Person sucht Kaffee.']},
+      {requires:['Повторіть, будь ласка'],prompt:'Повторіть, будь ласка.',answer:'Die Person bittet um Wiederholung.',options:['Die Person bittet um Wiederholung.','Die Person bittet um die Rechnung.','Die Person fragt nach dem Preis.']},
+      {requires:['Я зараз вдома'],prompt:'Я зараз вдома.',answer:'Die Person ist jetzt zu Hause.',options:['Die Person ist jetzt zu Hause.','Die Person ist im Hotel.','Die Person fährt nach Hause.']},
+      {requires:['У мене немає квитка'],prompt:'У мене немає квитка.',answer:'Die Person hat kein Ticket.',options:['Die Person hat kein Ticket.','Die Person kauft ein Ticket.','Die Person sucht den Bahnhof.']},
+      {requires:['Вчора я працював'],prompt:'Вчора я працював.',answer:'Gestern habe ich gearbeitet.',options:['Gestern habe ich gearbeitet.','Morgen werde ich arbeiten.','Heute arbeite ich.']},
+      {requires:['Ти будеш працювати?'],prompt:'Ти будеш працювати?',answer:'Es wird gefragt, ob du arbeiten wirst.',options:['Es wird gefragt, ob du arbeiten wirst.','Es wird gefragt, wo du arbeitest.','Es wird gefragt, ob du gearbeitet hast.']}
+    ],
+    writing:[
+      {requires:['Я не розумію'],prompt:'Ich verstehe nicht.',answers:['Я не розумію']},
+      {requires:['Мені потрібна допомога'],prompt:'Ich brauche Hilfe.',answers:['Мені потрібна допомога']},
+      {requires:['Де туалет?'],prompt:'Wo ist die Toilette?',answers:['Де туалет?']},
+      {requires:['Я з Німеччини'],prompt:'Ich komme aus Deutschland.',answers:['Я з Німеччини']},
+      {requires:['Я хочу їсти'],prompt:'Ich möchte essen.',answers:['Я хочу їсти']},
+      {requires:['Рахунок, будь ласка'],prompt:'Die Rechnung, bitte.',answers:['Рахунок, будь ласка']}
+    ],
+    grammar:[
+      {requires:['Я в магазині','Я йду в магазин'],prompt:'Du bist im Geschäft.',answers:['Я в магазині']},
+      {requires:['Я в магазині','Я йду в магазин'],prompt:'Du gehst ins Geschäft.',answers:['Я йду в магазин']},
+      {requires:['Я хочу каву'],prompt:'Ich möchte Kaffee.',answers:['Я хочу каву']},
+      {requires:['У мене немає квитка'],prompt:'Ich habe kein Ticket.',answers:['У мене немає квитка']},
+      {requires:['Вчора я працював'],prompt:'Gestern habe ich gearbeitet. (als Mann)',answers:['Вчора я працював','Учора я працював']},
+      {requires:['Я буду працювати'],prompt:'Ich werde arbeiten.',answers:['Я буду працювати']},
+      {requires:['Ти будеш працювати?'],prompt:'Wirst du arbeiten?',answers:['Ти будеш працювати?']}
+    ],
+    speaking:[
+      {requires:['Ти розумієш?','Я розумію…'],prompt:'Ти розумієш?',answers:['Так, я розумію','Я розумію']},
+      {requires:['Що ти хочеш?','Я хочу каву'],prompt:'Що ти хочеш?',answers:['Я хочу каву']},
+      {requires:['Звідки ти?','Я з Німеччини'],prompt:'Звідки ти?',answers:['Я з Німеччини']},
+      {requires:['Де ти?','Я в ресторані'],prompt:'Де ти?',answers:['Я в ресторані','Я у ресторані']},
+      {requires:['Що ти будеш робити завтра?','Я буду працювати'],prompt:'Що ти будеш робити завтра?',answers:['Завтра я буду працювати','Я буду працювати завтра','Я буду працювати']},
+      {requires:['У тебе є квиток?','У мене немає квитка'],prompt:'У тебе є квиток?',answers:['Ні, у мене немає квитка','У мене немає квитка']}
+    ]
+  };
+  const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
+  const available=type=>BANK[type].filter(x=>core.allIntroduced(x.requires));
+  const reviewDays=()=>[...new Set(WEEKLY_REVIEW_DAYS.map(Number))].filter(d=>d<D.length-1).sort((a,b)=>a-b);
+  function required(){const i=reviewDays().indexOf(Number(s.day));if(i<0||!core.isComplete?.('grammar.time'))return false;return i%3===2&&Object.keys(BANK).every(k=>available(k).length>=2)}
+  function ensure(){if(!s.weeklyEvaluator||typeof s.weeklyEvaluator!=='object')s.weeklyEvaluator={version:VERSION,days:{}};s.weeklyEvaluator.version=VERSION;s.weeklyEvaluator.days=s.weeklyEvaluator.days||{};return s.weeklyEvaluator}
+  function state(){const st=ensure(),k=String(s.day);return st.days[k]||(st.days[k]={completed:false,best:0,attempts:0,date:'',domains:{}})}
+  let session=null;
+  function start(){const items=[];for(const type of ['reading','listening','writing','grammar','speaking'])shuffle(available(type)).slice(0,2).forEach(x=>items.push({...x,type}));session={items:shuffle(items),idx:0,answers:[],plays:0,spoken:false};renderBox()}
+  function current(){return session?.items?.[session.idx]||null}
+  function submit(value){const q=current();if(!q)return;if(q.type==='speaking'&&!session.spoken){toast('Antworte zuerst laut und markiere das anschließend.');return}const user=String(value??'').trim();if(!user){toast('Bitte erst eine Antwort geben.');return}let good=false;if(q.options)good=user===q.answer;else good=core.accepts(user,q.answers);session.answers.push({type:q.type,prompt:q.prompt,user,expected:q.options?q.answer:q.answers[0],good,answers:q.answers||[q.answer]});session.idx++;session.plays=0;session.spoken=false;if(session.idx>=session.items.length){finish();return}renderBox()}
+  function domainResults(){const out={};for(const k of ['reading','listening','writing','grammar','speaking']){const rows=session.answers.filter(x=>x.type===k);out[k]={correct:rows.filter(x=>x.good).length,total:rows.length}}return out}
+  function finish(){const st=state(),domains=domainResults(),correct=session.answers.filter(x=>x.good).length,score=Math.round(correct/10*100);st.completed=true;st.best=Math.max(Number(st.best)||0,score);st.attempts++;st.date=date();st.domains=domains;
+    for(const [skill,r] of Object.entries(domains)){if(!r.total)continue;core.recordSession({skills:[skill],correct:r.correct,total:r.total,passed:r.correct===r.total,module:'weekly-evaluator',day:s.day,weight:skill==='speaking'?.55:.85,assisted:skill==='speaking'})}
+    session.phase='results';save();renderBox();toast('Wochencheck abgeschlossen. Lösungen und Auswertung sind jetzt sichtbar.')}
+  function questionHtml(){const q=current(),n=session.idx+1,label={reading:'Lesen',listening:'Hören',writing:'Schreiben',grammar:'Grammatik',speaking:'Sprechreaktion'}[q.type];let body='';
+    if(q.type==='reading')body='<div class="we-prompt" lang="uk">'+esc(q.prompt)+'</div>'+optionsHtml(q);
+    else if(q.type==='listening')body='<div class="actions"><button class="primary" id="weListen" '+(session.plays>=2?'disabled':'')+'>🔊 Aussage hören · '+session.plays+'/2</button></div>'+optionsHtml(q);
+    else if(q.type==='speaking')body='<div class="actions"><button class="primary" id="weListen" '+(session.plays>=2?'disabled':'')+'>🔊 Frage hören · '+session.plays+'/2</button><button class="'+(session.spoken?'secondary':'primary')+'" id="weSpoken">'+(session.spoken?'✓ laut beantwortet':'Antwort laut sprechen')+'</button></div><input id="weInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Danach exakt tippen, was du gesagt hast …"><div class="actions"><button class="primary" id="weSubmit">Antwort speichern</button></div>';
+    else body='<div class="we-prompt">'+esc(q.prompt)+'</div><input id="weInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ukrainisch aus dem Kopf …"><div class="actions"><button class="primary" id="weSubmit">Antwort speichern</button></div>';
+    return '<div class="label">10-Fragen-Wochencheck · '+n+' / 10 · '+label+'</div><h2>Keine Lösung bis zum Ende</h2><p class="small">Antworten werden gespeichert, aber erst nach Frage 10 bewertet und erklärt.</p>'+body}
+  function optionsHtml(q){return '<div class="we-options">'+shuffle(q.options).map(x=>'<button class="answer" data-we-option="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'}
+  function resultsHtml(){const st=state(),domainLabels={reading:'Lesen',listening:'Hören',writing:'Schreiben',grammar:'Grammatik',speaking:'Sprechen'},score=Math.round(session.answers.filter(x=>x.good).length/10*100),domains=domainResults(),weak=Object.entries(domains).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total).slice(0,2).map(([k])=>domainLabels[k]).join(' + ');return '<div class="label">Wochencheck · Auswertung</div><div class="we-head"><h2>'+score+' %</h2><div class="pill">'+session.answers.filter(x=>x.good).length+'/10</div></div><div class="tip">Nächster sinnvoller Fokus aus diesem Check: <strong>'+esc(weak)+'</strong>. Die Ergebnisse fließen zusätzlich in dein adaptives Skill-Profil ein.</div><div class="we-results">'+session.answers.map((x,i)=>{let note='';if(!x.good&&x.type==='grammar'&&window.UKRAINIAN_GRAMMAR_DECODER){const e=window.UKRAINIAN_GRAMMAR_DECODER.explain(x.user,x.answers,x.prompt);note='<div class="small"><strong>Warum?</strong> '+esc(e.reason)+'</div>'}return '<div class="we-result"><strong>'+(i+1)+'. '+(x.good?'✓':'✗')+' '+esc(x.prompt)+'</strong><span>Du: '+esc(x.user)+'</span><span>Passend: <span lang="uk">'+esc(x.expected)+'</span></span>'+note+'</div>'}).join('')+'</div><div class="actions"><button class="secondary" id="weAgain">Check noch einmal</button></div><p class="small">Der Check ist Diagnose, kein zusätzliches A1-Bestehensgate. Ein schwaches Ergebnis blockiert den Kurs nicht.</p>'}
+  function renderBox(){let box=document.getElementById('weeklyEvaluatorBox');if(!required()){if(box)box.hidden=true;return}const cards=document.getElementById('cards');if(!cards)return;if(!box){box=document.createElement('section');box.id='weeklyEvaluatorBox';box.className='card';cards.insertAdjacentElement('afterend',box)}box.hidden=false;const st=state();if(session?.phase==='results'){box.innerHTML=resultsHtml();document.getElementById('weAgain').onclick=start;return}if(session){box.innerHTML=questionHtml();box.querySelectorAll('[data-we-option]').forEach(b=>b.onclick=()=>submit(b.dataset.weOption));const inp=document.getElementById('weInput'),submitBtn=document.getElementById('weSubmit'),listen=document.getElementById('weListen'),spoken=document.getElementById('weSpoken');if(submitBtn&&inp){submitBtn.onclick=()=>submit(inp.value);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit(inp.value)}}}if(listen)listen.onclick=e=>{const q=current();if(session.plays>=2)return;session.plays++;speak(q.prompt,e.currentTarget);renderBox()};if(spoken)spoken.onclick=()=>{session.spoken=true;renderBox()};return}
+    box.innerHTML='<div class="we-head"><div><div class="label">Später Review · Progress Evaluator</div><h2>10 Fragen über das, was inzwischen sitzen sollte</h2></div><div class="pill">'+(st.completed?'✓':'10')+'</div></div><p class="small">Je zwei Aufgaben zu Lesen, Hören, Schreiben, Grammatik und spontaner Reaktion. Während des Checks gibt es keine Korrektur und keine Lösung.</p><div class="tip">'+(st.completed?'✓ Dieser Diagnosecheck wurde bereits abgeschlossen. Bestwert: '+st.best+' %.':'Heute einmal abschließen. Das Ergebnis diagnostiziert Schwächen, aber du musst keine Mindestpunktzahl erreichen.')+'</div><div class="actions"><button class="'+(st.completed?'secondary':'primary')+'" id="weStart">'+(st.completed?'noch einmal':'10-Fragen-Check starten')+'</button></div>';document.getElementById('weStart').onclick=start}
+  const oldNext=document.getElementById('next')?.onclick;if(document.getElementById('next'))document.getElementById('next').onclick=function(e){if(required()&&!state().completed){renderBox();document.getElementById('weeklyEvaluatorBox')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Heute erst den 10-Fragen-Wochencheck abschließen; es gibt keine Mindestpunktzahl.');return}return oldNext?.call(this,e)};
+  const css=document.createElement('style');css.textContent='.we-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.we-prompt{font-size:1.35rem;font-weight:850;margin:15px 0}.we-options{display:grid;grid-template-columns:1fr;gap:8px}.we-results{display:grid;gap:8px;margin:12px 0}.we-result{padding:11px;border-radius:12px;background:#f4f8fc}.we-result>span{display:block;margin-top:4px;font-size:.86rem}';document.head.append(css);
+  window.UKRAINIAN_WEEKLY_EVALUATOR={version:VERSION,required,completed:()=>state().completed,questions:10,domains:['reading','listening','writing','grammar','speaking'],answersHiddenUntilEnd:true,minScoreGate:false};
+  const previousRender=render;render=function(){previousRender();renderBox()};ensure();renderBox();
+})();
