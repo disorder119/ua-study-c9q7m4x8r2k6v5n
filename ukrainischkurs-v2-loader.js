@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='54';
+  const VERSION='55';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -27,7 +27,7 @@
       ['./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer'],
       ['./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS'],
       ['./ukrainischkurs-learning-core.js?v=5','Zentraler Lernkern mit Aktualitätsgewichtung'],
-      ['./ukrainischkurs-device-continuity.js?v=1','Sicherer Laptop-/iPhone-Gerätewechsel'],
+      ['./ukrainischkurs-device-continuity.js?v=2','Sicherer Laptop-/iPhone-Schnelltransfer'],
       ['./ukrainischkurs-error-memory.js?v=1','Intelligentes Fehlergedächtnis'],
       ['./ukrainischkurs-grammar-decoder.js?v=2','Grammar Decoder mit Fehlertypen'],
       ['./ukrainischkurs-fashion-bridge.js?v=1','Personalisierte Fashion-Brücke'],
@@ -60,13 +60,14 @@
       ['./ukrainischkurs-late-input-expansion.js?v=1','Zwölf zusätzliche späte A1/A1+ Input-Lektionen'],
       ['./ukrainischkurs-natural-input-expansion.js?v=1','Zwölf weitere A1+ Lektionen mit Kurztexten und freiem Transfer'],
       ['./ukrainischkurs-bridge-input-expansion.js?v=1','Zwölf weitere A1+ Brückenlektionen mit Alltagssprache'],
+      ['./ukrainischkurs-interaction-input-expansion.js?v=1','Zwölf weitere A1+ Interaktionslektionen'],
       ['./ukrainischkurs-a1-exam.js?v=2','Doppelt bestätigte CEFR-A1-Prüfung'],
       ['./ukrainischkurs-a1-cando.js?v=7','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
       ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
-      ['./ukrainischkurs-selftest.js?v=43','Selbsttest']
+      ['./ukrainischkurs-selftest.js?v=44','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
