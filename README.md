@@ -71,6 +71,18 @@ Der „Daily Lesson Creator“ wurde bewusst nicht als Zufallsgenerator umgesetz
 
 `ukrainischkurs-immersion-textlab.js` nimmt später echte ukrainische Texte entgegen, misst die Wortabdeckung anhand des bereits eingeführten Kursmaterials, markiert bekannte/unbekannte Wörter, liest den Text vor und kann unbekannte Wörter zu „Meine Wörter“ weitergeben. Es behauptet bewusst **keine automatische Übersetzung**, wenn keine verlässliche Übersetzungsengine vorhanden ist. Das Textlabor ist freiwillig und A1-neutral.
 
+## Zusätzlicher später A1/A1+ Input ab v52/v53
+
+Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **24 weitere geführte Lektionen mit insgesamt 120 zusätzlichen Lernobjekten**. Sie verlängern nicht die frühe Anfängerphase, sondern geben erst nach der vorhandenen Grammatik-, Hör-, Sprech- und Transferbasis deutlich mehr reale Sprachmenge.
+
+`ukrainischkurs-late-input-expansion.js` bringt die ersten 12 Lektionen zu Tagesablauf, Plänen, Restaurant, Kleidung/Größe, Bahn/Tickets, Wegbeschreibung, Wetter, Unterkunft, Arbeit/Schicht, Nachrichten, Terminen und Verabredungen. Dazu kommen sechs Dialogsituationen und drei freie 5-Satz-Transferchecks.
+
+`ukrainischkurs-natural-input-expansion.js` ergänzt weitere 12 Lektionen zu natürlicher Satzverknüpfung, Meinung/Vorlieben, Essen, Rückgabe/Umtausch, Reisestörungen, Apotheke, Problemen in Wohnung/Hotel, Arbeitskoordination, Treffen per Nachricht, Personenbeschreibung, Vergangenheit und einfachen Begründungen/Plänen.
+
+Der zweite Block enthält zusätzlich **sechs kurze zusammenhängende ukrainische Texte**. Auf diesen Input-Tagen muss der Text als Ganzes verstanden werden; danach folgen jeweils zwei Verständnisfragen. Audio kann als zusätzliche Exposition abgespielt werden, wird aber nicht fälschlich als Hörprüfung gewertet. Drei weitere freie Transferchecks speisen Fehlergedächtnis und Kompetenz-Mastery.
+
+Beide Inputblöcke bleiben vor der Prüfung angesiedelt und verändern **weder die A1-Prüfungsschwellen noch die bestehenden A1-Milestones**.
+
 ## Handlungsorientierter Abschluss
 
 Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check** mit freien Eingaben, Hörfragen und Verständnis-/Situationsaufgaben. Nichtverstehen, Preis, Haltestelle und Hilfe sind kritische Pflichtsituationen.
@@ -85,7 +97,7 @@ Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v50.mjs` übernimmt sämtliche v49-Schutzregeln und prüft zusätzlich die sechs späteren Lernwerkzeuge, Loader-Reihenfolge, Offline-Cache, A1-Neutralität der freiwilligen Module, verzögerte Freischaltung sowie konkrete Grammar-Decoder-Regeln. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v53.mjs` übernimmt die vollständigen v52/v51-Regressionsregeln und prüft zusätzlich den zweiten späten Inputblock: 12 Lektionen, 60 Lernobjekte, sechs zusammenhängende Kurztexte, sechs Dialogsituationen, drei freie Transferchecks, Loader-Reihenfolge, Offline-Cache sowie die Unverändertheit der A1-Prüfung. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
 
 Aktuelle Kernmodule umfassen unter anderem:
 
@@ -94,6 +106,8 @@ Aktuelle Kernmodule umfassen unter anderem:
 - `ukrainischkurs-adaptive-srs.js`
 - `ukrainischkurs-learning-core.js`
 - `ukrainischkurs-skill-profile.js`
+- `ukrainischkurs-error-memory.js`
+- `ukrainischkurs-competency-mastery.js`
 - `ukrainischkurs-a1-grammar-bridge.js`
 - `ukrainischkurs-time-bridge.js`
 - `ukrainischkurs-genitive-bridge.js`
@@ -108,6 +122,8 @@ Aktuelle Kernmodule umfassen unter anderem:
 - `ukrainischkurs-real-conversation.js`
 - `ukrainischkurs-weekly-evaluator.js`
 - `ukrainischkurs-immersion-textlab.js`
+- `ukrainischkurs-late-input-expansion.js`
+- `ukrainischkurs-natural-input-expansion.js`
 - `ukrainischkurs-daily-coach.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
