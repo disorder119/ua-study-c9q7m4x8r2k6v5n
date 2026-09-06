@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
       - name: App-Hülle deterministisch lokal generieren
         run: node scripts/build-app-shell.mjs
-      - name: Kurs und Lernstatus vollständig validieren
-        run: node tests/validate-v47.mjs
+      - name: Kurs, Lernstatus und Sprechtransfer vollständig validieren
+        run: node tests/validate-v48.mjs
       - name: A1-Auswahloptionen validieren
         run: node tests/validate-a1-options.mjs
