@@ -24,7 +24,7 @@ const loader=read('ukrainischkurs-v2-loader.js'),sw=read('ukrainisch-lernen-sw.j
 assert(loader.includes("const VERSION='59'"),'Loader ist nicht v59');
 assert(sw.includes("const VERSION='59'"),'Service Worker ist nicht v59');
 assert(loader.includes('persistedDay()')&&loader.includes('restoreDeferredDay()')&&loader.includes('UKRAINIAN_DEFERRED_DAY_RESTORE'),'Später Kurstag wird beim echten Reload nicht geschützt');
-assert(loader.indexOf('independence-ladder.js?v=1')<loader.indexOf('restoreDeferredDay()')||loader.includes('if(legacySelftest){restoreDeferredDay()'),'Deferred-Day-Restore liegt nicht nach den Kurserweiterungen');
+assert(loader.includes('if(legacySelftest)restoreDeferredDay();'),'Deferred-Day-Restore wird nicht erst nach Aufbau aller Kurserweiterungen ausgeführt');
 assert(loader.includes('exam-dashboard.js?v=2')&&loader.includes('selftest-v59.js?v=1'),'v59 Dashboard-/Selbsttest-Cachemarker fehlen');
 assert(sw.includes("'./ukrainischkurs-selftest-v59.js'"),'v59 Selbsttest fehlt im Offline-Cache');
 
@@ -40,7 +40,7 @@ assert(app===expectedApp,'ukrainischkurs-app.html entspricht nicht deterministis
 
 // Statische DOM-Verträge der Basis-App: keine doppelten IDs und jede direkte $()-
 // Referenz des Inline-Kerns hat ein reales Zielelement.
-const ids=[...base.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),idSet=new Set(ids);assert(ids.length===idSet.size,'Basis-App enthält doppelte HTML-IDs');
+const ids=[...base.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),idSet=new Set(ids),idCounts=new Map();ids.forEach(id=>idCounts.set(id,(idCounts.get(id)||0)+1));const duplicateIds=[...idCounts].filter(([,n])=>n>1).map(([id,n])=>`${id}×${n}`);assert(!duplicateIds.length,`Basis-App enthält doppelte HTML-IDs: ${duplicateIds.join(', ')}`);
 const dollarRefs=[...new Set(inline.flatMap(code=>[...code.matchAll(/\$\(['"]([^'"]+)['"]\)/g)].map(m=>m[1])))];
 for(const id of dollarRefs)assert(idSet.has(id),`Inline-Kern referenziert fehlendes DOM-Ziel #${id}`);
 
