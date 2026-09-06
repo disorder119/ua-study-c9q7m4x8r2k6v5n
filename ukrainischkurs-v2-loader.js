@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='48';
+  const VERSION='49';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -26,7 +26,7 @@
       ['./ukrainischkurs-reading-bridge.js?v=1','Lese-Brücke'],
       ['./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer'],
       ['./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS'],
-      ['./ukrainischkurs-learning-core.js?v=4','Zentraler Lernkern'],
+      ['./ukrainischkurs-learning-core.js?v=5','Zentraler Lernkern mit Aktualitätsgewichtung'],
       ['./ukrainischkurs-fashion-bridge.js?v=1','Personalisierte Fashion-Brücke'],
       ['./ukrainischkurs-resale-practice.js?v=1','Zusätzliche Disorder119 Resale-Praxis'],
       ['./ukrainischkurs-foundation-expansion.js?v=3','Grundkurs-Erweiterung'],
@@ -53,8 +53,8 @@
       ['./ukrainischkurs-a1-cando.js?v=7','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
-      ['./ukrainischkurs-skill-profile.js?v=2','Adaptives Skill-Profil'],
-      ['./ukrainischkurs-selftest.js?v=37','Selbsttest']
+      ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
+      ['./ukrainischkurs-selftest.js?v=38','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){

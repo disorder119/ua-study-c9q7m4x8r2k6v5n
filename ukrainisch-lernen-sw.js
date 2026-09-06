@@ -1,4 +1,4 @@
-const VERSION='48';
+const VERSION='49';
 const CACHE=`ukrainischkurs-joel-v${VERSION}`;
 const ASSETS=[
   './','./index.html','./ukrainischkurs-app.html','./ukrainisch-lernen.html','./ukrainisch-lernen.webmanifest',

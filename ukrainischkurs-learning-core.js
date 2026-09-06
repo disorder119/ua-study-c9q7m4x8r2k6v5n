@@ -1,8 +1,8 @@
-/* Ukrainischkurs für Joel · Learning Core v4
-   Gemeinsame Normalisierung, Curriculum-Abhängigkeiten, dynamische Freischaltung
-   und skillbasierte Evidenz mit automatischem Review-Fokus. */
+/* Ukrainischkurs für Joel · Learning Core v5
+   Gemeinsame Normalisierung, Curriculum-Abhängigkeiten, dynamische Freischaltung,
+   skillbasierte Evidenz und aktualitätsgewichtete automatische Review-Fokussierung. */
 (()=>{
-  const VERSION=4;
+  const VERSION=5;
   const SKILLS=['reading','listening','writing','speaking','grammar'];
   const LABELS={reading:'Lesen',listening:'Hören',writing:'Schreiben',speaking:'Sprechen',grammar:'Grammatik'};
   function ensure(){
@@ -45,15 +45,27 @@
     const total=Math.max(1,Number(meta.total)||1),correct=clamp(Number(meta.correct)||0,0,total),score=correct/total*100,skills=[...new Set((Array.isArray(meta.skills)?meta.skills:[meta.skills]).filter(Boolean))];
     skills.forEach(k=>addEvidence(k,score,{...meta,passed:meta.passed??correct===total},false));if(typeof save==='function')save();return profile();
   }
-  function skillScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
-  function profile(){const root=ensure();return Object.fromEntries(SKILLS.map(k=>[k,{label:LABELS[k],score:skillScore(k),sessions:Number(root.skills[k].sessions)||0,passed:Number(root.skills[k].passed)||0,assisted:Number(root.skills[k].assisted)||0,lastDate:root.skills[k].lastDate||''}]))}
-  function rankedSkills(minSessions=1){const p=profile();return SKILLS.filter(k=>p[k].sessions>=minSessions).sort((a,b)=>(p[a].score??101)-(p[b].score??101)||p[a].sessions-p[b].sessions)}
+  function cumulativeScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
+  function recentScore(skill,limit=8){
+    const st=ensure().skills[skill],hist=st.history.slice(-Math.max(1,Number(limit)||8));if(!hist.length)return null;
+    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),evidence=entry?.assisted ? .65 : 1,weight=recency*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
+    return weightSum?Math.round(scoreSum/weightSum):null;
+  }
+  function skillScore(skill){
+    const st=ensure().skills[skill],all=cumulativeScore(skill),recent=recentScore(skill);if(all==null)return recent;if(recent==null)return all;
+    const n=Math.max(0,Number(st.history.length)||0),recentShare=n>=6 ? .72 : n>=3 ? .60 : .45;return Math.round(all*(1-recentShare)+recent*recentShare);
+  }
+  function isoDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])):NaN}
+  function staleDays(skill){const st=ensure().skills[skill],from=isoDay(st.lastDate),to=isoDay(typeof date==='function'?date():'');if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from)return 0;return Math.min(365,Math.floor((to-from)/86400000))}
+  function priorityScore(skill){const base=skillScore(skill);if(base==null)return null;const stale=staleDays(skill),penalty=clamp((stale-3)*.75,0,8);return Math.round(clamp(base-penalty,0,100))}
+  function profile(){const root=ensure();return Object.fromEntries(SKILLS.map(k=>[k,{label:LABELS[k],score:skillScore(k),recent:recentScore(k),priority:priorityScore(k),staleDays:staleDays(k),sessions:Number(root.skills[k].sessions)||0,passed:Number(root.skills[k].passed)||0,assisted:Number(root.skills[k].assisted)||0,lastDate:root.skills[k].lastDate||''}]))}
+  function rankedSkills(minSessions=1){const p=profile();return SKILLS.filter(k=>p[k].sessions>=minSessions).sort((a,b)=>(p[a].priority??101)-(p[b].priority??101)||(p[a].score??101)-(p[b].score??101)||p[a].sessions-p[b].sessions)}
   function weakest(){return rankedSkills(1)[0]||null}
   function focusForDay(day=Number(s.day),opts={}){
     const root=ensure(),key=String(day);if(root.focusHistory[key]&&SKILLS.includes(root.focusHistory[key]))return root.focusHistory[key];
     const ranked=rankedSkills(Number(opts.minSessions)||1);if(!ranked.length)return null;
     let chosen=ranked[0],previousKeys=Object.keys(root.focusHistory).map(Number).filter(Number.isFinite).filter(x=>x<day).sort((a,b)=>b-a),previous=previousKeys.length?root.focusHistory[String(previousKeys[0])]:'';
-    if(previous===chosen&&ranked[1]){const p=profile(),gap=Math.abs((p[ranked[1]].score??100)-(p[chosen].score??100));if(gap<=Number(opts.rotateGap??6))chosen=ranked[1]}
+    if(previous===chosen&&ranked[1]){const p=profile(),gap=Math.abs((p[ranked[1]].priority??100)-(p[chosen].priority??100));if(gap<=Number(opts.rotateGap??6))chosen=ranked[1]}
     root.focusHistory[key]=chosen;const keys=Object.keys(root.focusHistory).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(keys.length>30)keys.slice(0,keys.length-30).forEach(x=>delete root.focusHistory[String(x)]);if(typeof save==='function'&&opts.persist!==false)save();return chosen
   }
   function reviewFocus(){if(!WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return null;return focusForDay(Number(s.day),{minSessions:1,rotateGap:6})}
@@ -85,5 +97,5 @@
     if(typeof save==='function')save();
   }
   ensure();seedLegacy();
-  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,introductionDays,isIntroduced,allIntroduced,anchorDay,recordSession,skillScore,profile,rankedSkills,weakest,focusForDay,reviewFocus,registerMilestone,isComplete,isUnlocked,unmet,curriculum};
+  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,introductionDays,isIntroduced,allIntroduced,anchorDay,recordSession,cumulativeScore,recentScore,skillScore,staleDays,priorityScore,profile,rankedSkills,weakest,focusForDay,reviewFocus,registerMilestone,isComplete,isUnlocked,unmet,curriculum};
 })();
