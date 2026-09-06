@@ -38,11 +38,15 @@ assert(inline.length>=1,'Basis-App enthält kein Inline-Kernscript');inline.forE
 const tag='<script src="./ukrainischkurs-v2-loader.js"></script>',expectedApp=base.replace('</body>',`${tag}\n</body>`);
 assert(app===expectedApp,'ukrainischkurs-app.html entspricht nicht deterministisch Basis + Loader');
 
-// Statische DOM-Verträge der Basis-App: keine doppelten IDs und jede direkte $()-
-// Referenz des Inline-Kerns hat ein reales Zielelement.
-const ids=[...base.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),idSet=new Set(ids),idCounts=new Map();ids.forEach(id=>idCounts.set(id,(idCounts.get(id)||0)+1));const duplicateIds=[...idCounts].filter(([,n])=>n>1).map(([id,n])=>`${id}×${n}`);assert(!duplicateIds.length,`Basis-App enthält doppelte HTML-IDs: ${duplicateIds.join(', ')}`);
+// Statische DOM-Verträge: ID-Eindeutigkeit nur am echten HTML-Markup messen. Strings
+// wie '<button id="back">' innerhalb eines JS-Templates dürfen mehrfach vorkommen,
+// weil sie denselben Container nacheinander ersetzen. Der Browser-Smoke prüft später
+// zusätzlich die tatsächlich gleichzeitig gerenderten IDs.
+const markupOnly=base.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'');
+const markupIds=[...markupOnly.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),markupCounts=new Map();markupIds.forEach(id=>markupCounts.set(id,(markupCounts.get(id)||0)+1));const duplicateIds=[...markupCounts].filter(([,n])=>n>1).map(([id,n])=>`${id}×${n}`);assert(!duplicateIds.length,`Echtes HTML-Markup enthält doppelte IDs: ${duplicateIds.join(', ')}`);
+const allDeclaredIds=new Set([...base.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
 const dollarRefs=[...new Set(inline.flatMap(code=>[...code.matchAll(/\$\(['"]([^'"]+)['"]\)/g)].map(m=>m[1])))];
-for(const id of dollarRefs)assert(idSet.has(id),`Inline-Kern referenziert fehlendes DOM-Ziel #${id}`);
+for(const id of dollarRefs)assert(allDeclaredIds.has(id),`Inline-Kern referenziert nirgends deklariertes DOM-Ziel #${id}`);
 
 // Loader ↔ Dateisystem ↔ Offline-Cache müssen vollständig übereinstimmen.
 const loaderScripts=[...loader.matchAll(/["'`](\.\/ukrainischkurs-[^?"'`]+\.js)\?v=/g)].map(m=>m[1]);
@@ -74,9 +78,9 @@ assert(core.includes('historyWeightAware:true')&&core.includes('assistance*evide
 assert(dash.includes('listeningPlayRequired:true')&&dash.includes("q.type==='listening'&&q.plays<1&&!q.assisted"),'Hörfrage kann noch ohne Hörversuch beantwortet werden');
 assert(dash.includes("if(!canSystemTTS()){q.assisted=true")&&dash.includes('ttsFallbackHonest:true'),'Fehlendes TTS wird nicht sauber als unterstützt markiert');
 assert(dash.includes('completedCourseDays()/Math.max(1,D.length)')&&dash.includes('reloadSafeCourseProgress:true'),'Kursprozent hängt noch vom gerade geöffneten Rückblicktag ab');
-assert(dash.includes("resultLight=lightForScore(entry.score,2)"),'Fehlgeschlagene Prüfung kann visuell fälschlich gelb statt rot erscheinen');
+assert(dash.includes("resultLight=lightForScore(entry.score,2)"),'Ergebnisfarbe der Prüfung folgt nicht dem tatsächlichen Score');
 assert(!dash.includes('s.a1Exam=')&&!dash.includes('s.a1CanDo.passed=')&&!dash.includes('registerMilestone('),'Übungsprüfungen greifen in echte A1-Gates ein');
 assert(self59.includes('releaseVersion:59')&&self59.includes('browserAuditRequired:true'),'v59 Laufzeit-Selbsttest fehlt oder verschweigt Browseraudit');
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);errors.forEach(e=>console.error('- '+e));process.exit(1)}
-console.log(`VALIDIERUNG OK: v59 hat ${jsFiles.length} JavaScript-Dateien syntaktisch geprüft, Loader/Offline-Assets gegengeprüft, Basis-DOM-Verträge validiert und sämtliche v58→v42 Regressionen weitergeführt. Reload später Kurstage, evidenzgewichteter Recent-Score, verpflichtender Hörversuch/TTS-Fallback und stabiler Kursfortschritt sind statisch abgesichert.`);
+console.log(`VALIDIERUNG OK: v59 hat ${jsFiles.length} JavaScript-Dateien syntaktisch geprüft, Loader/Offline-Assets gegengeprüft, echte Basis-DOM-Verträge validiert und sämtliche v58→v42 Regressionen weitergeführt. Reload später Kurstage, evidenzgewichteter Recent-Score, verpflichtender Hörversuch/TTS-Fallback und stabiler Kursfortschritt sind statisch abgesichert.`);
