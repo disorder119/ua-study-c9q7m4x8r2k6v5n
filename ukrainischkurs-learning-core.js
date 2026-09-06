@@ -48,12 +48,12 @@
   function cumulativeScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
   function recentScore(skill,limit=8){
     const st=ensure().skills[skill],hist=st.history.slice(-Math.max(1,Number(limit)||8));if(!hist.length)return null;
-    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),evidence=entry?.assisted?.65:1,weight=recency*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
+    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),evidence=entry?.assisted ? .65 : 1,weight=recency*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
     return weightSum?Math.round(scoreSum/weightSum):null;
   }
   function skillScore(skill){
     const st=ensure().skills[skill],all=cumulativeScore(skill),recent=recentScore(skill);if(all==null)return recent;if(recent==null)return all;
-    const n=Math.max(0,Number(st.history.length)||0),recentShare=n>=6?.72:n>=3?.60:.45;return Math.round(all*(1-recentShare)+recent*recentShare);
+    const n=Math.max(0,Number(st.history.length)||0),recentShare=n>=6 ? .72 : n>=3 ? .60 : .45;return Math.round(all*(1-recentShare)+recent*recentShare);
   }
   function isoDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])):NaN}
   function staleDays(skill){const st=ensure().skills[skill],from=isoDay(st.lastDate),to=isoDay(typeof date==='function'?date():'');if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from)return 0;return Math.min(365,Math.floor((to-from)/86400000))}
