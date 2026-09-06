@@ -1,6 +1,7 @@
 /* Ukrainischkurs für Joel · Learning Core v5
    Gemeinsame Normalisierung, Curriculum-Abhängigkeiten, dynamische Freischaltung,
-   skillbasierte Evidenz und aktualitätsgewichtete automatische Review-Fokussierung. */
+   skillbasierte Evidenz und aktualitätsgewichtete automatische Review-Fokussierung.
+   v59-Härtung: das bereits vorhandene Evidenzgewicht zählt nun auch im Recent-Score. */
 (()=>{
   const VERSION=5;
   const SKILLS=['reading','listening','writing','speaking','grammar'];
@@ -38,7 +39,7 @@
   function addEvidence(skill,score,meta={},persist=true){
     if(!SKILLS.includes(skill))return;const root=ensure(),st=root.skills[skill],weight=clamp(Number(meta.weight)||1,.25,4),pct=clamp(Number(score)||0,0,100);
     st.sessions=(Number(st.sessions)||0)+1;st.scoreSum=(Number(st.scoreSum)||0)+pct*weight;st.weight=(Number(st.weight)||0)+weight;st.passed=(Number(st.passed)||0)+(meta.passed?1:0);st.assisted=(Number(st.assisted)||0)+(meta.assisted?1:0);st.lastDate=meta.date||date();
-    st.history.push({date:st.lastDate,day:Number.isFinite(Number(meta.day))?Number(meta.day):Number(s.day),module:String(meta.module||''),score:Math.round(pct),passed:!!meta.passed,assisted:!!meta.assisted});if(st.history.length>40)st.history.splice(0,st.history.length-40);
+    st.history.push({date:st.lastDate,day:Number.isFinite(Number(meta.day))?Number(meta.day):Number(s.day),module:String(meta.module||''),score:Math.round(pct),passed:!!meta.passed,assisted:!!meta.assisted,weight});if(st.history.length>40)st.history.splice(0,st.history.length-40);
     if(persist&&typeof save==='function')save();
   }
   function recordSession(meta={}){
@@ -48,12 +49,12 @@
   function cumulativeScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
   function recentScore(skill,limit=8){
     const st=ensure().skills[skill],hist=st.history.slice(-Math.max(1,Number(limit)||8));if(!hist.length)return null;
-    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),evidence=entry?.assisted ? .65 : 1,weight=recency*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
+    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),assistance=entry?.assisted?.65:1,evidence=clamp(Number(entry?.weight)||1,.25,4),weight=recency*assistance*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
     return weightSum?Math.round(scoreSum/weightSum):null;
   }
   function skillScore(skill){
     const st=ensure().skills[skill],all=cumulativeScore(skill),recent=recentScore(skill);if(all==null)return recent;if(recent==null)return all;
-    const n=Math.max(0,Number(st.history.length)||0),recentShare=n>=6 ? .72 : n>=3 ? .60 : .45;return Math.round(all*(1-recentShare)+recent*recentShare);
+    const n=Math.max(0,Number(st.history.length)||0),recentShare=n>=6?.72:n>=3?.60:.45;return Math.round(all*(1-recentShare)+recent*recentShare);
   }
   function isoDay(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])):NaN}
   function staleDays(skill){const st=ensure().skills[skill],from=isoDay(st.lastDate),to=isoDay(typeof date==='function'?date():'');if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from)return 0;return Math.min(365,Math.floor((to-from)/86400000))}
@@ -97,5 +98,5 @@
     if(typeof save==='function')save();
   }
   ensure();seedLegacy();
-  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,introductionDays,isIntroduced,allIntroduced,anchorDay,recordSession,cumulativeScore,recentScore,skillScore,staleDays,priorityScore,profile,rankedSkills,weakest,focusForDay,reviewFocus,registerMilestone,isComplete,isUnlocked,unmet,curriculum};
+  window.UKRAINIAN_LEARNING_CORE={version:VERSION,skills:[...SKILLS],labels:{...LABELS},normalize,accepts,introductionDay,introductionDays,isIntroduced,allIntroduced,anchorDay,recordSession,cumulativeScore,recentScore,skillScore,staleDays,priorityScore,profile,rankedSkills,weakest,focusForDay,reviewFocus,registerMilestone,isComplete,isUnlocked,unmet,curriculum,historyWeightAware:true};
 })();
