@@ -103,7 +103,8 @@
     ];
     for(const [path,label] of modules){
       const legacySelftest=path.includes('ukrainischkurs-selftest.js?v=45');
-      if(legacySelftest){restoreDeferredDay();window.UKRAINIAN_COURSE_LOADER.version=56}
+      if(legacySelftest)restoreDeferredDay();
+      if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=56;
       await loadScript(path,label);
       if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     }
