@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='51';
+  const VERSION='52';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -56,13 +56,14 @@
       ['./ukrainischkurs-real-conversation.js?v=1','Später Real Conversation Mode'],
       ['./ukrainischkurs-weekly-evaluator.js?v=2','10-Fragen-Check mit später Fehleranalyse'],
       ['./ukrainischkurs-immersion-textlab.js?v=1','Später Immersion Text Lab'],
+      ['./ukrainischkurs-late-input-expansion.js?v=1','Zwölf zusätzliche späte A1/A1+ Input-Lektionen'],
       ['./ukrainischkurs-a1-exam.js?v=2','Doppelt bestätigte CEFR-A1-Prüfung'],
       ['./ukrainischkurs-a1-cando.js?v=7','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
       ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
-      ['./ukrainischkurs-selftest.js?v=40','Selbsttest']
+      ['./ukrainischkurs-selftest.js?v=41','Selbsttest']
     ];
     for(const [path,label] of modules)await loadScript(path,label);
   }catch(error){
