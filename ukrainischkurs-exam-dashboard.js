@@ -60,7 +60,7 @@
   function weakestSkill(){const ranked=signals().filter(x=>x.score!=null).sort((a,b)=>a.score-b.score||a.evidence-b.evidence);return ranked[0]?.skill||core.weakest?.()||'grammar'}
   function recommendedMode(){const sig=signals();if(sig.some(x=>x.status==='red'))return'weak';const h=history(),lastFull=[...h].reverse().find(x=>x.mode==='full'),done=completedCourseDays(),lastDone=Number(lastFull?.courseDone ?? lastFull?.day ?? 0);if(done>=24&&(!lastFull||done-lastDone>=12))return'full';return'standard'}
   function simulationDue(){
-    const h=history(),last=h[h.length-1],done=completedCourseDays();if(done<8)return false;if(WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return true;if(!last)return true;
+    const h=history(),last=h[h.length-1],done=completedCourseDays();if(WEEKLY_REVIEW_DAYS.includes(Number(s.day)))return true;if(done<8)return false;if(!last)return true;
     const lastDone=Number(last.courseDone ?? last.day ?? 0);return done-lastDone>=4
     // v58 compatibility marker: (Number(s.day)||0)-Number(last.day||0)>=4
   }
