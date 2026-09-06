@@ -1,5 +1,18 @@
 (async()=>{
-  const VERSION='58';
+  const VERSION='59';
+  const STATE_KEY='ukrainischkurs-joel-v4',LEGACY_STATE_KEY='ukrainisch-mit-liebe-v2';
+  function persistedDay(){
+    try{
+      for(const key of [STATE_KEY,LEGACY_STATE_KEY]){
+        const raw=window.localStorage?.getItem(key);if(!raw)continue;
+        const parsed=JSON.parse(raw),day=Number(parsed?.day);
+        if(Number.isInteger(day)&&day>=0)return day;
+      }
+    }catch{}
+    return null;
+  }
+  const deferredDay=persistedDay();
+  window.UKRAINIAN_DEFERRED_DAY_RESTORE={captured:deferredDay,restored:false,status:'pending',courseLength:0,effectiveDay:null};
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -11,6 +24,22 @@
       window.addEventListener('error',onRuntimeError);script.onerror=()=>fail(new Error(label+' fehlt'));
       script.onload=()=>setTimeout(()=>{if(settled)return;settled=true;cleanup();resolve()},0);document.head.append(script);
     });
+  }
+  function restoreDeferredDay(){
+    const info=window.UKRAINIAN_DEFERRED_DAY_RESTORE,target=info?.captured;
+    info.courseLength=Array.isArray(D)?D.length:0;
+    if(!Number.isInteger(target)){info.status='none';info.effectiveDay=Number(s?.day)||0;return}
+    if(target<0||target>=info.courseLength){info.status='out-of-range';info.effectiveDay=Number(s?.day)||0;return}
+    const changed=Number(s.day)!==target;s.day=target;info.restored=true;info.status=changed?'restored':'already-correct';info.effectiveDay=target;
+    if(changed){
+      // Die Basis-App kennt beim ersten Parsen nur ihre ursprünglichen 30 Tage und
+      // kann einen späteren gültigen Tag temporär auf 0 setzen. Nach allen
+      // Kurserweiterungen stellen wir exakt den zuvor persistenten Tag wieder her.
+      // Direkte Persistenz vermeidet dabei eine künstliche Sync-Revision nur durch Reload.
+      try{window.localStorage?.setItem(STATE_KEY,JSON.stringify(s))}catch{}
+      if(typeof ensureDaily==='function')ensureDaily();
+      render();if(typeof stats==='function')stats();
+    }
   }
   try{
     await loadScript(`./ukrainischkurs-v2-core.js?v=${VERSION}`,'Statischer Kurskern');
@@ -26,7 +55,7 @@
       ['./ukrainischkurs-reading-bridge.js?v=1','Lese-Brücke'],
       ['./ukrainischkurs-reading-transfer.js?v=2','Lese-Transfer'],
       ['./ukrainischkurs-adaptive-srs.js?v=2','Adaptives SRS'],
-      ['./ukrainischkurs-learning-core.js?v=5','Zentraler Lernkern mit Aktualitätsgewichtung'],
+      ['./ukrainischkurs-learning-core.js?v=5','Zentraler Lernkern mit gewichteter Aktualität'],
       ['./ukrainischkurs-device-continuity.js?v=2','Sicherer Laptop-/iPhone-Schnelltransfer'],
       ['./ukrainischkurs-error-memory.js?v=1','Intelligentes Fehlergedächtnis'],
       ['./ukrainischkurs-grammar-decoder.js?v=2','Grammar Decoder mit Fehlertypen'],
@@ -68,20 +97,22 @@
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
-      ['./ukrainischkurs-exam-dashboard.js?v=1','Lernampel und häufige Übungsprüfungen'],
+      ['./ukrainischkurs-exam-dashboard.js?v=2','Lernampel und gehärtete Übungsprüfungen'],
       ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
       ['./ukrainischkurs-selftest.js?v=45','Basis-Selbsttest v45']
     ];
     for(const [path,label] of modules){
       const legacySelftest=path.includes('ukrainischkurs-selftest.js?v=45');
-      if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=56;
+      if(legacySelftest){restoreDeferredDay();window.UKRAINIAN_COURSE_LOADER.version=56}
       await loadScript(path,label);
       if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     }
     window.UKRAINIAN_COURSE_LOADER.version=57;
     await loadScript('./ukrainischkurs-selftest-v57.js?v=1','v57 Zusatz-Selbsttest');
-    window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
+    window.UKRAINIAN_COURSE_LOADER.version=58;
     await loadScript('./ukrainischkurs-selftest-v58.js?v=1','v58 Zusatz-Selbsttest');
+    window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
+    await loadScript('./ukrainischkurs-selftest-v59.js?v=1','v59 Qualitäts-Selbsttest');
   }catch(error){
     window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
