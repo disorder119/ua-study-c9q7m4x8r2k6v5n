@@ -71,9 +71,9 @@ Der „Daily Lesson Creator“ wurde bewusst nicht als Zufallsgenerator umgesetz
 
 `ukrainischkurs-immersion-textlab.js` nimmt später echte ukrainische Texte entgegen, misst die Wortabdeckung anhand des bereits eingeführten Kursmaterials, markiert bekannte/unbekannte Wörter, liest den Text vor und kann unbekannte Wörter zu „Meine Wörter“ weitergeben. Es behauptet bewusst **keine automatische Übersetzung**, wenn keine verlässliche Übersetzungsengine vorhanden ist. Das Textlabor ist freiwillig und A1-neutral.
 
-## Zusätzlicher später A1/A1+ Input ab v52–v55
+## Zusätzlicher später A1/A1+ Input ab v52–v56
 
-Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **48 weitere geführte Lektionen mit insgesamt 240 zusätzlichen Lernobjekten**. Sie verlängern nicht die frühe Alphabet-/Anfängerphase, sondern geben erst nach der vorhandenen Grammatik-, Hör-, Sprech- und Transferbasis deutlich mehr reale Sprachmenge.
+Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **64 weitere geführte Lektionen mit insgesamt 320 zusätzlichen Lernobjekten**. Sie verlängern nicht die frühe Alphabet-/Anfängerphase, sondern geben erst nach der vorhandenen Grammatik-, Hör-, Sprech- und Transferbasis deutlich mehr reale Sprachmenge. Der gesamte geführte Pfad liegt damit bei rund **164 Kursslots** vor den adaptiven Zusatzwiederholungen.
 
 `ukrainischkurs-late-input-expansion.js` bringt die ersten 12 Lektionen zu Tagesablauf, Plänen, Restaurant, Kleidung/Größe, Bahn/Tickets, Wegbeschreibung, Wetter, Unterkunft, Arbeit/Schicht, Nachrichten, Terminen und Verabredungen.
 
@@ -83,7 +83,17 @@ Direkt vor der bestehenden A1-Prüfungsphase liegen jetzt **48 weitere geführte
 
 `ukrainischkurs-interaction-input-expansion.js` bringt weitere 12 Lektionen zu Rückfragen, Verabredungsänderungen, Mengen/Bezahlen, Restaurant-Reklamation, Umsteigen/Aussteigen, Hotelankunft, Haushalt, Arbeitskoordination, Telefon, Smalltalk, einfachen Begründungen und einem zusammenhängenden Tagesplan.
 
-Die späteren Blöcke enthalten zusammen zusätzliche kurze ukrainische Lesetexte, Dialogsituationen und freie 5-Satz-Transferchecks. Lesen wird getrennt erfasst; optionales Vorlesen zählt nicht fälschlich als Hörprüfung. Freie Antworten speisen Fehlergedächtnis und Kompetenz-Mastery.
+### Progressive Growth ab v56
+
+`ukrainischkurs-progressive-growth.js` ergänzt **16 weitere Lektionen mit 80 Lernobjekten**. Dieser Block ist bewusst nicht nur „mehr Stoff“: Jede einzelne Lektion besitzt ein verpflichtendes freies **Micro-Mastery-Gate**, bevor der nächste Kurstag geöffnet wird.
+
+Die Schwierigkeit steigt kontrolliert. In Stufe 1 zeigt die App bei freien Antworten noch 15 Anfangszeichen als Starthilfe; danach wird die Hilfe **in jeder einzelnen Lektion um genau ein Zeichen reduziert**, bis Stufe 16 ganz ohne sichtbare Anfangshilfe arbeitet. Gleichzeitig wächst der freie Abruf von zwei Aufgaben auf drei, vier und schließlich fünf Aufgaben. Ab der zweiten Lektion enthält jede Micro-Mastery außerdem einen kumulativen Abruf aus dem vorherigen Stoff.
+
+Fehler werden nicht einfach weitergeklickt: Der erste Versuch wird separat gespeichert, eine falsche Antwort muss korrekt repariert werden und erst danach läuft die Aufgabe weiter. Auf jedem zweiten neuen Kurstag kommt ein zusammenhängender Lesetext mit zwei verpflichtenden Verständnisfragen hinzu. Nach jeweils vier Lektionen prüft ein gemischter 5-Aufgaben-Retention-Checkpoint den gesamten letzten Block; 4/5 müssen im ersten Durchgang stimmen.
+
+Die 16 Stufen entwickeln sich von sicherem Nachfragen über Satzverknüpfung, einfache Gründe, Zeitabläufe, Vergangenheit/Zukunft und Vergleiche bis zu Problem-Lösung, genaueren Ortsangaben, Arbeitsstatus, dreistufigen Erzählungen/Plänen, gemischten Zeiten, Meinung + Begründung + Beispiel, natürlicher Gesprächsreaktion und einer kleinen freien Mini-Erzählung.
+
+Die späteren Blöcke enthalten zusammen zusätzliche ukrainische Lesetexte, Dialogsituationen und freie Transferchecks. Lesen wird getrennt erfasst; optionales Vorlesen zählt nicht fälschlich als Hörprüfung. Freie Antworten speisen Fehlergedächtnis und Kompetenz-Mastery.
 
 Alle Inputblöcke bleiben vor der Prüfung angesiedelt und verändern **weder die A1-Prüfungsschwellen noch die bestehenden A1-Milestones**.
 
@@ -111,7 +121,7 @@ Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v55.mjs` übernimmt die vollständigen v54/v53/v52/v51-Regressionsregeln und prüft zusätzlich Device Continuity v2, den URL-Fragment-Schnelltransfer mit Plain-Fallback, Loader/Offline-Cache sowie den vierten späten Inputblock mit 12 Lektionen, 60 Lernobjekten, sechs Lesetexten, sechs Dialogsituationen und drei freien Transferchecks. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v56.mjs` übernimmt die vollständigen v55/v54/v53/v52/v51-Regressionsregeln und prüft zusätzlich die 16-stufige Progressive-Growth-Kurve: 80 Lernobjekte, Pflicht-Micro-Mastery auf jedem neuen Tag, streng sinkende Starthilfe 15→0, wachsenden freien Abruf 2→5, kumulative Wiederholung, getrennte Erstversuchs-/Reparaturdaten, acht Lesetexte, acht Dialogsituationen, vier Retention-Checkpoints, Loader-Reihenfolge, Offline-Cache sowie die Unverändertheit der A1-Prüfung. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
 
 Aktuelle Kernmodule umfassen unter anderem:
 
@@ -141,6 +151,7 @@ Aktuelle Kernmodule umfassen unter anderem:
 - `ukrainischkurs-natural-input-expansion.js`
 - `ukrainischkurs-bridge-input-expansion.js`
 - `ukrainischkurs-interaction-input-expansion.js`
+- `ukrainischkurs-progressive-growth.js`
 - `ukrainischkurs-daily-coach.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
