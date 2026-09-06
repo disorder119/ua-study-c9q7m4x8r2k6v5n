@@ -25,60 +25,55 @@ Das SRS speichert Lerntage, Intervall, Ease, Rückfälle und Problemstatus. Neue
 
 Eine richtige Antwort unmittelbar nach einem Fehler ist nur **Reparatur**. Sie erhöht die Langzeitstufe nicht und muss am Folgetag erneut aus dem Gedächtnis bewiesen werden.
 
-Zusätzlich führt der zentrale Lernkern ein Skill-Profil für **Lesen, Hören, Schreiben, Sprechen und Grammatik**. Für die Review-Priorität zählt nicht mehr nur der historische Gesamtdurchschnitt: die jüngsten bis zu acht Messungen werden stärker gewichtet, unterstützte Durchgänge schwächer, und bei ähnlichen Leistungswerten werden länger nicht geprüfte Bereiche moderat vorgezogen. Alte Fehler bleiben als Langzeitevidenz erhalten, dominieren die Auswahl aber nicht dauerhaft.
+Zusätzlich führt der zentrale Lernkern ein Skill-Profil für **Lesen, Hören, Schreiben, Sprechen und Grammatik**. Für die Review-Priorität zählt nicht nur der historische Gesamtdurchschnitt: die jüngsten bis zu acht Messungen werden stärker gewichtet, unterstützte Durchgänge schwächer, und bei ähnlichen Leistungswerten werden länger nicht geprüfte Bereiche moderat vorgezogen.
 
 ## A1-Grundkurs
 
-Die frühere Wortphase wurde in zwei Stufen um insgesamt **20 zusätzliche Grundlagenlektionen mit 100 Lernobjekten** erweitert. Themen sind unter anderem:
+Die frühere Wortphase wurde in zwei Stufen um insgesamt **20 zusätzliche Grundlagenlektionen mit 100 Lernobjekten** erweitert. Themen sind unter anderem Menschen/Familie, zentrale Verbchunks, Verneinung, Fragewörter, Zahlen, Einkaufen, Bus/Zug, Gesundheit/Hilfe, Essen/Trinken, Orte, Bewegung und persönliche Angaben.
 
-- Menschen und Familie
-- мій / моя / моє / мої
-- zentrale Ich- und Du-Verbchunks
-- Verneinung
-- Fragewörter und echte Fragen
-- Zahlen bis 20
-- Einkaufen und Preis
-- Bus, Zug und Haltestelle
-- Gesundheit und Hilfe
-- Essen und Trinken als Bedürfnisse
-- wichtige Orte
-- Gehen, Fahren, Essen und Trinken
-- persönliche Angaben und Selbstvorstellung
-- flexible Satzrahmen für konkrete Bedürfnisse
+Wichtige Sprachmuster werden in kleinen Gates geprüft. Spätere Brücken systematisieren Ort/Richtung, Akkusativ, Zeitformen und praktische Genitivmuster.
 
-Wichtige Sprachmuster werden zunächst in kleinen 3-Fragen-Gates geprüft. Alle drei müssen in einem frischen Durchgang korrekt sein.
+## Freie Produktion und Transfer
 
-## Freie Produktion
-
-Auf späteren Review-Tagen reicht Wiedererkennen nicht. Die App zeigt deutsche Absichten und verlangt die **freie ukrainische Eingabe ohne Antwortbuttons**. Kritische Alltagssätze dürfen nicht durch Raten bestanden werden.
-
-## Verständnis-Labor
-
-Kurze neue Lese- und Hörsituationen prüfen Transfer auf Material, das nicht einfach als Karte wiedererkannt werden kann. Inhalte erscheinen erst, nachdem die dafür nötigen Wörter und Muster eingeführt wurden.
-
-## Grammatik-Spirale
-
-Ab den späteren Review-Tagen werden bereits gelernte Muster **ohne Themenhinweis gemischt**. Die Aufgabe verrät nicht, ob gerade Besitz, Verneinung, Fragebildung, Bedürfnis oder Ortsfrage gebraucht wird. Antworten müssen frei auf Ukrainisch erzeugt werden.
-
-Pro Review werden bis zu sechs gemischte Aufgaben gezogen. Höchstens ein unkritischer Fehler ist erlaubt; wichtige Sätze zu Preis, Orientierung, Hilfe und Nichtverstehen müssen korrekt sein.
-
-## Mini-Geschichten
-
-Das Story Lab verbindet einzelne Sätze zu kurzen zusammenhängenden Texten. Der Text wird einmal gelesen und anschließend **ausgeblendet**. Danach folgen drei Verständnisfragen. Bestehen nur mit 3/3. Damit wird Inhalt über Satzgrenzen hinweg verarbeitet statt nur einzelne Karten zu erkennen.
-
-## Hör-Diktat
-
-Auf Review-Tagen werden bereits eingeführte ukrainische Sätze **ohne sichtbare Vorlage** abgespielt und anschließend frei getippt. Erst nach der Eingabe erscheint die Lösung. Die derzeitige Satzwiedergabe nutzt System-TTS und ist transparent als technischer Hörkanal gekennzeichnet; sie wird nicht als Ersatz für echtes Muttersprachler-Audio ausgegeben.
+Auf späteren Review-Tagen reicht Wiedererkennen nicht. Die App verlangt freie ukrainische Eingaben, gemischte Grammatik, unbekannte Lese-/Hörsituationen, Mini-Geschichten, Hör-Diktate und zusammenhängende Dialoge. Kritische Alltagssätze dürfen nicht durch Raten bestanden werden.
 
 ## Spontaner Sprechtransfer
 
 Auf ausgewählten späteren Review-Tagen hört der Lernende eine ukrainische Frage ohne mitzulesen und antwortet sofort laut. Bei verfügbarem Mikrofon gehören Aufnahme und vollständiges Rückhören zum Durchgang; danach wird exakt getippt, was gesprochen wurde. Die Frage kann höchstens zweimal abgespielt werden.
 
-Ein eingeblendeter Fragetext oder ein technischer Mikrofon-Fallback bleibt erlaubt, wird aber transparent als unterstützter Durchgang markiert und im Skill-Profil schwächer gewichtet. Es gibt bewusst **keine künstliche Akzentnote**.
+Ein eingeblendeter Fragetext oder technischer Mikrofon-Fallback wird transparent als unterstützt markiert und im Skill-Profil schwächer gewichtet. Es gibt bewusst **keine künstliche Akzentnote**.
+
+## Späte Lernwerkzeuge ab v50
+
+Die zusätzlichen Ideen aus allgemeinen Sprachlern-Prompts werden **nicht an den Kursanfang gesetzt**, sondern erst freigeschaltet, wenn die nötige Basis wirklich vorhanden ist.
+
+### Geführter Tagesplan
+
+Der „Daily Lesson Creator“ wurde bewusst nicht als Zufallsgenerator umgesetzt. Nach der ersten systematischen Grammatikbrücke zeigt `ukrainischkurs-daily-coach.js` einen kompakten Plan aus dem echten aktuellen Kurstag, fälligem SRS, adaptivem Review-Fokus und gegebenenfalls Wochencheck. Optionale Praxis wird getrennt markiert.
+
+### Meine Wörter
+
+`ukrainischkurs-personal-words.js` erlaubt später eigene Wörter und Sätze aus Alltag, Reisen, Nika oder Disorder119. Diese Karten besitzen ein eigenes 1/2/4/7/14/30/60-Tage-Wiederholungssystem. Eigene Inhalte bleiben **vollständig außerhalb** der A1-Gates und des zentralen Skill-Scores, weil ihre sprachliche Qualität nicht automatisch verifiziert werden kann.
+
+### Grammar Decoder
+
+`ukrainischkurs-grammar-decoder.js` erklärt typische A1-Fehler kurz anhand des erwarteten Musters: unter anderem Ort/Richtung, häufige Akkusativformen, `немає` + Genitiv, Vergangenheit, Zukunft, Person und Verneinung. Die spätere Grammatik-Spirale verwendet diesen Decoder bei Fehlern. Die eigentliche Richtig/Falsch-Bewertung bleibt unverändert im zentralen Lernkern.
+
+### Real Conversation Mode
+
+`ukrainischkurs-real-conversation.js` erscheint erst nach der Satz-Sprechbrücke. Es gibt kontrollierte Situationen zu Café/Restaurant, Reisen/Ticket, Nichtverstehen/Hilfe und Kennenlernen/Alltag. Der Modus verzweigt innerhalb bereits eingeführter A1-Sprache, ist aber bewusst **kein vorgetäuschter KI-Chat**. Er ist freiwillig und verändert keine A1-Bestehenswerte.
+
+### 10-Fragen-Wochencheck
+
+`ukrainischkurs-weekly-evaluator.js` erscheint erst nach der Zeit-Grammatik und nur periodisch auf späteren Review-Tagen, damit der Kurs nicht überladen wird. Der Check enthält je zwei Aufgaben zu Lesen, Hören, Schreiben, Grammatik und spontaner Sprechreaktion. Während des Checks werden **keine Lösungen verraten**; erst nach Frage 10 erscheinen Ergebnis, Lösungen und Fehlerhinweise. Es gibt keine zusätzliche Mindestpunktzahl als A1-Gate – der Check ist Diagnose und speist lediglich das adaptive Skill-Profil.
+
+### Immersion Text Lab
+
+`ukrainischkurs-immersion-textlab.js` nimmt später echte ukrainische Texte entgegen, misst die Wortabdeckung anhand des bereits eingeführten Kursmaterials, markiert bekannte/unbekannte Wörter, liest den Text vor und kann unbekannte Wörter zu „Meine Wörter“ weitergeben. Es behauptet bewusst **keine automatische Übersetzung**, wenn keine verlässliche Übersetzungsengine vorhanden ist. Das Textlabor ist freiwillig und A1-neutral.
 
 ## Handlungsorientierter Abschluss
 
-Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check**. Er enthält freie Eingaben, Hörfragen und Verständnis-/Situationsaufgaben. Nichtverstehen, Preis, Haltestelle und Hilfe sind kritische Pflichtsituationen.
+Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check** mit freien Eingaben, Hörfragen und Verständnis-/Situationsaufgaben. Nichtverstehen, Preis, Haltestelle und Hilfe sind kritische Pflichtsituationen.
 
 Bestehen: mindestens 13/16 im ersten Durchgang und alle kritischen Aufgaben korrekt. Fehler werden anschließend repariert.
 
@@ -90,30 +85,30 @@ Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v49.mjs` läuft über GitHub Actions und übernimmt den vollständigen v48-Regressionsschutz. Zusätzlich simuliert er die neue Skill-Aktualitätsgewichtung: jüngere Verbesserungen müssen den adaptiven Wert sichtbar anheben, veraltete Messungen dürfen bei ähnlicher Leistung leicht vorgezogen werden, und innerhalb der ersten drei Tage gibt es keine künstliche Vergessensstrafe.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v50.mjs` übernimmt sämtliche v49-Schutzregeln und prüft zusätzlich die sechs späteren Lernwerkzeuge, Loader-Reihenfolge, Offline-Cache, A1-Neutralität der freiwilligen Module, verzögerte Freischaltung sowie konkrete Grammar-Decoder-Regeln. `tests/validate-a1-options.mjs` bleibt als gesonderter A1-Auswahltest bestehen.
 
-Aktuelle Kernmodule:
+Aktuelle Kernmodule umfassen unter anderem:
 
 - `ukrainischkurs-adaptive-alphabet.js`
 - `ukrainischkurs-alphabet-proof.js`
-- `ukrainischkurs-native-audio.js`
-- `ukrainischkurs-pronunciation.js`
-- `ukrainischkurs-pronunciation-mastery.js`
-- `ukrainischkurs-quality-hardening.js`
-- `ukrainischkurs-learning-state-guard.js`
-- `ukrainischkurs-reading-bridge.js`
-- `ukrainischkurs-reading-transfer.js`
 - `ukrainischkurs-adaptive-srs.js`
 - `ukrainischkurs-learning-core.js`
 - `ukrainischkurs-skill-profile.js`
-- `ukrainischkurs-foundation-expansion.js`
-- `ukrainischkurs-a1-expansion-2.js`
+- `ukrainischkurs-a1-grammar-bridge.js`
+- `ukrainischkurs-time-bridge.js`
+- `ukrainischkurs-genitive-bridge.js`
 - `ukrainischkurs-comprehension-lab.js`
 - `ukrainischkurs-active-production.js`
 - `ukrainischkurs-grammar-spiral.js`
 - `ukrainischkurs-story-lab.js`
 - `ukrainischkurs-dictation.js`
 - `ukrainischkurs-spoken-transfer.js`
+- `ukrainischkurs-grammar-decoder.js`
+- `ukrainischkurs-personal-words.js`
+- `ukrainischkurs-real-conversation.js`
+- `ukrainischkurs-weekly-evaluator.js`
+- `ukrainischkurs-immersion-textlab.js`
+- `ukrainischkurs-daily-coach.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
 
