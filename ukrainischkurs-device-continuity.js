@@ -61,7 +61,7 @@
   const importInput=document.getElementById('import');if(importInput)importInput.onchange=e=>{const f=e.target.files?.[0];if(f)importFile(f);e.target.value=''};
   for(const id of ['reset','resetProgress']){const btn=document.getElementById(id);if(btn)btn.onclick=()=>{storeRecovery('vor-reset',s);resetProgress();renderContinuity()}}
   const originalSettingsText=document.querySelector('#settings p.small');if(originalSettingsText)originalSettingsText.textContent='Fortschritt bleibt lokal auf diesem Gerät. Für Laptop ↔ iPhone nutzt du unter Fortschritt die sichere Gerätewechsel-Datei.';
-  window.addEventListener?.('storage',e=>{if(e.key===KEY&&e.newValue){try{const other=normal(JSON.parse(e.newValue)),a=summary(other),b=summary(s);if(Date.parse(a.updatedAt||'')>Date.parse(b.updatedAt||''))toast('Ein anderer Tab hat einen neueren lokalen Lernstand gespeichert.')}}catch{}});
+  window.addEventListener?.('storage',e=>{if(e.key===KEY&&e.newValue){try{const other=normal(JSON.parse(e.newValue)),a=summary(other),b=summary(s);if(Date.parse(a.updatedAt||'')>Date.parse(b.updatedAt||''))toast('Ein anderer Tab hat einen neueren lokalen Lernstand gespeichert.')}catch{}}});
   const m=ensureMeta();if(!m.updatedAt){m.updatedAt=now();m.lastDeviceId=LOCAL_DEVICE;internalSave=true;try{baseSave()}finally{internalSave=false}}
   window.UKRAINIAN_DEVICE_CONTINUITY={version:VERSION,format:FORMAT,manualHandoff:true,automaticCloudSync:false,checksum:true,recoveryBeforeImport:true,recoveryBeforeReset:true,olderSnapshotGuard:true,courseVersionGuard:true,deviceId:LOCAL_DEVICE,summary,makeEnvelope,parsePackage,looksOlder,storeRecovery,applyProgress};
   renderContinuity();
