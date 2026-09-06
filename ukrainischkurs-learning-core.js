@@ -49,7 +49,7 @@
   function cumulativeScore(skill){const st=ensure().skills[skill];return st.weight>0?Math.round(st.scoreSum/st.weight):null}
   function recentScore(skill,limit=8){
     const st=ensure().skills[skill],hist=st.history.slice(-Math.max(1,Number(limit)||8));if(!hist.length)return null;
-    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),assistance=entry?.assisted?.65:1,evidence=clamp(Number(entry?.weight)||1,.25,4),weight=recency*assistance*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
+    let scoreSum=0,weightSum=0;hist.forEach((entry,index)=>{const age=hist.length-1-index,recency=Math.pow(.82,age),assistance=entry?.assisted ? .65 : 1,evidence=clamp(Number(entry?.weight)||1,.25,4),weight=recency*assistance*evidence;scoreSum+=clamp(Number(entry?.score)||0,0,100)*weight;weightSum+=weight});
     return weightSum?Math.round(scoreSum/weightSum):null;
   }
   function skillScore(skill){
