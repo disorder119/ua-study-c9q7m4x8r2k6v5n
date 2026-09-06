@@ -25,6 +25,8 @@ Das SRS speichert Lerntage, Intervall, Ease, Rückfälle und Problemstatus. Neue
 
 Eine richtige Antwort unmittelbar nach einem Fehler ist nur **Reparatur**. Sie erhöht die Langzeitstufe nicht und muss am Folgetag erneut aus dem Gedächtnis bewiesen werden.
 
+Zusätzlich führt der zentrale Lernkern ein Skill-Profil für **Lesen, Hören, Schreiben, Sprechen und Grammatik**. Für die Review-Priorität zählt nicht mehr nur der historische Gesamtdurchschnitt: die jüngsten bis zu acht Messungen werden stärker gewichtet, unterstützte Durchgänge schwächer, und bei ähnlichen Leistungswerten werden länger nicht geprüfte Bereiche moderat vorgezogen. Alte Fehler bleiben als Langzeitevidenz erhalten, dominieren die Auswahl aber nicht dauerhaft.
+
 ## A1-Grundkurs
 
 Die frühere Wortphase wurde in zwei Stufen um insgesamt **20 zusätzliche Grundlagenlektionen mit 100 Lernobjekten** erweitert. Themen sind unter anderem:
@@ -68,6 +70,12 @@ Das Story Lab verbindet einzelne Sätze zu kurzen zusammenhängenden Texten. Der
 
 Auf Review-Tagen werden bereits eingeführte ukrainische Sätze **ohne sichtbare Vorlage** abgespielt und anschließend frei getippt. Erst nach der Eingabe erscheint die Lösung. Die derzeitige Satzwiedergabe nutzt System-TTS und ist transparent als technischer Hörkanal gekennzeichnet; sie wird nicht als Ersatz für echtes Muttersprachler-Audio ausgegeben.
 
+## Spontaner Sprechtransfer
+
+Auf ausgewählten späteren Review-Tagen hört der Lernende eine ukrainische Frage ohne mitzulesen und antwortet sofort laut. Bei verfügbarem Mikrofon gehören Aufnahme und vollständiges Rückhören zum Durchgang; danach wird exakt getippt, was gesprochen wurde. Die Frage kann höchstens zweimal abgespielt werden.
+
+Ein eingeblendeter Fragetext oder ein technischer Mikrofon-Fallback bleibt erlaubt, wird aber transparent als unterstützter Durchgang markiert und im Skill-Profil schwächer gewichtet. Es gibt bewusst **keine künstliche Akzentnote**.
+
 ## Handlungsorientierter Abschluss
 
 Am echten letzten Kurstag folgt ein **16-teiliger Can-do-Check**. Er enthält freie Eingaben, Hörfragen und Verständnis-/Situationsaufgaben. Nichtverstehen, Preis, Haltestelle und Hilfe sind kritische Pflichtsituationen.
@@ -76,13 +84,13 @@ Bestehen: mindestens 13/16 im ersten Durchgang und alle kritischen Aufgaben korr
 
 ## Lernprinzipien
 
-Die App kombiniert aktive Erinnerung, Spacing, Interleaving, Fehler-Reparatur, Mastery Learning, Dekodier-Transfer, freie Produktion, gemischte Grammatik, zusammenhängendes Lesen und Hör-Diktat. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
+Die App kombiniert aktive Erinnerung, Spacing, Interleaving, Fehler-Reparatur, Mastery Learning, Dekodier-Transfer, freie Produktion, gemischte Grammatik, zusammenhängendes Lesen, Hör-Diktat, spontanes Sprechen und aktualitätsgewichtete adaptive Reviews. Geschwindigkeit ist kein hartes Bestehenskriterium; Genauigkeit und stabile Erinnerung kommen zuerst.
 
 Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht automatisch empirische Lernwirkung. Die reale Lernwirkung muss langfristig zusätzlich mit echten Anfängern und verzögerten Retentionstests gemessen werden.
 
 ## Qualitätssicherung
 
-`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate.mjs` läuft bei jedem Push über GitHub Actions und prüft Syntax, Loader/Cache, Alphabet-Mastery, Audioquellen, Lese-Transfer, SRS, A1-Erweiterungen, freie Produktion, Grammatik-Spirale, Mini-Geschichten, Hör-Diktat und Can-do-Abschluss.
+`ukrainischkurs-selftest.js` prüft beim App-Start zentrale Laufzeit-Invarianten. `tests/validate-v49.mjs` läuft über GitHub Actions und übernimmt den vollständigen v48-Regressionsschutz. Zusätzlich simuliert er die neue Skill-Aktualitätsgewichtung: jüngere Verbesserungen müssen den adaptiven Wert sichtbar anheben, veraltete Messungen dürfen bei ähnlicher Leistung leicht vorgezogen werden, und innerhalb der ersten drei Tage gibt es keine künstliche Vergessensstrafe.
 
 Aktuelle Kernmodule:
 
@@ -92,9 +100,12 @@ Aktuelle Kernmodule:
 - `ukrainischkurs-pronunciation.js`
 - `ukrainischkurs-pronunciation-mastery.js`
 - `ukrainischkurs-quality-hardening.js`
+- `ukrainischkurs-learning-state-guard.js`
 - `ukrainischkurs-reading-bridge.js`
 - `ukrainischkurs-reading-transfer.js`
 - `ukrainischkurs-adaptive-srs.js`
+- `ukrainischkurs-learning-core.js`
+- `ukrainischkurs-skill-profile.js`
 - `ukrainischkurs-foundation-expansion.js`
 - `ukrainischkurs-a1-expansion-2.js`
 - `ukrainischkurs-comprehension-lab.js`
@@ -102,6 +113,7 @@ Aktuelle Kernmodule:
 - `ukrainischkurs-grammar-spiral.js`
 - `ukrainischkurs-story-lab.js`
 - `ukrainischkurs-dictation.js`
+- `ukrainischkurs-spoken-transfer.js`
 - `ukrainischkurs-a1-cando.js`
 - `ukrainischkurs-selftest.js`
 
