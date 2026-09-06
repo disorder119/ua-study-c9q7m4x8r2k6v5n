@@ -1,5 +1,5 @@
 (async()=>{
-  const VERSION='56';
+  const VERSION='57';
   window.UKRAINIAN_COURSE_LOADER={version:Number(VERSION),mode:'external-core-script',evalFree:true,staticCore:true};
   function loadScript(path,label){
     return new Promise((resolve,reject)=>{
@@ -62,16 +62,24 @@
       ['./ukrainischkurs-bridge-input-expansion.js?v=1','Zwölf weitere A1+ Brückenlektionen mit Alltagssprache'],
       ['./ukrainischkurs-interaction-input-expansion.js?v=1','Zwölf weitere A1+ Interaktionslektionen'],
       ['./ukrainischkurs-progressive-growth.js?v=1','Sechzehn progressive A1+ Steigerungslektionen mit Micro-Mastery'],
+      ['./ukrainischkurs-independence-ladder.js?v=1','Sechzehn weitere A1+ Unabhängigkeitslektionen mit Audio-first und freiem Output'],
       ['./ukrainischkurs-a1-exam.js?v=2','Doppelt bestätigte CEFR-A1-Prüfung'],
       ['./ukrainischkurs-a1-cando.js?v=7','A1 Can-do-Abschluss'],
       ['./ukrainischkurs-uk-keyboard.js?v=2','Ukrainische Eingabehilfe'],
       ['./ukrainischkurs-dynamic-course-ui.js?v=2','Dynamische Kursanzeige'],
       ['./ukrainischkurs-skill-profile.js?v=3','Aktualitätsgewichtetes Skill-Profil'],
       ['./ukrainischkurs-daily-coach.js?v=2','Tagesplan mit Muster-/Fehlerfokus'],
-      ['./ukrainischkurs-selftest.js?v=45','Selbsttest']
+      ['./ukrainischkurs-selftest.js?v=45','Basis-Selbsttest v45']
     ];
-    for(const [path,label] of modules)await loadScript(path,label);
+    for(const [path,label] of modules){
+      const legacySelftest=path.includes('ukrainischkurs-selftest.js?v=45');
+      if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=56;
+      await loadScript(path,label);
+      if(legacySelftest)window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
+    }
+    await loadScript('./ukrainischkurs-selftest-v57.js?v=1','v57 Zusatz-Selbsttest');
   }catch(error){
+    window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
     const toast=document.getElementById('toast');if(toast){toast.textContent='Die neue Kurslogik konnte nicht geladen werden. Bitte App neu öffnen.';toast.classList.add('show');}
   }
