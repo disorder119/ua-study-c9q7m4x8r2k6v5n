@@ -29,8 +29,12 @@
   }
   function playExample(letter,button){
     const row=EXAMPLE[letter];if(!row)return;
+    const nativeMeta=window.UKRAINIAN_PRONUNCIATION_META?.[letter],nativeSrc=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];
+    if(nativeSrc&&nativeMeta?.label===row[0]){
+      const audio=new Audio(nativeSrc);button?.classList.add('playing');audio.onended=()=>button?.classList.remove('playing');audio.onerror=()=>button?.classList.remove('playing');audio.play().then(markListened).catch(()=>button?.classList.remove('playing'));return;
+    }
     const voice=('speechSynthesis'in window)&&speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('uk'));
-    if(!voice){toast('Für Audio bitte zuerst eine ukrainische Systemstimme installieren. Die Schreib- und Leseübungen funktionieren trotzdem.');return}
+    if(!voice){toast('Für dieses Beispiel ist keine sichere ukrainische Stimme verfügbar. Lesen und Schreiben funktionieren trotzdem.');return}
     if(!window.SpeechSynthesisUtterance)return;
     const u=new SpeechSynthesisUtterance(row[0]);u.lang=voice.lang;u.voice=voice;u.rate=.72;u.pitch=1;
     u.onstart=()=>button?.classList.add('playing');u.onend=()=>button?.classList.remove('playing');u.onerror=()=>button?.classList.remove('playing');
@@ -69,22 +73,23 @@
   function renderSimpleStart(){
     let box=document.getElementById('simpleFoundationStart');
     if(!foundation()){box?.remove();return}
+    const streakEl=$('streak');if(streakEl)streakEl.textContent='Alphabet';
     const learn=$('learn'),anchor=learn?.querySelector('article.card');if(!learn||!anchor)return;
     if(!box){box=document.createElement('article');box.id='simpleFoundationStart';box.className='card simple-start';anchor.insertAdjacentElement('beforebegin',box)}
-    const day=Number(s.day),p=lessonState(day);
+    const day=Number(s.day),p=lessonState(day);if(p.testPassed)syncLesson(day);
     if(day<INTRO_DAYS){
-      const letters=todayLetters(),seen=seenCount(),written=writingDone(),tested=!!p.testPassed;
-      const primary=!allSeen()?['Alphabet lernen',()=>show('alphabet')]:!written?['Jetzt schreiben',()=>show('write')]:!tested?['Mini-Check starten',()=>document.getElementById('startQuiz')?.click()]:['Heute geschafft',()=>show('alphabet')];
+      const letters=todayLetters(),seen=seenCount(),written=writingDone(),tested=!!p.testPassed,nextAllowed=!!window.UKRAINIAN_LEARNING_STATE_GUARD?.alphabetDayAllowed?.(day+1);
+      const primary=!allSeen()?['Alphabet lernen',()=>show('alphabet')]:!written?['Jetzt schreiben',()=>show('write')]:!tested?['Mini-Check starten',()=>document.getElementById('startQuiz')?.click()]:nextAllowed?['Nächsten Buchstabentag starten',()=>advanceLesson()]:['Für heute fertig',()=>toast('Der nächste neue Buchstabentag öffnet sich morgen. Du kannst heute freiwillig weiter schreiben.')];
       box.innerHTML='<div class="simple-kicker">Dein klarer Lernweg</div><h2>Heute nur '+letters.join(' · ')+'</h2><p>Keine sechs Pflichtaufgaben. Du lernst zuerst die Zeichen und schreibst sie. Aussprache kannst du zusätzlich hören, sie blockiert deinen Fortschritt aber nicht.</p><div class="simple-steps">'+
         '<div class="simple-step '+(allSeen()?'done':'')+'"><span>'+(allSeen()?'✓':'1')+'</span><div><strong>Buchstaben ansehen</strong><small>'+seen+' von '+letters.length+' angesehen</small></div><b>2–3 Min.</b></div>'+
         '<div class="simple-step '+(written?'done':'')+'"><span>'+(written?'✓':'2')+'</span><div><strong>Schreiben</strong><small>Einen der heutigen Buchstaben nachzeichnen</small></div><b>3–5 Min.</b></div>'+
         '<div class="simple-step '+(tested?'done':'')+'"><span>'+(tested?'✓':'3')+'</span><div><strong>Mini-Check</strong><small>Nur kurz prüfen, ob du die Laute wiedererkennst</small></div><b>1–2 Min.</b></div></div>'+
-        '<button class="primary simple-main" id="simplePrimary">'+primary[0]+'</button><div class="simple-secondary-row"><button class="secondary" id="simpleAlphabet">Alphabet öffnen</button><button class="secondary" id="simpleWrite">Schreiben öffnen</button></div><div class="simple-note">Audio ist nur Hilfe: Beim Antippen wird ein echtes ukrainisches Beispielwort gesprochen. Der Buchstabe allein wird nicht mehr an die Systemstimme geschickt.</div>';
+        '<button class="primary simple-main" id="simplePrimary">'+primary[0]+'</button><div class="simple-secondary-row"><button class="secondary" id="simpleAlphabet">Alphabet öffnen</button><button class="secondary" id="simpleWrite">Schreiben öffnen</button></div><div class="simple-note">Audio ist nur Hilfe: Es wird ein echtes ukrainisches Beispielwort gesprochen. Isolierte Buchstaben werden nicht mehr an die Systemstimme geschickt.</div>';
       box.querySelector('#simplePrimary').onclick=primary[1];box.querySelector('#simpleAlphabet').onclick=()=>show('alphabet');box.querySelector('#simpleWrite').onclick=()=>show('write');
     }else{
-      const tested=!!p.testPassed,names=['Verwechslungen prüfen','Alphabet festigen','Alphabet abschließen'];
-      box.innerHTML='<div class="simple-kicker">Alphabet · fast fertig</div><h2>'+names[day-11]+'</h2><p>Heute gibt es keine neuen Buchstaben. Ein kurzer Check reicht.</p><div class="simple-steps"><div class="simple-step '+(tested?'done':'')+'"><span>'+(tested?'✓':'1')+'</span><div><strong>'+names[day-11]+'</strong><small>Keine Aussprachepflicht, kein Zusatzprogramm</small></div><b>3–5 Min.</b></div></div><button class="primary simple-main" id="simplePrimary">'+(tested?'Heute geschafft':'Geführten Check starten')+'</button>';
-      box.querySelector('#simplePrimary').onclick=()=>tested?show('alphabet'):document.getElementById('startQuiz')?.click();
+      const tested=!!p.testPassed,names=['Verwechslungen prüfen','Alphabet festigen','Alphabet abschließen'],nextAllowed=day<ALPHABET_DAYS-1&&!!window.UKRAINIAN_LEARNING_STATE_GUARD?.alphabetDayAllowed?.(day+1);
+      box.innerHTML='<div class="simple-kicker">Alphabet · fast fertig</div><h2>'+names[day-11]+'</h2><p>Heute gibt es keine neuen Buchstaben. Ein kurzer Check reicht.</p><div class="simple-steps"><div class="simple-step '+(tested?'done':'')+'"><span>'+(tested?'✓':'1')+'</span><div><strong>'+names[day-11]+'</strong><small>Keine Aussprachepflicht, kein Zusatzprogramm</small></div><b>3–5 Min.</b></div></div><button class="primary simple-main" id="simplePrimary">'+(!tested?'Geführten Check starten':nextAllowed?'Nächsten Alphabettag starten':'Für heute fertig')+'</button>';
+      box.querySelector('#simplePrimary').onclick=()=>!tested?document.getElementById('startQuiz')?.click():nextAllowed?advanceLesson():toast(day===ALPHABET_DAYS-1?'Alphabet geschafft. Danach öffnet sich der nächste Lernabschnitt.':'Der nächste Alphabettag öffnet sich morgen.');
     }
   }
 
@@ -111,6 +116,10 @@
 
   const baseWrite=renderWrite;
   renderWrite=function(){
+    if(foundation()&&intro()){
+      const letters=todayLetters(),current=currentLetter()?.[0];
+      if(letters.length&&!letters.includes(current)){s.writing.letter=ORDER.indexOf(letters[0]);s.writing.count=0;s.writing.target=10}
+    }
     baseWrite.apply(this,arguments);if(!foundation()||!intro())return;
     const box=$('write')?.querySelector('article.card'),head=box?.querySelector('.practice-head');if(!box||!head)return;
     let picker=document.getElementById('simpleWritePicker');if(!picker){picker=document.createElement('div');picker.id='simpleWritePicker';picker.className='simple-write-picker';head.insertAdjacentElement('afterend',picker)}
@@ -127,6 +136,9 @@
   const baseLessonComplete=lessonComplete;
   lessonComplete=function(di){if(Number(di)<ALPHABET_DAYS){const p=s.lessonProgress?.[di];return !!(p&&p.testPassed&&p.reviewDone)}return baseLessonComplete.apply(this,arguments)};
   syncLessons();
+
+  const baseProgress=progress;
+  progress=function(){const out=baseProgress.apply(this,arguments);if(foundation()){const e=$('streak');if(e)e.textContent='Alphabet'}return out};
 
   function applyMode(){
     ensureWriteTab();bindTabs();const on=foundation();document.body.classList.toggle('foundation-simple',on);
