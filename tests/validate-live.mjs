@@ -8,6 +8,7 @@ const realSw=fs.readFileSync(swPath,'utf8');
 const loader=fs.readFileSync(path.join(root,'ukrainischkurs-v2-loader.js'),'utf8');
 const guided=fs.readFileSync(path.join(root,'ukrainischkurs-guided-start.js'),'utf8');
 const writingHardening=fs.readFileSync(path.join(root,'ukrainischkurs-guided-writing-hardening.js'),'utf8');
+const flowHardening=fs.readFileSync(path.join(root,'ukrainischkurs-guided-flow-hardening.js'),'utf8');
 const nativeAudio=fs.readFileSync(path.join(root,'ukrainischkurs-native-audio.js'),'utf8');
 const pronunciation=fs.readFileSync(path.join(root,'ukrainischkurs-pronunciation.js'),'utf8');
 const mastery=fs.readFileSync(path.join(root,'ukrainischkurs-pronunciation-mastery.js'),'utf8');
@@ -18,8 +19,8 @@ const a1HumanListening=fs.readFileSync(path.join(root,'ukrainischkurs-a1-human-l
 const errors=[];
 const assert=(condition,message)=>{if(!condition)errors.push(message)};
 
-assert(realSw.includes("const VERSION='67'"),'Live-Service-Worker ist nicht v67');
-for(const asset of ['./ukrainischkurs-simple-foundation.js','./ukrainischkurs-guided-start.js','./ukrainischkurs-guided-writing-hardening.js','./ukrainischkurs-audio-quality-gate.js','./ukrainischkurs-a1-human-listening-gate.js'])assert(realSw.includes(`'${asset}'`),`${asset} fehlt im Offline-Cache`);
+assert(realSw.includes("const VERSION='68'"),'Live-Service-Worker ist nicht v68');
+for(const asset of ['./ukrainischkurs-simple-foundation.js','./ukrainischkurs-guided-start.js','./ukrainischkurs-guided-writing-hardening.js','./ukrainischkurs-guided-flow-hardening.js','./ukrainischkurs-audio-quality-gate.js','./ukrainischkurs-a1-human-listening-gate.js'])assert(realSw.includes(`'${asset}'`),`${asset} fehlt im Offline-Cache`);
 assert(loader.includes("./ukrainischkurs-native-audio.js?v=6"),'Native Audio v6 wird nicht geladen');
 assert(loader.includes("./ukrainischkurs-pronunciation.js?v=5"),'Human-Aussprache-Coach wird nicht geladen');
 assert(loader.includes("./ukrainischkurs-pronunciation-mastery.js?v=5"),'Human-Aussprache-Mastery wird nicht geladen');
@@ -29,12 +30,13 @@ assert(loader.includes("./ukrainischkurs-spoken-transfer.js?v=2"),'Source-aware 
 assert(loader.includes("./ukrainischkurs-a1-human-listening-gate.js?v=1"),'Human-only A1-Hörnachweis wird nicht geladen');
 assert(loader.includes("await loadScript('./ukrainischkurs-guided-start.js?v=4'"),'Geführter Alphabet-Start v4 wird nicht geladen');
 assert(loader.includes("await loadScript('./ukrainischkurs-guided-writing-hardening.js?v=1'"),'Strenge Druckschrift-Nachmalprüfung wird nicht geladen');
+assert(loader.includes("await loadScript('./ukrainischkurs-guided-flow-hardening.js?v=1'"),'Geführter Tageswechsel-Fix wird nicht geladen');
 assert(loader.indexOf('human-sentence-audio.js?v=4')<loader.indexOf('audio-quality-gate.js?v=2'),'Audio-Integritätswache muss nach Human-Sentence-Audio laden');
 assert(loader.indexOf('audio-quality-gate.js?v=2')<loader.indexOf('human-listening.js?v=4'),'Audio-Integritätswache muss vor Human Listening laden');
 assert(loader.indexOf('audio-quality-gate.js?v=2')<loader.indexOf('spoken-transfer.js?v=2'),'Audio-Integritätswache muss vor Spoken Transfer laden');
 assert(loader.indexOf('a1-exam.js?v=2')<loader.indexOf('a1-human-listening-gate.js?v=1')&&loader.indexOf('a1-human-listening-gate.js?v=1')<loader.indexOf('a1-cando.js?v=7'),'Human-only A1-Hörnachweis muss zwischen A1-Prüfung und Can-do laden');
 assert(loader.indexOf('simple-foundation.js?v=1')<loader.indexOf('guided-start.js?v=4'),'Geführter Start muss nach der bisherigen Grundlagen-UI laden');
-assert(loader.indexOf('guided-start.js?v=4')<loader.indexOf('guided-writing-hardening.js?v=1'),'Schreib-Härtung muss nach dem geführten Start laden');
+assert(loader.indexOf('guided-start.js?v=4')<loader.indexOf('guided-writing-hardening.js?v=1')&&loader.indexOf('guided-writing-hardening.js?v=1')<loader.indexOf('guided-flow-hardening.js?v=1'),'Geführte Anfänger-Härtungen laden nicht in sicherer Reihenfolge');
 
 for(const marker of ['oneScreenOneTask:true','pictureLearning:true','tracing:true','humanAudioOnly:true','exactWordAudio:true','fullHumanAudio:true','strokeByStroke:true','autoHelp:true','easyFirstChoice:true','guided-trace','Los geht’s','Noch einen lernen','Bleib auf der hellen Form'])assert(guided.includes(marker),`Geführter Start vermisst ${marker}`);
 assert(!guided.includes('speechSynthesis')&&!guided.includes('SpeechSynthesisUtterance'),'Geführter Einstieg darf keine System-TTS verwenden');
@@ -42,10 +44,15 @@ assert(guided.includes("String(meta.label||'').trim().toLowerCase()!==String(x.w
 assert(!guided.includes("В'єтнам"),'Vietnam darf im geführten Alphabet-Start nicht vorkommen');
 assert(guided.includes('attempts.value>=2')&&guided.includes("classList.add('hint')"),'Automatische Hilfe nach zwei Fehlern fehlt');
 assert(guided.includes("day()===0&&store().index===0?2:3"),'Allererste Auswahl muss auf zwei Optionen reduziert sein');
+assert(guided.includes("primary('Morgen weitermachen',()=>{})"),'Baseline-Totbutton wurde unerwartet verändert; Flow-Hardening soll ihn kontrolliert reparieren');
 
 for(const marker of ['printFirst:true','normativeStrokeOrderClaim:false','spatialCoverageRequired:true','antiScribble:true','minHitRatio:.72','minCoverage:.34','GRID=12','visited=new Set','occupied=new Set','distance>=minDistance','m.hitRatio>=.72','m.coverage>=.34','cloneNode(false)','fakeSteps.hidden=true','Druckschrift zuerst'])assert(writingHardening.includes(marker),`Schreib-Härtung vermisst ${marker}`);
 assert(writingHardening.includes("st.stage='letter'")&&writingHardening.includes('done.disabled=!ready'),'Nachmalprüfung gibt den nächsten Schritt nicht ausschließlich nach bestandenem Qualitätsgate frei');
 assert(!writingHardening.includes('strokeOrder')&&!writingHardening.includes('Strichfolge ist korrekt'),'Schreib-Härtung behauptet eine unbelegte normative Strichfolge');
+
+for(const marker of ['functionalNextDayButton:true','usesExistingNextHandler:true','directDayMutation:false','respectsCalendarGate:true',"document.getElementById('next')","next.click()",'Weiter mit den nächsten Buchstaben',"st?.stage!=='complete'",'data-guided-advance'])assert(flowHardening.includes(marker),`Geführter Flow-Fix vermisst ${marker}`);
+assert(!flowHardening.includes('s.day++')&&!flowHardening.includes('s.day +=')&&!flowHardening.includes('s.day='),'Geführter Flow-Fix darf den Kurstag nicht direkt mutieren');
+assert(flowHardening.includes("if((Number(s.day)||0)>before)"),'Flow-Fix darf neuen Guided-State erst nach erfolgreichem bestehendem Tageswechsel anfassen');
 
 const guidedPairs=new Map([...guided.matchAll(/'([^']+)':\{small:'[^']*',word:'([^']+)'/g)].map(m=>[m[1],m[2]]));
 const audioPairs=new Map([...nativeAudio.matchAll(/^\s*'([^']+)':\{file:'[^']+',label:'([^']+)'/gm)].map(m=>[m[1],m[2]]));
@@ -84,15 +91,15 @@ for(const marker of ['POOL=[','poolSize:POOL.length','questionsPerAttempt:10','t
 assert((a1HumanListening.match(/\{letter:'/g)||[]).length===20,'A1 Human Listening braucht exakt 20 verifizierte Pool-Einträge');
 assert(!a1HumanListening.includes('speechSynthesis')&&!a1HumanListening.includes('SpeechSynthesisUtterance')&&!a1HumanListening.includes('speak('),'A1 Human Listening darf keinerlei TTS-/speak-Fallback enthalten');
 assert(a1HumanListening.includes("core.normalize(meta.label)===core.normalize(q.text)"),'A1 Human Listening muss Aufnahme-Label und Prüfwort exakt abgleichen');
-assert(a1HumanListening.includes("toast('Menschliche Aufnahme konnte nicht geladen werden. Kein TTS-Ersatz in der Prüfung.')")||a1HumanListening.includes('Kein TTS-Ersatz in der Prüfung'),'Fehlendes Human-Audio muss hart ohne TTS-Fallback scheitern');
+assert(a1HumanListening.includes('Kein TTS-Ersatz in der Prüfung'),'Fehlendes Human-Audio muss hart ohne TTS-Fallback scheitern');
 
-for(const [name,source] of [['guided',guided],['writingHardening',writingHardening],['nativeAudio',nativeAudio],['pronunciation',pronunciation],['mastery',mastery],['humanListening',humanListening],['audioGate',audioGate],['spokenTransfer',spokenTransfer],['a1HumanListening',a1HumanListening]])try{new Function(source)}catch(error){errors.push(`${name} Syntax: ${error.message}`)}
+for(const [name,source] of [['guided',guided],['writingHardening',writingHardening],['flowHardening',flowHardening],['nativeAudio',nativeAudio],['pronunciation',pronunciation],['mastery',mastery],['humanListening',humanListening],['audioGate',audioGate],['spokenTransfer',spokenTransfer],['a1HumanListening',a1HumanListening]])try{new Function(source)}catch(error){errors.push(`${name} Syntax: ${error.message}`)}
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);errors.forEach(error=>console.error('- '+error));process.exit(1)}
 
 try{
-  fs.writeFileSync(swPath,realSw.replace("const VERSION='67'","const VERSION='58'"),'utf8');
+  fs.writeFileSync(swPath,realSw.replace("const VERSION='68'","const VERSION='58'"),'utf8');
   await import(pathToFileURL(path.join(root,'tests/validate-v58.mjs')).href+'?live='+Date.now());
 } finally {fs.writeFileSync(swPath,realSw,'utf8')}
 
-console.log(`LIVE-VALIDIERUNG OK: v67 hat ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}) exakt passende menschliche Anfänger-Audios; Druckschrift-Nachmalen verlangt Formnähe + räumliche Abdeckung; Aussprache-Coach/Mastery sind TTS-frei; Human Listening besteht nur mit Human-Audio; starker Spoken Transfer verlangt Human-Fragen; A1 Hören braucht zusätzlich zwei Human-only 9/10-Nachweise an verschiedenen Tagen.`);
+console.log(`LIVE-VALIDIERUNG OK: v68 hat ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}) exakt passende menschliche Anfänger-Audios; Druckschrift-Nachmalen verlangt Formnähe + räumliche Abdeckung; der tote Anfänger-Weiterbutton wird über den bestehenden Tages-Gate-Handler repariert; Aussprache-Coach/Mastery sind TTS-frei; A1 Hören braucht zwei Human-only 9/10-Nachweise.`);
