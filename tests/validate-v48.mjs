@@ -13,7 +13,7 @@ assert(app===base.replace('</body>','<script src="./ukrainischkurs-v2-loader.js"
 
 const loader=read('ukrainischkurs-v2-loader.js');
 assert(loader.includes("const VERSION='48'"),'Loader ist nicht v48');
-for(const t of ['learning-state-guard.js?v=1','designer-alphabet.js?v=3','fashion-bridge.js?v=1','resale-practice.js?v=1','learning-core.js?v=4','spoken-transfer.js?v=1','a1-exam.js?v=2','selftest.js?v=37'])assert(loader.includes(t),`Loader vermisst ${t}`);
+for(const t of ['learning-state-guard.js?v=1','designer-alphabet.js?v=3','fashion-bridge.js?v=1','resale-practice.js?v=1','learning-core.js?v=4','spoken-transfer.js?v=2','a1-exam.js?v=2','selftest.js?v=37'])assert(loader.includes(t),`Loader vermisst ${t}`);
 assert(loader.indexOf('quality-hardening.js')<loader.indexOf('learning-state-guard.js')&&loader.indexOf('learning-state-guard.js')<loader.indexOf('adaptive-alphabet.js'),'Learning State Guard wird nicht zwischen Qualitäts-Härtung und Alphabet-Mastery geladen');
 assert(loader.indexOf('learning-core.js')<loader.indexOf('fashion-bridge.js')&&loader.indexOf('fashion-bridge.js')<loader.indexOf('resale-practice.js'),'Additive Fashion-/Resale-Reihenfolge ist falsch');
 assert(loader.indexOf('adaptive-review.js')<loader.indexOf('spoken-transfer.js')&&loader.indexOf('spoken-transfer.js')<loader.indexOf('a1-exam.js'),'Spontaner Sprechtransfer liegt nicht zwischen Review und A1-Prüfung');
@@ -52,16 +52,20 @@ try{
   today='2026-09-06';assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(1)===true,'Tag 2 öffnet sich am Folgetag nicht');
 }catch(e){errors.push(`Learning-State-Simulation: ${e.stack||e.message}`)}
 
+// v48 führte Spoken Transfer ein. Die später gehärtete v2 behält alle v48-Regeln
+// und verschärft sie um quellensensitive Human-Audio-Evidenz.
 const spoken=read('ukrainischkurs-spoken-transfer.js');
-assert(spoken.includes('const VERSION=1'),'Spoken Transfer ist nicht v1');
+assert(spoken.includes('const VERSION=2'),'Spoken Transfer ist nicht die gehärtete v2');
 assert((spoken.match(/requires:\[/g)||[]).length>=20,'Spoken Transfer hat weniger als 20 kontrollierte Frage-/Antwortmuster');
 assert(spoken.includes("core.reviewFocus()==='speaking'?4:3"),'Schwaches Sprechen erhöht den Review nicht von 3 auf 4 Antworten');
 assert(spoken.includes('session.plays>=2'),'Audio-first Frage ist nicht auf zwei Wiedergaben begrenzt');
 assert(spoken.includes('session.recorded&&session.replayed'),'Aufnahme und vollständiges Rückhören werden bei verfügbarem Mikrofon nicht gemeinsam verlangt');
-assert(spoken.includes('session.assisted=true')&&spoken.includes('Unterstützter Durchgang'),'Frage-Reveal/Fallback wird nicht transparent als Unterstützung markiert');
+assert(spoken.includes('session.assisted=true')&&spoken.includes('Unterstützter Übungsdurchgang'),'Frage-Reveal/Fallback wird nicht transparent als Unterstützung markiert');
 assert(spoken.includes("skills:['speaking','listening']"),'Sprechtransfer schreibt keine zentrale Sprech-/Hör-Evidenz');
 assert(spoken.includes("weight:strong?1.25:.55"),'Starker und unterstützter Sprechtransfer werden nicht unterschiedlich gewichtet');
 assert(spoken.includes('noFakeAccentScore:true')&&spoken.includes('recordingRequiredWhenAvailable:true')&&spoken.includes('replayRequired:true'),'Sprechtransfer exportiert seine Qualitätsregeln nicht');
+assert(spoken.includes('humanAudioRequiredForStrong:true')&&spoken.includes("session.questionSources.every(x=>x==='human')"),'v2 verlangt nicht für jede starke Sprech-/Hörevidenz menschliche Fragen');
+assert(spoken.includes('audioAssisted')&&spoken.includes("lastAudioQuality=allHuman?'human':'synthetic-or-unverified'"),'v2 trennt synthetische und menschliche Fragequalität nicht');
 assert(!spoken.includes('D.push('),'Sprechtransfer fügt unerwünschte neue Kurstage hinzu');
 assert(!spoken.includes('s.a1CanDo.passed=')&&!spoken.includes('s.a1Exam='),'Sprechtransfer darf A1-Status nicht manipulieren');
 
@@ -73,5 +77,5 @@ const srs=read('ukrainischkurs-adaptive-srs.js');for(const t of ['repairPending'
 const exam=read('ukrainischkurs-a1-exam.js');assert(exam.includes('doublePass:true')&&exam.includes('generatedForms:true')&&exam.includes('maxListeningPlays:2'),'A1-Prüfungsstrenge beschädigt');assert(exam.includes('officialCertificate:false')&&exam.includes('cefrAligned:true'),'A1-Status ist nicht transparent');
 const selftest=read('ukrainischkurs-selftest.js');assert(selftest.includes('Laufzeit-Selbsttest v37')&&selftest.includes('version===48')&&selftest.includes('UKRAINIAN_LEARNING_STATE_GUARD')&&selftest.includes('UKRAINIAN_SPOKEN_TRANSFER')&&selftest.includes('UKRAINIAN_FASHION_BRIDGE')&&selftest.includes('UKRAINIAN_RESALE_PRACTICE'),'Selbsttest ist nicht auf v48/Sprechtransfer aktualisiert');
 
-if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);errors.forEach(e=>console.error('- '+e));process.exit(1)}
-console.log('VALIDIERUNG OK: v48 behält den vollständigen bisherigen Lernweg und ergänzt auf ausgewählten Review-Tagen audio-first spontanes Sprechen mit maximal zwei Fragewiedergaben, Aufnahme + Rückhören, freier Transkription, transparenter Fallback-Gewichtung und zentraler Sprech-/Hör-Evidenz; strenge A1-Gates bleiben unverändert.');
+if(errors.length){console.error(`VALIDIERUNG FEHLGESCHAGEN (${errors.length})`);errors.forEach(e=>console.error('- '+e));process.exit(1)}
+console.log('VALIDIERUNG OK: v48 behält den vollständigen bisherigen Lernweg und prüft den inzwischen auf v2 gehärteten audio-first Sprechtransfer: maximal zwei Fragewiedergaben, Aufnahme + Rückhören, freie Transkription, transparente Fallback-Gewichtung und Human-Audio als Voraussetzung für starke Evidenz; strenge A1-Gates bleiben unverändert.');
