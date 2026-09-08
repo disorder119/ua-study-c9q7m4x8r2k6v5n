@@ -8,19 +8,28 @@ const realSw=fs.readFileSync(swPath,'utf8');
 const loader=fs.readFileSync(path.join(root,'ukrainischkurs-v2-loader.js'),'utf8');
 const guided=fs.readFileSync(path.join(root,'ukrainischkurs-guided-start.js'),'utf8');
 const nativeAudio=fs.readFileSync(path.join(root,'ukrainischkurs-native-audio.js'),'utf8');
+const pronunciation=fs.readFileSync(path.join(root,'ukrainischkurs-pronunciation.js'),'utf8');
+const mastery=fs.readFileSync(path.join(root,'ukrainischkurs-pronunciation-mastery.js'),'utf8');
+const humanListening=fs.readFileSync(path.join(root,'ukrainischkurs-human-listening.js'),'utf8');
+const audioGate=fs.readFileSync(path.join(root,'ukrainischkurs-audio-quality-gate.js'),'utf8');
 const errors=[];
 const assert=(condition,message)=>{if(!condition)errors.push(message)};
 
-assert(realSw.includes("const VERSION='63'"),'Live-Service-Worker ist nicht v63');
-assert(realSw.includes("'./ukrainischkurs-simple-foundation.js'"),'Einfacher Alphabet-Start fehlt im Offline-Cache');
-assert(realSw.includes("'./ukrainischkurs-guided-start.js'"),'Geführter Alphabet-Start fehlt im Offline-Cache');
-assert(loader.includes("await loadScript('./ukrainischkurs-guided-start.js?v=3'"),'Geführter Alphabet-Start v3 wird nicht geladen');
-assert(loader.includes("./ukrainischkurs-native-audio.js?v=5"),'Erweiterte verifizierte Audioanker v5 werden nicht geladen');
-assert(loader.indexOf('simple-foundation.js?v=1')<loader.indexOf('guided-start.js?v=3'),'Geführter Start muss nach der bisherigen Grundlagen-UI laden');
-for(const marker of ['oneScreenOneTask:true','pictureLearning:true','tracing:true','humanAudioOnly:true','exactWordAudio:true','strokeByStroke:true','autoHelp:true','easyFirstChoice:true','guided-trace','Los geht’s','Noch einen lernen','Bleib auf der hellen Form'])assert(guided.includes(marker),`Geführter Start vermisst ${marker}`);
-assert(!guided.includes('speechSynthesis')&&!guided.includes('SpeechSynthesisUtterance'),'Geführter Einstieg darf keine unsichere System-TTS verwenden');
-assert(guided.includes("String(meta.label||'').trim().toLowerCase()!==String(x.word||'').trim().toLowerCase()"),'Menschliches Audio muss exakt zum angezeigten Anfängerwort passen');
-assert(guided.includes('Für dieses Wort fehlt noch eine exakt passende menschliche Aufnahme'),'Fehlendes Exakt-Audio muss ehrlich angezeigt werden');
+assert(realSw.includes("const VERSION='64'"),'Live-Service-Worker ist nicht v64');
+for(const asset of ['./ukrainischkurs-simple-foundation.js','./ukrainischkurs-guided-start.js','./ukrainischkurs-audio-quality-gate.js'])assert(realSw.includes(`'${asset}'`),`${asset} fehlt im Offline-Cache`);
+assert(loader.includes("./ukrainischkurs-native-audio.js?v=6"),'Native Audio v6 wird nicht geladen');
+assert(loader.includes("./ukrainischkurs-pronunciation.js?v=5"),'Human-Aussprache-Coach wird nicht geladen');
+assert(loader.includes("./ukrainischkurs-pronunciation-mastery.js?v=5"),'Human-Aussprache-Mastery wird nicht geladen');
+assert(loader.includes("./ukrainischkurs-audio-quality-gate.js?v=1"),'Audio-Integritätswache wird nicht geladen');
+assert(loader.includes("./ukrainischkurs-human-listening.js?v=4"),'Human Listening v4 wird nicht geladen');
+assert(loader.includes("await loadScript('./ukrainischkurs-guided-start.js?v=4'"),'Geführter Alphabet-Start v4 wird nicht geladen');
+assert(loader.indexOf('human-sentence-audio.js?v=4')<loader.indexOf('audio-quality-gate.js?v=1'),'Audio-Integritätswache muss nach Human-Sentence-Audio laden');
+assert(loader.indexOf('audio-quality-gate.js?v=1')<loader.indexOf('human-listening.js?v=4'),'Audio-Integritätswache muss vor Human Listening laden');
+assert(loader.indexOf('simple-foundation.js?v=1')<loader.indexOf('guided-start.js?v=4'),'Geführter Start muss nach der bisherigen Grundlagen-UI laden');
+
+for(const marker of ['oneScreenOneTask:true','pictureLearning:true','tracing:true','humanAudioOnly:true','exactWordAudio:true','fullHumanAudio:true','strokeByStroke:true','autoHelp:true','easyFirstChoice:true','guided-trace','Los geht’s','Noch einen lernen','Bleib auf der hellen Form'])assert(guided.includes(marker),`Geführter Start vermisst ${marker}`);
+assert(!guided.includes('speechSynthesis')&&!guided.includes('SpeechSynthesisUtterance'),'Geführter Einstieg darf keine System-TTS verwenden');
+assert(guided.includes("String(meta.label||'').trim().toLowerCase()!==String(x.word||'').trim().toLowerCase()"),'Human-Audio muss exakt zum angezeigten Anfängerwort passen');
 assert(!guided.includes("В'єтнам"),'Vietnam darf im geführten Alphabet-Start nicht vorkommen');
 assert(guided.includes('attempts.value>=2')&&guided.includes("classList.add('hint')"),'Automatische Hilfe nach zwei Fehlern fehlt');
 assert(guided.includes("day()===0&&store().index===0?2:3"),'Allererste Auswahl muss auf zwei Optionen reduziert sein');
@@ -34,20 +43,34 @@ const mismatches=[...guidedPairs].filter(([letter,word])=>norm(audioPairs.get(le
 const coverage=guidedPairs.size?exact.length/guidedPairs.size*100:0;
 assert(guidedPairs.size===33,`Geführter Alphabet-Start hat ${guidedPairs.size} statt 33 Audio-Lernanker`);
 assert(audioPairs.size===33,`Native-Audio-Map hat ${audioPairs.size} statt 33 Buchstaben`);
-assert(coverage>=90,`Exakte Human-Audio-Abdeckung nur ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}); mindestens 90% erforderlich. Abweichungen: ${mismatches.join(', ')}`);
-assert(exact.length>=30,`Mindestens 30 von 33 Anfängerwörtern brauchen exakt passendes Human-Audio; aktuell ${exact.length}`);
-assert(mismatches.length<=3,`Zu viele Wörter ohne Exakt-Audio: ${mismatches.join(', ')}`);
-assert(nativeAudio.includes("'Г':{file:'Uk-гора.ogg',label:'гора'")&&nativeAudio.includes("'Д':{file:'Uk-дім.ogg',label:'дім'")&&nativeAudio.includes("'Е':{file:'Uk-екран.ogg',label:'екран'"),'Verifizierte Г/Д/Е-Exaktaufnahmen fehlen');
-assert(nativeAudio.includes("'К':{file:'Uk-кіт.ogg',label:'кіт'")&&nativeAudio.includes("'Л':{file:'Uk-лампа.ogg',label:'лампа'")&&nativeAudio.includes("'У':{file:'Uk-урок.ogg',label:'урок'"),'Verifizierte К/Л/У-Exaktaufnahmen fehlen');
-assert(nativeAudio.includes("'Я':{file:'Uk-яблуко.ogg',label:'яблуко'"),'Verifizierte Я-Apfelaufnahme fehlt');
-try{new Function(guided)}catch(error){errors.push('Geführter Start Syntax: '+error.message)}
-try{new Function(nativeAudio)}catch(error){errors.push('Native Audio Syntax: '+error.message)}
+assert(coverage===100,`Exakte Human-Audio-Abdeckung ist ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}) statt 100%. Abweichungen: ${mismatches.join(', ')}`);
+assert(exact.length===33,'Alle 33 Anfängerwörter brauchen exakt passendes Human-Audio');
+assert(mismatches.length===0,`Kein Audio-Mismatch erlaubt: ${mismatches.join(', ')}`);
+assert(nativeAudio.includes("'Й':{file:'LL-Q8798 (ukr)-Tohaomg-йогурт.wav',label:'йогурт'"),'Verifizierte Й-Joghurtaufnahme fehlt');
+assert(nativeAudio.includes("'Ф':{file:'LL-Q8798 (ukr)-Tohaomg-Франція.wav',label:'Франція'"),'Verifizierte Ф-Frankreichaufnahme fehlt');
+
+for(const [name,source] of [['Aussprache-Coach',pronunciation],['Aussprache-Mastery',mastery]]){
+  assert(!source.includes('speechSynthesis')&&!source.includes('SpeechSynthesisUtterance'),`${name} darf keinen System-TTS-Hörnachweis enthalten`);
+}
+assert(pronunciation.includes('humanReferencesOnly:true')&&pronunciation.includes('noTtsEvidence:true'),'Aussprache-Coach muss Human-only Evidenz deklarieren');
+assert(mastery.includes('humanAudioOnly:true')&&mastery.includes('noTtsEvidence:true'),'Aussprache-Mastery muss Human-only Evidenz deklarieren');
+assert(mastery.includes('playHuman(')&&!mastery.includes('playTts('),'Aussprache-Mastery muss menschliche Referenzen statt TTS abspielen');
+
+assert(humanListening.includes('allCorrect&&allHuman'),'Human Listening darf nur mit richtig + Human-Audio bestehen');
+assert(humanListening.includes('human===total'),'Human Listening muss jeden Prüfpunkt als Human-Audio prüfen');
+assert(humanListening.includes('humanOnlyPass:true'),'Human Listening muss den Human-only Gate exportieren');
+assert(humanListening.includes('synthetisch')||humanListening.includes('Synthetische'),'TTS-Fallback muss im Human Listening transparent als nicht bestehensfähig beschrieben sein');
+
+for(const marker of ['tts-unverified','syntheticSinceEvidence','assisted:true','synthetic-or-unverified','human-listening','spoken-transfer'])assert(audioGate.includes(marker),`Audio-Integritätswache vermisst ${marker}`);
+assert(audioGate.includes("st.passed=false")&&audioGate.includes("st.strongPassed=false"),'Synthetische Quelle muss Human-Pass bzw. starken Sprechpass zurückstufen');
+
+for(const [name,source] of [['guided',guided],['nativeAudio',nativeAudio],['pronunciation',pronunciation],['mastery',mastery],['humanListening',humanListening],['audioGate',audioGate]])try{new Function(source)}catch(error){errors.push(`${name} Syntax: ${error.message}`)}
 
 if(errors.length){console.error(`VALIDIERUNG FEHLGESCHLAGEN (${errors.length})`);errors.forEach(error=>console.error('- '+error));process.exit(1)}
 
 try{
-  fs.writeFileSync(swPath,realSw.replace("const VERSION='63'","const VERSION='58'"),'utf8');
+  fs.writeFileSync(swPath,realSw.replace("const VERSION='64'","const VERSION='58'"),'utf8');
   await import(pathToFileURL(path.join(root,'tests/validate-v58.mjs')).href+'?live='+Date.now());
 } finally {fs.writeFileSync(swPath,realSw,'utf8')}
 
-console.log(`LIVE-VALIDIERUNG OK: v63 hat ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}) exakt passende menschliche Anfänger-Audios; Sicherheitsgrenze >=90%.`);
+console.log(`LIVE-VALIDIERUNG OK: v64 hat ${coverage.toFixed(1)}% (${exact.length}/${guidedPairs.size}) exakt passende menschliche Anfänger-Audios; Aussprache-Coach/Mastery sind TTS-frei; Human Listening besteht nur mit Human-Audio.`);
