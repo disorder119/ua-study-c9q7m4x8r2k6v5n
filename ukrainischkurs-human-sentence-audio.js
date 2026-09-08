@@ -1,15 +1,16 @@
-/* Ukrainischkurs für Joel · Human Course Audio v5
+/* Ukrainischkurs für Joel · Human Course Audio v6
    Verifizierte menschliche Wort-/Phrasenaufnahmen außerhalb des Alphabets.
-   Häufige Anfängerwörter werden gezielt mit Human-Audio abgedeckt. Die Laufzeit
-   meldet transparent, ob menschliches Audio oder ein TTS-Fallback lief. */
+   Häufige Anfängerwörter und frühe Selbstvorstellung werden gezielt mit Human-Audio
+   abgedeckt. Die Laufzeit meldet transparent Human-Audio versus TTS-Fallback. */
 (()=>{
-  const VERSION=5;
+  const VERSION=6;
   const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
   const commonsFile=file=>'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file);
   const commonsPage=file=>'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(file);
   const GALIA={speaker:'Галя Раптова',credit:'Галя Раптова, Nicolas Vion / Shtooka Project',license:'CC BY 3.0 US'};
   const ZHENIA={speaker:'Женя Музика',credit:'Женя Музика, Nicolas Vion / Shtooka Project',license:'CC BY 3.0 US'};
   const SVITLANA={speaker:'Світлана Чурак',credit:'Association Shtooka, Світлана Чурак / Shtooka Project',license:'CC BY 3.0 US'};
+  const VASYL={speaker:'Василь Бабич',credit:'Василь Бабич / Wikimedia Commons',license:'Public Domain'};
   const ITEMS=[
     {text:'привіт',file:'Uk-привіт.ogg',...GALIA},
     {text:'дякую',file:'Uk-дякую.ogg',...SVITLANA},
@@ -17,6 +18,8 @@
     {text:'добре',file:'Uk-добре.ogg',...GALIA},
     {text:'до побачення',file:'Uk-до побачення.ogg',...ZHENIA},
     {text:'будь ласка',file:'Uk-будь ласка.ogg',...ZHENIA},
+    {text:'Мене звати',file:'Uk-Мене звати.ogg',...VASYL},
+    {text:'звати',file:'Uk-звати.ogg',...GALIA},
     {text:'Я не знаю',file:'Uk-я не знаю.ogg',...SVITLANA},
     {text:'Німеччина',file:'Uk-Німеччина.ogg',...ZHENIA},
     {text:'вода',file:'Uk-вода.ogg',...GALIA},
@@ -32,40 +35,23 @@
   const MAP=new Map(ITEMS.map(x=>[norm(x.text),x]));
   const baseSpeak=speak;
   let current=null;
-  function announce(item,source){
-    try{window.dispatchEvent(new CustomEvent('ukrainian-audio-source',{detail:{text:item.text,source,speaker:item.speaker,license:item.license}}))}catch{}
-  }
-  function release(playback){
-    if(!playback||playback.released)return;
-    playback.released=true;
-    playback.audio.onended=null;playback.audio.onerror=null;
-    if(playback.button)playback.button.disabled=false;
-    if(current===playback)current=null;
-  }
+  function announce(item,source){try{window.dispatchEvent(new CustomEvent('ukrainian-audio-source',{detail:{text:item.text,source,speaker:item.speaker,license:item.license}}))}catch{}}
+  function release(playback){if(!playback||playback.released)return;playback.released=true;playback.audio.onended=null;playback.audio.onerror=null;if(playback.button)playback.button.disabled=false;if(current===playback)current=null}
   function stopCurrent(){const playback=current;if(!playback)return;try{playback.audio.pause()}catch{}release(playback)}
-  function fallback(item,button){
-    if(button){button.disabled=false;button.dataset.audioSource='tts-fallback';button.title='System-TTS-Fallback · menschliche Datei konnte nicht geladen werden'}
-    announce(item,'tts-fallback');baseSpeak(item.text,button);
-  }
+  function fallback(item,button){if(button){button.disabled=false;button.dataset.audioSource='tts-fallback';button.title='System-TTS-Fallback · menschliche Datei konnte nicht geladen werden'}announce(item,'tts-fallback');baseSpeak(item.text,button)}
   function humanSpeak(item,button){
     stopCurrent();
     try{
       const audio=new Audio(item.url),playback={audio,button,released:false};current=playback;let failed=false;
       if(button){button.disabled=true;button.dataset.humanAudio='1';button.dataset.audioSource='loading';button.title='Menschliche Aufnahme wird geladen · '+item.speaker}
       const done=()=>release(playback),failOnce=()=>{if(failed||playback.released)return;failed=true;release(playback);fallback(item,button)};
-      audio.onended=done;audio.onerror=failOnce;
-      const p=audio.play();
+      audio.onended=done;audio.onerror=failOnce;const p=audio.play();
       if(p&&typeof p.then==='function')p.then(()=>{if(failed||playback.released)return;if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(failOnce);
       else if(!playback.released){if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}
     }catch{stopCurrent();fallback(item,button)}
   }
   speak=function(text,button){const item=MAP.get(norm(text));if(item)return humanSpeak(item,button);stopCurrent();return baseSpeak(text,button)};
   window.UKRAINIAN_HUMAN_SENTENCE_AUDIO={version:VERSION,count:ITEMS.length,items:ITEMS.map(x=>({...x})),has:text=>MAP.has(norm(text)),sourceFor:text=>MAP.get(norm(text))||null};
-  function credits(){
-    if(document.getElementById('humanAudioCredits'))return;
-    const details=document.createElement('details');details.id='humanAudioCredits';details.className='human-audio-credits';
-    details.innerHTML='<summary>Audioquellen · '+ITEMS.length+' verifizierte menschliche Aufnahmen</summary><div class="small">'+ITEMS.map(x=>'<div><span lang="uk">'+x.text+'</span> — '+x.credit+', '+x.license+' · <a href="'+x.source+'" target="_blank" rel="noopener">Dateiquelle</a></div>').join('')+'<div>Andere spätere Wörter und Sätze können weiterhin System-TTS als klar markierte Übungshilfe verwenden. Für Human-only Prüfungen zählt dieser Fallback nicht.</div></div>';
-    document.body.append(details)
-  }
+  function credits(){if(document.getElementById('humanAudioCredits'))return;const details=document.createElement('details');details.id='humanAudioCredits';details.className='human-audio-credits';details.innerHTML='<summary>Audioquellen · '+ITEMS.length+' verifizierte menschliche Aufnahmen</summary><div class="small">'+ITEMS.map(x=>'<div><span lang="uk">'+x.text+'</span> — '+x.credit+', '+x.license+' · <a href="'+x.source+'" target="_blank" rel="noopener">Dateiquelle</a></div>').join('')+'<div>Andere spätere Wörter und Sätze können weiterhin System-TTS als klar markierte Übungshilfe verwenden. Für Human-only Prüfungen zählt dieser Fallback nicht.</div></div>';document.body.append(details)}
   const css=document.createElement('style');css.textContent='.human-audio-credits{max-width:760px;margin:14px auto 28px;padding:0 18px;font-size:.82rem;opacity:.78}.human-audio-credits summary{cursor:pointer;font-weight:700}.human-audio-credits a{color:inherit}';document.head.append(css);credits();
 })();
