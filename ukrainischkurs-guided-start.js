@@ -1,22 +1,23 @@
-/* Ukrainischkurs für Joel · geführter Alphabet-Start v1
-   Ein Bildschirm = eine Aufgabe: sehen -> hören -> malen -> erkennen -> Bild finden -> Lob. */
+/* Ukrainischkurs für Joel · geführter Alphabet-Start v2
+   Extrem einfacher Einstieg: ein Buchstabe nach dem anderen, Bild + echtes Audio,
+   geführtes Nachmalen, leichte Auswahl, automatische Hilfe und Lob. */
 (()=>{
-  const VERSION=1,INTRO_DAYS=11;
+  const VERSION=2,INTRO_DAYS=11;
   const ORDER='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
   const INFO={
     'А':{small:'а',word:'автобус',de:'Bus',icon:'🚌',sound:'A wie in Auto',steps:['Schräg nach unten','Noch einmal schräg','Kurzer Strich in die Mitte']},
-    'Б':{small:'б',word:'банан',de:'Banane',icon:'🍌',sound:'B wie in Ball',steps:['Strich nach unten','Oben einen kurzen Strich','Rechts eine Rundung malen']},
-    'В':{small:'в',word:'вода',de:'Wasser',icon:'💧',sound:'W wie in Wasser',steps:['Langer Strich nach unten','Oben einen Bauch','Unten einen Bauch']},
-    'Г':{small:'г',word:'гора',de:'Berg',icon:'⛰️',sound:'Hör auf das ukrainische Beispiel',steps:['Strich nach unten','Oben einen Strich nach rechts']},
-    'Ґ':{small:'ґ',word:'ґудзик',de:'Knopf',icon:'🔘',sound:'Kräftiger G-Laut',steps:['Strich nach unten','Oben nach rechts','Kleiner Haken nach oben']},
+    'Б':{small:'б',word:'бабуся',de:'Oma',icon:'👵',sound:'B wie in Ball',steps:['Strich nach unten','Oben einen kurzen Strich','Rechts die Rundung malen']},
+    'В':{small:'в',word:'вода',de:'Wasser',icon:'💧',sound:'W wie in Wasser',steps:['Langer Strich nach unten','Obere Rundung','Untere Rundung']},
+    'Г':{small:'г',word:'гора',de:'Berg',icon:'⛰️',sound:'Ein ukrainischer H-/G-Laut',steps:['Strich nach unten','Oben einen Strich nach rechts']},
+    'Ґ':{small:'ґ',word:'ґудзик',de:'Knopf',icon:'🔘',sound:'Kräftiger G-Laut',steps:['Strich nach unten','Oben nach rechts','Kleinen Haken ergänzen']},
     'Д':{small:'д',word:'дім',de:'Haus',icon:'🏠',sound:'D wie in Dach',steps:['Obere Form malen','Beide Seiten nach unten','Unten die Füße ergänzen']},
     'Е':{small:'е',word:'екран',de:'Bildschirm',icon:'🖥️',sound:'E wie in Ecke',steps:['Langer Strich nach unten','Oben nach rechts','Mitte und unten nach rechts']},
     'Є':{small:'є',word:'єнот',de:'Waschbär',icon:'🦝',sound:'Je-Laut',steps:['Großen Bogen malen','Zwei kurze Striche nach innen']},
-    'Ж':{small:'ж',word:'жук',de:'Käfer',icon:'🪲',sound:'Stimmhafter sch-Laut',steps:['Strich durch die Mitte','Schräge Linie links','Schräge Linie rechts']},
-    'З':{small:'з',word:'зуб',de:'Zahn',icon:'🦷',sound:'S wie in Sonne, aber stimmhaft',steps:['Obere Rundung','Untere Rundung']},
-    'И':{small:'и',word:'син',de:'Sohn',icon:'👦',sound:'Kurzer i-ähnlicher Laut',steps:['Linken Strich nach unten','Schräg nach oben','Rechten Strich nach unten']},
+    'Ж':{small:'ж',word:'жук',de:'Käfer',icon:'🪲',sound:'Stimmhafter sch-Laut',steps:['Strich durch die Mitte','Schräge links','Schräge rechts']},
+    'З':{small:'з',word:'зуб',de:'Zahn',icon:'🦷',sound:'Stimmhaftes S',steps:['Obere Rundung','Untere Rundung']},
+    'И':{small:'и',word:'син',de:'Sohn',icon:'👦',sound:'Kurzer i-ähnlicher Laut',steps:['Linken Strich','Schräg nach oben','Rechten Strich']},
     'І':{small:'і',word:'ім’я',de:'Name',icon:'🏷️',sound:'I wie in Igel',steps:['Langer Strich nach unten']},
-    'Ї':{small:'ї',word:'їжа',de:'Essen',icon:'🍽️',sound:'Ji-Laut',steps:['Langer Strich nach unten','Zwei Punkte darüber']},
+    'Ї':{small:'ї',word:'їжа',de:'Essen',icon:'🍽️',sound:'Ji-Laut',steps:['Langer Strich','Erster Punkt','Zweiter Punkt']},
     'Й':{small:'й',word:'йогурт',de:'Joghurt',icon:'🥣',sound:'Kurzer J-Laut',steps:['Wie И malen','Kleinen Bogen darüber']},
     'К':{small:'к',word:'кіт',de:'Katze',icon:'🐱',sound:'K wie in Katze',steps:['Langer Strich','Oben schräg zur Mitte','Von der Mitte schräg nach unten']},
     'Л':{small:'л',word:'лампа',de:'Lampe',icon:'💡',sound:'L wie in Lampe',steps:['Schräg zur Mitte hoch','Schräg nach unten']},
@@ -24,21 +25,21 @@
     'Н':{small:'н',word:'ніс',de:'Nase',icon:'👃',sound:'N wie in Nase',steps:['Linker Strich','Rechter Strich','Querstrich in die Mitte']},
     'О':{small:'о',word:'око',de:'Auge',icon:'👁️',sound:'O wie in Ofen',steps:['Einen großen Kreis malen']},
     'П':{small:'п',word:'парк',de:'Park',icon:'🌳',sound:'P wie in Park',steps:['Linker Strich','Oben nach rechts','Rechter Strich nach unten']},
-    'Р':{small:'р',word:'рука',de:'Hand',icon:'✋',sound:'Gerolltes R',steps:['Langer Strich','Oben einen Bauch nach rechts']},
+    'Р':{small:'р',word:'рука',de:'Hand',icon:'✋',sound:'Gerolltes R',steps:['Langer Strich','Oben eine Rundung nach rechts']},
     'С':{small:'с',word:'сир',de:'Käse',icon:'🧀',sound:'S wie in Sonne',steps:['Einen offenen Bogen malen']},
     'Т':{small:'т',word:'так',de:'Ja',icon:'✅',sound:'T wie in Tag',steps:['Oben einen Strich','Von der Mitte nach unten']},
     'У':{small:'у',word:'урок',de:'Lektion',icon:'📚',sound:'U wie in Uhr',steps:['Zwei schräge Linien treffen lassen','Vom Treffpunkt nach unten']},
     'Ф':{small:'ф',word:'фото',de:'Foto',icon:'📷',sound:'F wie in Foto',steps:['Kreis in die Mitte','Strich durch den Kreis']},
     'Х':{small:'х',word:'хата',de:'Haus',icon:'🏡',sound:'Ch wie in Bach',steps:['Schräg nach unten','Andere Schräge kreuzen']},
-    'Ц':{small:'ц',word:'це',de:'das / dies',icon:'👉',sound:'Z wie in Zahl',steps:['Zwei Striche verbinden','Kleinen Haken unten ergänzen']},
+    'Ц':{small:'ц',word:'це',de:'das',icon:'👉',sound:'Z wie in Zahl',steps:['Zwei Striche verbinden','Kleinen Haken unten ergänzen']},
     'Ч':{small:'ч',word:'чай',de:'Tee',icon:'🍵',sound:'Tsch-Laut',steps:['Kurzen linken Strich','Bogen zur rechten Seite','Rechten Strich nach unten']},
-    'Ш':{small:'ш',word:'школа',de:'Schule',icon:'🏫',sound:'Sch wie in Schule',steps:['Drei Striche nach unten','Unten verbinden']},
+    'Ш':{small:'ш',word:'школа',de:'Schule',icon:'🏫',sound:'Sch wie in Schule',steps:['Erster Strich','Zweiter Strich','Dritter Strich und unten verbinden']},
     'Щ':{small:'щ',word:'щука',de:'Hecht',icon:'🐟',sound:'Weicher schtsch-Laut',steps:['Wie Ш malen','Kleinen Haken unten ergänzen']},
-    'Ь':{small:'ь',word:'кінь',de:'Pferd',icon:'🐴',sound:'Weichheitszeichen – kein eigener Laut',steps:['Langer Strich','Unten einen kleinen Bauch']},
+    'Ь':{small:'ь',word:'кінь',de:'Pferd',icon:'🐴',sound:'Kein eigener Laut – macht davor weich',steps:['Langer Strich','Unten eine kleine Rundung']},
     'Ю':{small:'ю',word:'юнак',de:'junger Mann',icon:'🧑',sound:'Ju-Laut',steps:['Linker Strich','Kurzer Querstrich','Rechts einen Kreis']},
-    'Я':{small:'я',word:'яблуко',de:'Apfel',icon:'🍎',sound:'Ja-Laut',steps:['Oben einen Bauch','Zur Mitte ziehen','Schräg nach unten']}
+    'Я':{small:'я',word:'яблуко',de:'Apfel',icon:'🍎',sound:'Ja-Laut',steps:['Oben eine Rundung','Zur Mitte ziehen','Schräg nach unten']}
   };
-  const STAGES=['look','listen','trace','letter','picture','reward'];
+  const STAGES=['discover','trace','letter','picture','reward'];
   const guided=()=>Number(s.day)<INTRO_DAYS&&!alphabetReady();
   const day=()=>Number(s.day)||0;
   const letters=()=>guided()?(D[day()]?.[3]||[]).map(c=>String(c?.[0]||'')[0]).filter(Boolean):[];
@@ -47,125 +48,69 @@
     s.guidedAlphabet.version=VERSION;s.guidedAlphabet.days=s.guidedAlphabet.days||{};
     const k=String(day());
     if(!s.guidedAlphabet.days[k])s.guidedAlphabet.days[k]={index:0,stage:'welcome',done:[]};
-    return s.guidedAlphabet.days[k];
+    const st=s.guidedAlphabet.days[k];
+    if(st.stage==='look'||st.stage==='listen')st.stage='discover';
+    return st;
   }
-  function persist(){try{save()}catch(_){} }
-  function current(){const ls=letters(),st=store();st.index=Math.max(0,Math.min(st.index||0,Math.max(0,ls.length-1)));return ls[st.index]||ls[0]||'А'}
-  function info(letter){return INFO[letter]||{small:letter.toLowerCase(),word:letter,de:'',icon:'🌱',sound:'Hör dir das Beispiel an',steps:['Fahre die helle Vorlage langsam nach']}}
-  function shuffledChoices(values,seed){const a=[...values];for(let i=a.length-1;i>0;i--){const j=(seed+i*7)%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
-  function letterChoices(letter){const ls=letters();return shuffledChoices([letter,...ls.filter(x=>x!==letter),...ORDER.filter(x=>!ls.includes(x))].slice(0,3),store().index+3)}
-  function pictureChoices(letter){const ls=letters();return shuffledChoices([letter,...ls.filter(x=>x!==letter),...ORDER.filter(x=>INFO[x]&&x!==letter&&!ls.includes(x))].slice(0,3),store().index+5)}
-  function speakWord(letter,button){
-    const row=info(letter),meta=window.UKRAINIAN_PRONUNCIATION_META?.[letter],src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];
-    if(src&&meta?.label===row.word){const a=new Audio(src);button?.classList.add('is-playing');a.onended=()=>button?.classList.remove('is-playing');a.onerror=()=>button?.classList.remove('is-playing');a.play().catch(()=>button?.classList.remove('is-playing'));return true}
-    if(!('speechSynthesis'in window)||!window.SpeechSynthesisUtterance)return false;
-    const voice=speechSynthesis.getVoices().find(v=>String(v.lang||'').toLowerCase().startsWith('uk'));
-    if(!voice)return false;
-    const u=new SpeechSynthesisUtterance(row.word);u.lang=voice.lang;u.voice=voice;u.rate=.72;
-    u.onstart=()=>button?.classList.add('is-playing');u.onend=()=>button?.classList.remove('is-playing');u.onerror=()=>button?.classList.remove('is-playing');
-    speechSynthesis.cancel();speechSynthesis.speak(u);return true;
+  const persist=()=>{try{save()}catch(_){}};
+  function current(){const ls=letters(),st=store();st.index=Math.max(0,Math.min(Number(st.index)||0,Math.max(0,ls.length-1)));return ls[st.index]||ls[0]||'А'}
+  const info=l=>INFO[l]||{small:l.toLowerCase(),word:l,de:'',icon:'🌱',sound:'Hör das Beispiel an',steps:['Fahre die helle Vorlage nach']};
+  function shuffle(a,seed){a=[...a];for(let i=a.length-1;i>0;i--){const j=(seed+i*7)%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+  function easyCount(){return day()===0&&store().index===0?2:3}
+  function letterChoices(l){const n=easyCount(),ls=letters();return shuffle([l,...ls.filter(x=>x!==l),...ORDER.filter(x=>x!==l&&!ls.includes(x))].slice(0,n),store().index+3)}
+  function pictureChoices(l){const n=easyCount(),ls=letters();return shuffle([l,...ls.filter(x=>x!==l),...ORDER.filter(x=>INFO[x]&&x!==l&&!ls.includes(x))].slice(0,n),store().index+5)}
+  function highlighted(l,word){const low=l.toLowerCase(),i=word.toLowerCase().indexOf(low);if(i<0)return word;return word.slice(0,i)+'<em>'+word[i]+'</em>'+word.slice(i+1)}
+  function humanAudio(l,button,onDone){
+    const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[l],meta=window.UKRAINIAN_PRONUNCIATION_META?.[l];
+    if(!src||!meta)return false;
+    const a=new Audio(src);button?.classList.add('is-playing');
+    const done=()=>{button?.classList.remove('is-playing');onDone?.(meta)};
+    a.onended=done;a.onerror=done;a.play().catch(done);return true;
   }
-  function markLegacyLetter(){
-    const st=store(),di=day(),ci=st.index;
-    try{const k=id(di,ci);if(!s.known[k])s.known[k]=typeof freshMeta==='function'?freshMeta():{seen:1}}catch(_){}
-    persist();
-  }
-  function finishDay(){
-    const di=day();
-    try{s.simpleFoundation=s.simpleFoundation||{};s.simpleFoundation.writing=s.simpleFoundation.writing||{};s.simpleFoundation.writing[di]=true}catch(_){}
-    try{const p=lessonState(di);p.testPassed=true;p.reviewDone=true;if(typeof syncLesson==='function')syncLesson(di)}catch(_){}
-    persist();
-  }
-  function nextStage(stage){store().stage=stage;persist();render()}
-  function nextLetter(){
-    const st=store(),ls=letters();markLegacyLetter();st.done=Array.from(new Set([...(st.done||[]),current()]));
-    if(st.index<ls.length-1){st.index++;st.stage='look';persist();render()}else{st.stage='complete';finishDay();persist();render()}
-  }
-  function feedback(text,ok=true){const el=document.getElementById('guidedFeedback');if(!el)return;el.textContent=text;el.className='guided-feedback '+(ok?'ok':'try')}
+  function markLegacy(){const st=store();try{const k=id(day(),st.index);if(!s.known[k])s.known[k]=typeof freshMeta==='function'?freshMeta():{seen:1}}catch(_){}persist()}
+  function finishDay(){try{s.simpleFoundation=s.simpleFoundation||{};s.simpleFoundation.writing=s.simpleFoundation.writing||{};s.simpleFoundation.writing[day()]=true}catch(_){}try{const p=lessonState(day());p.testPassed=true;p.reviewDone=true;if(typeof syncLesson==='function')syncLesson(day())}catch(_){}persist()}
+  const nextStage=stage=>{store().stage=stage;persist();render()};
+  function nextLetter(){const st=store(),ls=letters();markLegacy();st.done=Array.from(new Set([...(st.done||[]),current()]));if(st.index<ls.length-1){st.index++;st.stage='discover';persist();render()}else{st.stage='complete';finishDay();persist();render()}}
   function primary(label,fn){const b=document.createElement('button');b.className='guided-primary';b.textContent=label;b.onclick=fn;return b}
-  function shell(title,eyebrow){
-    const root=document.getElementById('guidedAlphabetStart');root.innerHTML='';
-    const progress=document.createElement('div');progress.className='guided-top';
-    const st=store(),ls=letters();progress.innerHTML='<span class="guided-backmark">🌱</span><div class="guided-mini-progress"><i style="width:'+(((st.index+(st.stage==='reward'||st.stage==='complete'?1:0))/Math.max(1,ls.length))*100)+'%"></i></div><span class="guided-count">'+Math.min(st.index+1,ls.length)+' / '+ls.length+'</span>';
-    const card=document.createElement('section');card.className='guided-card';card.innerHTML='<div class="guided-eyebrow">'+eyebrow+'</div><h2>'+title+'</h2>';
-    root.append(progress,card);return card;
+  function shell(title,kicker){
+    const root=document.getElementById('guidedAlphabetStart');root.innerHTML='';const st=store(),ls=letters();
+    const top=document.createElement('div');top.className='guided-top';top.innerHTML='<span class="guided-seed">🌱</span><div class="guided-dots">'+ls.map((_,i)=>'<i class="'+(i<st.index?'done':i===st.index?'now':'')+'"></i>').join('')+'</div>';
+    const card=document.createElement('section');card.className='guided-card';card.innerHTML='<div class="guided-kicker">'+kicker+'</div><h2>'+title+'</h2>';root.append(top,card);return card;
   }
-  function renderWelcome(){
-    const l=current(),x=info(l),card=shell(day()===0?'Dein erster Buchstabe':'Dein nächster Buchstabe','Wir starten ganz einfach');
-    card.innerHTML+='<div class="guided-hero-letter">'+l+'</div><div class="guided-small-letter">klein: <b>'+x.small+'</b></div><p class="guided-lead">Ich zeige dir alles Schritt für Schritt.</p>';
-    card.append(primary('Los geht’s',()=>nextStage('look')));
+  function renderWelcome(){const l=current(),x=info(l),card=shell(day()===0?'Dein erster Buchstabe':'Wir machen weiter','Ganz einfach');card.innerHTML+='<div class="guided-hero-letter">'+l+'</div><div class="guided-small-letter">klein <b>'+x.small+'</b></div><p class="guided-lead">Nur diesen einen Buchstaben. Ich führe dich.</p>';card.append(primary('Los geht’s',()=>nextStage('discover')))}
+  function renderDiscover(){
+    const l=current(),x=info(l),card=shell('Schau und hör','Lernen');
+    card.innerHTML+='<div class="guided-visual"><span>'+x.icon+'</span></div><div class="guided-pair">'+l+' <span>'+x.small+'</span></div><div class="guided-word"><b>'+highlighted(l,x.word)+'</b><small>'+x.de+'</small></div><div class="guided-soundhint">'+x.sound+'</div><p class="guided-lead">Bild, Wort und Buchstabe gehören zusammen.</p>';
+    const btn=primary('🔊 Anhören',()=>{btn.disabled=true;const ok=humanAudio(l,btn,meta=>{btn.disabled=false;btn.textContent='Weiter';btn.onclick=()=>nextStage('trace');const note=document.getElementById('guidedAudioNote');if(note)note.textContent=meta.label===x.word?'Echte ukrainische Aufnahme':'Hörbeispiel: '+meta.label});if(!ok){btn.disabled=false;btn.textContent='Weiter';btn.onclick=()=>nextStage('trace');document.getElementById('guidedAudioNote').textContent='Ohne Ton weiter – kein unsicheres Geräte-Audio.'}});card.append(btn);const note=document.createElement('div');note.id='guidedAudioNote';note.className='guided-audio-note';note.textContent='Echte ukrainische Aufnahme';card.append(note)
   }
-  function renderLook(){
-    const l=current(),x=info(l),card=shell('Schau mal','1 · Anschauen');
-    card.innerHTML+='<div class="guided-picture">'+x.icon+'</div><div class="guided-pair">'+l+' <span>'+x.small+'</span></div><div class="guided-word"><b>'+x.word+'</b><span>'+x.de+'</span></div><p class="guided-lead">Merke dir nur das Bild und die Form.</p>';
-    card.append(primary('Weiter',()=>nextStage('listen')));
-  }
-  function renderListen(){
-    const l=current(),x=info(l),card=shell('Hör mal','2 · Anhören');
-    card.innerHTML+='<div class="guided-picture smallpic">'+x.icon+'</div><div class="guided-word big"><b>'+x.word+'</b><span>'+x.de+'</span></div><div class="guided-soundhint">'+x.sound+'</div>';
-    const audio=primary('🔊 Wort anhören',()=>{if(!speakWord(l,audio)){audio.textContent='Audio hier nicht verfügbar';audio.disabled=true;setTimeout(()=>{audio.disabled=false;audio.textContent='Weiter ohne Audio'},600)}});card.append(audio);
-    const skip=document.createElement('button');skip.className='guided-secondary';skip.textContent='Weiter';skip.onclick=()=>nextStage('trace');card.append(skip);
-  }
-  function setupCanvas(){
-    const canvas=document.getElementById('guidedCanvas'),ctx=canvas.getContext('2d');let drawing=false,moves=0;
-    const fit=()=>{const r=canvas.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineWidth=10;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#2f7d57'};fit();
+  function setupTrace(l,steps){
+    const canvas=document.getElementById('guidedCanvas'),ctx=canvas.getContext('2d'),mask=document.createElement('canvas'),mctx=mask.getContext('2d');let drawing=false,last=null,distance=0,total=0,good=0,step=0;
+    function fit(){const r=canvas.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineWidth=11;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#318c4d';mask.width=Math.round(r.width);mask.height=Math.round(r.height);mctx.clearRect(0,0,mask.width,mask.height);mctx.fillStyle='#000';mctx.textAlign='center';mctx.textBaseline='middle';mctx.font='900 '+Math.floor(Math.min(r.height*.76,r.width*.58))+'px Arial,sans-serif';mctx.fillText(l,r.width/2,r.height/2+r.height*.04)}
+    fit();
     const pos=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
-    canvas.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});
-    canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();moves++;if(moves>8)document.getElementById('guidedTraceDone').disabled=false});
-    const end=e=>{if(drawing)e.preventDefault();drawing=false};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
-    document.getElementById('guidedClear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);moves=0;document.getElementById('guidedTraceDone').disabled=true};
+    function near(p){const x=Math.round(p.x),y=Math.round(p.y),rad=18,xx=Math.max(0,x-rad),yy=Math.max(0,y-rad),w=Math.min(mask.width-xx,rad*2),h=Math.min(mask.height-yy,rad*2);if(w<=0||h<=0)return false;const d=mctx.getImageData(xx,yy,w,h).data;for(let i=3;i<d.length;i+=4)if(d[i]>20)return true;return false}
+    function resetStroke(){distance=0;total=0;good=0;last=null;document.getElementById('guidedStrokeDone').disabled=true}
+    function updateText(){document.getElementById('guidedStrokeGuide').innerHTML='<b>'+(step+1)+'</b><span>'+steps[step]+'</span>';document.querySelectorAll('.guided-drawsteps span').forEach((el,i)=>el.classList.toggle('active',i===step))}
+    canvas.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;last=pos(e);ctx.beginPath();ctx.moveTo(last.x,last.y)});
+    canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();if(last)distance+=Math.hypot(p.x-last.x,p.y-last.y);last=p;total++;if(near(p))good++;const ratio=total?good/total:0;if(distance>55&&total>5&&ratio>=.5)document.getElementById('guidedStrokeDone').disabled=false});
+    const end=e=>{if(drawing)e.preventDefault();drawing=false;last=null};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
+    document.getElementById('guidedClear').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);step=0;resetStroke();updateText()};
+    document.getElementById('guidedStrokeDone').onclick=()=>{if(step<steps.length-1){step++;resetStroke();updateText();document.getElementById('guidedStrokeDone').textContent=step===steps.length-1?'Letzten Strich malen':'Strich geschafft ✓'}else nextStage('letter')};
+    updateText()
   }
-  function renderTrace(){
-    const l=current(),x=info(l),card=shell('Male '+l+' nach','3 · Nachmalen');
-    card.innerHTML+='<p class="guided-lead">Fahre die helle Vorlage mit dem Finger oder der Maus nach.</p><div class="guided-trace"><div class="guided-trace-letter">'+l+'</div><span class="guided-start-dot">●</span><canvas id="guidedCanvas"></canvas></div><div class="guided-drawsteps">'+x.steps.map((t,i)=>'<span><b>'+(i+1)+'</b>'+t+'</span>').join('')+'</div><button class="guided-secondary" id="guidedClear">↻ Nochmal malen</button><button class="guided-primary" id="guidedTraceDone" disabled>Geschafft ✓</button>';
-    card.querySelector('#guidedTraceDone').onclick=()=>nextStage('letter');setupCanvas();
-  }
-  function renderLetterQuiz(){
-    const l=current(),card=shell('Wo ist '+l+'?','4 · Finden');
-    card.innerHTML+='<p class="guided-lead">Tippe auf den richtigen Buchstaben.</p><div class="guided-choice-grid" id="guidedChoices"></div><div id="guidedFeedback" class="guided-feedback"></div>';
-    const grid=card.querySelector('#guidedChoices');letterChoices(l).forEach(choice=>{const b=document.createElement('button');b.className='guided-choice letter';b.textContent=choice;b.onclick=()=>{if(choice===l){b.classList.add('right');feedback('Super! ⭐');setTimeout(()=>nextStage('picture'),350)}else{b.classList.add('wrong');feedback('Fast! Probier noch einmal.',false);setTimeout(()=>b.classList.remove('wrong'),450)}};grid.append(b)});
-  }
-  function renderPictureQuiz(){
-    const l=current(),x=info(l),card=shell('Welches Bild gehört zu '+l+'?','5 · Bild finden');
-    card.innerHTML+='<p class="guided-lead"><b>'+x.word+'</b> bedeutet <b>'+x.de+'</b>.</p><div class="guided-choice-grid pictures" id="guidedChoices"></div><div id="guidedFeedback" class="guided-feedback"></div>';
-    const grid=card.querySelector('#guidedChoices');pictureChoices(l).forEach(choice=>{const y=info(choice),b=document.createElement('button');b.className='guided-choice picture';b.innerHTML='<span>'+y.icon+'</span><small>'+y.de+'</small>';b.onclick=()=>{if(choice===l){b.classList.add('right');feedback('Richtig! ⭐');setTimeout(()=>nextStage('reward'),350)}else{b.classList.add('wrong');feedback('Fast! Schau auf das Wort.',false);setTimeout(()=>b.classList.remove('wrong'),450)}};grid.append(b)});
-  }
-  function renderReward(){
-    const l=current(),x=info(l),card=shell('Super gemacht!','⭐ Geschafft');
-    card.innerHTML+='<div class="guided-celebrate">⭐</div><div class="guided-pair reward">'+l+' <span>'+x.small+'</span></div><p class="guided-lead">Du kennst jetzt <b>'+l+'</b>.</p>';
-    card.append(primary(store().index>=letters().length-1?'Fertig':'Nächster Buchstabe',nextLetter));
-  }
-  function renderComplete(){
-    const ls=letters(),card=shell('Geschafft! 🎉','Heute fertig');
-    card.innerHTML+='<div class="guided-celebrate">🌟</div><p class="guided-lead">Diese Buchstaben hast du heute kennengelernt:</p><div class="guided-doneletters">'+ls.map(l=>'<span>'+l+'</span>').join('')+'</div><div class="guided-picture-row">'+ls.map(l=>'<span title="'+info(l).de+'">'+info(l).icon+'</span>').join('')+'</div>';
-    const allowed=!!window.UKRAINIAN_LEARNING_STATE_GUARD?.alphabetDayAllowed?.(day()+1);
-    if(allowed)card.append(primary('Weiterlernen',()=>{try{advanceLesson()}catch(_){};setTimeout(()=>mount(true),0)}));else{const done=document.createElement('div');done.className='guided-finish-note';done.textContent='Für heute ist alles geschafft. Morgen geht es weiter.';card.append(done)}
-  }
-  function render(){
-    if(!guided()){cleanup();return}
-    const st=store();if(!STAGES.includes(st.stage)&&st.stage!=='welcome'&&st.stage!=='complete')st.stage='welcome';
-    if(st.stage==='welcome')renderWelcome();else if(st.stage==='look')renderLook();else if(st.stage==='listen')renderListen();else if(st.stage==='trace')renderTrace();else if(st.stage==='letter')renderLetterQuiz();else if(st.stage==='picture')renderPictureQuiz();else if(st.stage==='reward')renderReward();else renderComplete();
-  }
+  function renderTrace(){const l=current(),x=info(l),card=shell('Male '+l+' nach','Malen');card.innerHTML+='<p class="guided-lead">Immer nur einen Strich. Bleib auf der hellen Form.</p><div id="guidedStrokeGuide" class="guided-stroke-guide"></div><div class="guided-trace"><div class="guided-trace-letter">'+l+'</div><canvas id="guidedCanvas"></canvas></div><div class="guided-drawsteps">'+x.steps.map((t,i)=>'<span><b>'+(i+1)+'</b>'+t+'</span>').join('')+'</div><button class="guided-secondary" id="guidedClear">↻ Neu anfangen</button><button class="guided-primary" id="guidedStrokeDone" disabled>Strich geschafft ✓</button>';setupTrace(l,x.steps)}
+  function quizAssist(grid,correct,attempts,label){if(attempts.value>=2){grid.querySelectorAll('button').forEach(b=>{if(b.dataset.value===correct)b.classList.add('hint')});const f=document.getElementById('guidedFeedback');f.textContent='Schau: Hier ist '+label+'. Tippe darauf.';f.className='guided-feedback help'}}
+  function renderLetterQuiz(){const l=current(),card=shell('Wo ist '+l+'?','Finden');card.innerHTML+='<p class="guided-lead">Tippe auf '+l+'.</p><div class="guided-choice-grid" id="guidedChoices"></div><div id="guidedFeedback" class="guided-feedback"></div>';const grid=card.querySelector('#guidedChoices'),attempts={value:0};letterChoices(l).forEach(c=>{const b=document.createElement('button');b.className='guided-choice letter';b.dataset.value=c;b.textContent=c;b.onclick=()=>{if(c===l){b.classList.add('right');const f=document.getElementById('guidedFeedback');f.textContent='Super! ⭐';f.className='guided-feedback ok';setTimeout(()=>nextStage('picture'),450)}else{attempts.value++;b.classList.add('wrong');const f=document.getElementById('guidedFeedback');f.textContent='Fast. Versuch es noch einmal.';f.className='guided-feedback try';setTimeout(()=>b.classList.remove('wrong'),400);quizAssist(grid,l,attempts,l)}};grid.append(b)})}
+  function renderPictureQuiz(){const l=current(),x=info(l),card=shell('Welches Bild passt?','Bild finden');card.innerHTML+='<div class="guided-target-word"><b>'+highlighted(l,x.word)+'</b><span>'+x.de+'</span></div><p class="guided-lead">Tippe auf das passende Bild.</p><div class="guided-choice-grid pictures" id="guidedChoices"></div><div id="guidedFeedback" class="guided-feedback"></div>';const grid=card.querySelector('#guidedChoices'),attempts={value:0};pictureChoices(l).forEach(c=>{const y=info(c),b=document.createElement('button');b.className='guided-choice picture';b.dataset.value=c;b.innerHTML='<span>'+y.icon+'</span><small>'+y.de+'</small>';b.onclick=()=>{if(c===l){b.classList.add('right');const f=document.getElementById('guidedFeedback');f.textContent='Richtig! ⭐';f.className='guided-feedback ok';setTimeout(()=>nextStage('reward'),450)}else{attempts.value++;b.classList.add('wrong');const f=document.getElementById('guidedFeedback');f.textContent='Fast. Schau noch einmal auf das Wort.';f.className='guided-feedback try';setTimeout(()=>b.classList.remove('wrong'),400);quizAssist(grid,l,attempts,x.de)}};grid.append(b)})}
+  function renderReward(){const l=current(),x=info(l),card=shell('Super gemacht!','Geschafft');card.innerHTML+='<div class="guided-celebrate">⭐</div><div class="guided-visual mini"><span>'+x.icon+'</span></div><div class="guided-pair reward">'+l+' <span>'+x.small+'</span></div><div class="guided-word"><b>'+highlighted(l,x.word)+'</b><small>'+x.de+'</small></div><p class="guided-lead">Diesen Buchstaben hast du geschafft.</p>';card.append(primary(store().index>=letters().length-1?'Fertig':'Noch einen lernen',nextLetter))}
+  function renderComplete(){const ls=letters(),card=shell('Für heute geschafft!','Fertig');card.innerHTML+='<div class="guided-celebrate">🌟</div><p class="guided-lead">Das hast du heute kennengelernt:</p><div class="guided-doneletters">'+ls.map(l=>'<span><b>'+l+'</b><small>'+info(l).icon+'</small></span>').join('')+'</div>';const allowed=!!window.UKRAINIAN_LEARNING_STATE_GUARD?.alphabetDayAllowed?.(day()+1);if(allowed)card.append(primary('Morgen weitermachen',()=>{}));else{const note=document.createElement('div');note.className='guided-finish-note';note.textContent='Mehr musst du heute nicht machen.';card.append(note)}}
+  function render(){if(!guided()){cleanup();return}const st=store();if(!STAGES.includes(st.stage)&&st.stage!=='welcome'&&st.stage!=='complete')st.stage='welcome';if(st.stage==='welcome')renderWelcome();else if(st.stage==='discover')renderDiscover();else if(st.stage==='trace')renderTrace();else if(st.stage==='letter')renderLetterQuiz();else if(st.stage==='picture')renderPictureQuiz();else if(st.stage==='reward')renderReward();else renderComplete()}
   function cleanup(){document.body.classList.remove('guided-alphabet');document.getElementById('guidedAlphabetStart')?.remove()}
-  function mount(){
-    if(!guided()){cleanup();return}
-    document.body.classList.add('guided-alphabet');
-    try{if(typeof show==='function')show('learn')}catch(_){}
-    const learn=document.getElementById('learn');if(!learn)return;
-    let root=document.getElementById('guidedAlphabetStart');if(!root){root=document.createElement('div');root.id='guidedAlphabetStart';root.className='guided-root';learn.prepend(root)}
-    render();
-  }
-  const css=document.createElement('style');css.id='guidedAlphabetStyles';css.textContent=`
-    body.guided-alphabet{background:radial-gradient(circle at 15% 5%,#e5f8df 0 12%,transparent 31%),linear-gradient(180deg,#f5fbf2,#eef8ee 60%,#f8fcf7);color:#244431}
-    body.guided-alphabet main{max-width:680px;padding-top:18px}
-    body.guided-alphabet main>header,body.guided-alphabet nav,body.guided-alphabet main>section.card,body.guided-alphabet #learn>*:not(#guidedAlphabetStart){display:none!important}
-    body.guided-alphabet #learn{display:block!important}
-    .guided-root{min-height:calc(100vh - 55px);display:flex;flex-direction:column;justify-content:flex-start;padding:6px 0 28px}
-    .guided-top{display:grid;grid-template-columns:38px 1fr auto;gap:11px;align-items:center;margin:4px 3px 15px}.guided-backmark{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:#fff;box-shadow:0 6px 18px #315d3c14}.guided-mini-progress{height:11px;border-radius:99px;background:#dfeee0;overflow:hidden}.guided-mini-progress i{display:block;height:100%;background:linear-gradient(90deg,#58a969,#77c874);border-radius:inherit;transition:width .3s}.guided-count{font-size:.82rem;font-weight:900;color:#5d7966}
-    .guided-card{background:#fff;border:1px solid #dcebdc;border-radius:28px;padding:28px 24px;box-shadow:0 18px 50px #28563813;text-align:center}.guided-eyebrow{font-size:.78rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#5a9e67}.guided-card h2{font-size:clamp(1.65rem,6vw,2.35rem);color:#244c32;margin:6px 0 12px}.guided-lead{font-size:1.02rem;color:#607468;margin:12px auto 20px;max-width:430px}.guided-hero-letter{font-size:clamp(7rem,28vw,11rem);font-weight:900;line-height:.92;color:#3f9156;margin:24px 0 4px;text-shadow:0 8px 0 #e2f2e4}.guided-small-letter{font-size:1.05rem;color:#6d8174}.guided-small-letter b{font-size:1.55rem;color:#3e6d4c}.guided-picture{font-size:clamp(6rem,24vw,9rem);line-height:1.1;margin:15px 0}.guided-picture.smallpic{font-size:6rem}.guided-pair{font-size:4rem;font-weight:950;line-height:1;color:#2f7d49}.guided-pair span{font-size:.62em;color:#65a675}.guided-word{margin:16px auto 8px;display:flex;flex-direction:column;gap:3px}.guided-word b{font-size:1.55rem;color:#264e34}.guided-word span{color:#6a7c70}.guided-word.big b{font-size:2rem}.guided-soundhint{display:inline-block;padding:9px 13px;background:#eff8ef;border-radius:14px;color:#4f6f58;margin-bottom:17px}.guided-primary,.guided-secondary{width:100%;border:0;border-radius:16px;padding:15px 18px;font-weight:900;font-size:1.04rem;cursor:pointer}.guided-primary{background:#55a866;color:#fff;box-shadow:0 5px 0 #3e8650;margin-top:10px}.guided-primary:active{transform:translateY(2px);box-shadow:0 3px 0 #3e8650}.guided-primary:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}.guided-secondary{background:#edf7ee;color:#386348;margin-top:10px}.guided-primary.is-playing{background:#3f8f54}.guided-trace{height:310px;max-width:470px;margin:18px auto 12px;position:relative;border:3px dashed #b8ddb9;border-radius:25px;background:#f9fdf8;overflow:hidden}.guided-trace-letter{position:absolute;inset:0;display:grid;place-items:center;font-size:15rem;font-weight:900;color:#dceedd;user-select:none}.guided-start-dot{position:absolute;top:32px;left:50%;transform:translateX(-50%);z-index:1;color:#57aa67;font-size:1.35rem}.guided-trace canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.guided-drawsteps{display:grid;gap:7px;margin:11px auto 15px;max-width:470px;text-align:left}.guided-drawsteps span{display:flex;gap:10px;align-items:center;padding:9px 11px;border-radius:13px;background:#f2f9f2;color:#52695a}.guided-drawsteps b{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#63b372;color:white}.guided-choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:22px auto 12px;max-width:500px}.guided-choice{border:2px solid #d8e8d9;background:#fff;border-radius:20px;min-height:118px;cursor:pointer;color:#2e5d3b;transition:.15s}.guided-choice.letter{font-size:3.5rem;font-weight:950}.guided-choice.picture{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.guided-choice.picture span{font-size:4rem}.guided-choice.picture small{font-weight:800;color:#688071}.guided-choice.right{background:#e6f7e8;border-color:#5eb66c;transform:scale(1.02)}.guided-choice.wrong{background:#fff5e9;border-color:#e9b35f}.guided-feedback{min-height:30px;font-weight:900}.guided-feedback.ok{color:#31834a}.guided-feedback.try{color:#9a6a25}.guided-celebrate{font-size:6rem;animation:guidedPop .45s ease}.guided-pair.reward{margin:8px 0 18px}.guided-doneletters{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px 0}.guided-doneletters span{width:78px;height:78px;display:grid;place-items:center;border-radius:20px;background:#edf8ee;color:#2f7d49;font-size:2.7rem;font-weight:950}.guided-picture-row{display:flex;justify-content:center;gap:17px;font-size:2.7rem;margin:8px 0 18px}.guided-finish-note{margin-top:18px;padding:14px;border-radius:16px;background:#eff8ef;color:#55715d;font-weight:800}@keyframes guidedPop{0%{transform:scale(.55);opacity:.2}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-    @media(max-width:560px){body.guided-alphabet main{padding:12px 12px 24px}.guided-card{padding:23px 17px;border-radius:24px}.guided-root{min-height:calc(100vh - 30px)}.guided-choice-grid{gap:8px}.guided-choice{min-height:103px}.guided-choice.picture span{font-size:3.35rem}.guided-trace{height:270px}.guided-trace-letter{font-size:12rem}.guided-drawsteps span{font-size:.9rem}}
+  function mount(){if(!guided()){cleanup();return}document.body.classList.add('guided-alphabet');try{if(typeof show==='function')show('learn')}catch(_){}const learn=document.getElementById('learn');if(!learn)return;let root=document.getElementById('guidedAlphabetStart');if(!root){root=document.createElement('div');root.id='guidedAlphabetStart';root.className='guided-root';learn.prepend(root)}render()}
+  const css=document.createElement('style');css.id='guidedAlphabetStylesV2';css.textContent=`
+    body.guided-alphabet{background:linear-gradient(180deg,#f4fbf1,#eaf7eb 58%,#f8fcf7);color:#244431}body.guided-alphabet main{max-width:660px;padding-top:14px}body.guided-alphabet main>header,body.guided-alphabet nav,body.guided-alphabet main>section.card,body.guided-alphabet #learn>*:not(#guidedAlphabetStart){display:none!important}body.guided-alphabet #learn{display:block!important}.guided-root{min-height:calc(100vh - 35px);padding:4px 0 28px}.guided-top{display:flex;align-items:center;gap:13px;margin:3px 4px 14px}.guided-seed{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:#fff;box-shadow:0 6px 18px #315d3c12}.guided-dots{display:flex;gap:8px;flex:1;justify-content:center}.guided-dots i{width:11px;height:11px;border-radius:50%;background:#dcebdd}.guided-dots i.now{background:#58aa69;transform:scale(1.22)}.guided-dots i.done{background:#89c88f}.guided-card{background:#fff;border:1px solid #dcebdc;border-radius:28px;padding:27px 23px;box-shadow:0 18px 46px #28563812;text-align:center}.guided-kicker{font-size:.79rem;font-weight:900;color:#5a9e67}.guided-card h2{font-size:clamp(1.7rem,6vw,2.35rem);color:#244c32;margin:5px 0 11px}.guided-lead{font-size:1.02rem;color:#607468;margin:12px auto 18px;max-width:430px}.guided-hero-letter{font-size:clamp(7.5rem,29vw,11rem);font-weight:950;line-height:.92;color:#3f9156;margin:24px 0 5px;text-shadow:0 8px 0 #e2f2e4}.guided-small-letter{color:#6d8174}.guided-small-letter b{font-size:1.55rem;color:#3e6d4c}.guided-visual{width:min(230px,62vw);aspect-ratio:1.18;margin:13px auto 14px;border-radius:30px;background:linear-gradient(145deg,#eff9e9,#fdfef9);border:2px solid #dcefd9;display:grid;place-items:center;box-shadow:inset 0 -8px 20px #89b88e12}.guided-visual span{font-size:clamp(6rem,24vw,9rem);filter:drop-shadow(0 8px 8px #355c3920)}.guided-visual.mini{width:120px;border-radius:22px}.guided-visual.mini span{font-size:4.8rem}.guided-pair{font-size:4.2rem;font-weight:950;line-height:1;color:#2f7d49}.guided-pair span{font-size:.6em;color:#65a675}.guided-word{margin:14px auto 8px;display:flex;flex-direction:column;gap:2px}.guided-word b,.guided-target-word b{font-size:1.8rem;color:#264e34}.guided-word b em,.guided-target-word b em{font-style:normal;color:#55a866;background:#e9f7e9;border-radius:7px;padding:0 3px}.guided-word small,.guided-target-word span{color:#6a7c70;font-size:1rem}.guided-target-word{display:flex;flex-direction:column;margin:18px 0 3px}.guided-soundhint{display:inline-block;padding:9px 13px;background:#eff8ef;border-radius:14px;color:#4f6f58}.guided-audio-note{font-size:.78rem;color:#789080;margin-top:8px}.guided-primary,.guided-secondary{width:100%;border:0;border-radius:17px;padding:15px 18px;font-weight:900;font-size:1.05rem;cursor:pointer}.guided-primary{background:#55a866;color:#fff;box-shadow:0 5px 0 #3e8650;margin-top:10px}.guided-primary:active{transform:translateY(2px);box-shadow:0 3px 0 #3e8650}.guided-primary:disabled{opacity:.4;box-shadow:none}.guided-secondary{background:#edf7ee;color:#386348;margin-top:10px}.guided-primary.is-playing{background:#3f8f54}.guided-stroke-guide{max-width:470px;margin:11px auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 14px;border-radius:15px;background:#eaf7ea;color:#365f42;font-weight:850}.guided-stroke-guide b{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#55a866;color:#fff}.guided-trace{height:310px;max-width:470px;margin:12px auto;position:relative;border:3px dashed #b8ddb9;border-radius:25px;background:#f9fdf8;overflow:hidden}.guided-trace-letter{position:absolute;inset:0;display:grid;place-items:center;font-size:15rem;font-weight:900;color:#dceedd;user-select:none}.guided-trace canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.guided-drawsteps{display:grid;gap:6px;margin:10px auto 14px;max-width:470px;text-align:left}.guided-drawsteps span{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:12px;background:#f5faf5;color:#718077;opacity:.58}.guided-drawsteps span.active{opacity:1;background:#eaf7ea;color:#355f41;font-weight:800}.guided-drawsteps b{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#8fc797;color:white}.guided-drawsteps span.active b{background:#55a866}.guided-choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:20px auto 10px;max-width:500px}.guided-choice-grid:has(.guided-choice:nth-child(2):last-child){grid-template-columns:repeat(2,1fr);max-width:390px}.guided-choice{border:2px solid #d8e8d9;background:#fff;border-radius:20px;min-height:118px;cursor:pointer;color:#2e5d3b;transition:.15s}.guided-choice.letter{font-size:3.7rem;font-weight:950}.guided-choice.picture{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}.guided-choice.picture span{font-size:4.2rem}.guided-choice.picture small{font-weight:850;color:#688071}.guided-choice.right{background:#e6f7e8;border-color:#5eb66c;transform:scale(1.02)}.guided-choice.wrong{background:#fff8ed;border-color:#e8ba6d}.guided-choice.hint{border-color:#55a866;box-shadow:0 0 0 4px #a8dfae55;animation:guidedHint .8s infinite alternate}.guided-feedback{min-height:29px;font-weight:900}.guided-feedback.ok{color:#31834a}.guided-feedback.try{color:#936b2e}.guided-feedback.help{color:#317343}.guided-celebrate{font-size:5.5rem;animation:guidedPop .45s ease}.guided-pair.reward{margin:7px 0}.guided-doneletters{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px 0}.guided-doneletters span{width:88px;height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:20px;background:#edf8ee;color:#2f7d49}.guided-doneletters b{font-size:2.7rem}.guided-doneletters small{font-size:1.8rem}.guided-finish-note{margin-top:18px;padding:14px;border-radius:16px;background:#eff8ef;color:#55715d;font-weight:800}@keyframes guidedPop{0%{transform:scale(.55);opacity:.2}70%{transform:scale(1.12)}100%{transform:scale(1)}}@keyframes guidedHint{to{transform:scale(1.035)}}@media(max-width:560px){body.guided-alphabet main{padding:10px 11px 24px}.guided-card{padding:22px 16px;border-radius:24px}.guided-choice-grid{gap:8px}.guided-choice{min-height:104px}.guided-choice.picture span{font-size:3.5rem}.guided-trace{height:270px}.guided-trace-letter{font-size:12rem}.guided-drawsteps span{font-size:.88rem}}
   `;document.head.append(css);
   const baseRender=typeof render==='function'?render:null;if(baseRender){render=function(){const out=baseRender.apply(this,arguments);setTimeout(mount,0);return out}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
-  window.UKRAINIAN_GUIDED_ALPHABET={version:VERSION,oneScreenOneTask:true,pictureLearning:true,tracing:true};
+  window.UKRAINIAN_GUIDED_ALPHABET={version:VERSION,oneScreenOneTask:true,pictureLearning:true,tracing:true,humanAudioOnly:true,strokeByStroke:true,autoHelp:true,easyFirstChoice:true};
 })();
