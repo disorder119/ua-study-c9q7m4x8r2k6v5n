@@ -8,9 +8,9 @@
   const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'Freie Creative-Commons-Lizenz; genaue Lizenz auf der Dateiseite'};
   const SH={speaker:'Галя Раптова',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US'};
   const rows={
-    'А':{file:'LL-Q8798 (ukr)-Tohaomg-Албанія.wav',label:'Албанія',...LL},
-    'Б':{file:'LL-Q8798 (ukr)-Tohaomg-Білорусь.wav',label:'Білорусь',...LL},
-    'В':{file:"LL-Q8798 (ukr)-Tohaomg-В'єтнам.wav",label:"В'єтнам",...LL},
+    'А':{file:'Uk-автобус.ogg',label:'автобус',...SH},
+    'Б':{file:'Uk-бабуся.ogg',label:'бабуся',...SH},
+    'В':{file:'Uk-вода.ogg',label:'вода',...SH},
     'Г':{file:'LL-Q8798 (ukr)-Tohaomg-Гана.wav',label:'Гана',...LL},
     'Ґ':{file:'Uk-ґудзик.ogg',label:'ґудзик',...SH},
     'Д':{file:'LL-Q8798 (ukr)-Tohaomg-Данія.wav',label:'Данія',...LL},
