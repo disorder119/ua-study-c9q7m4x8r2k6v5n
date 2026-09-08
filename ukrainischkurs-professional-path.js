@@ -1,29 +1,82 @@
-/* Ukrainischkurs für Joel · Professional Lesson Path v1
-   Einheitliche didaktische Oberfläche über ALLE bestehenden Lektionen, ohne D,
-   Tagesindizes oder bestehende Mastery-Gates zu verändern.
-   Ziele: weniger gleichzeitige neue Chunks, Wiederholungen sichtbar machen,
-   Transliteration nur als Notfallhilfe, aktiver Abruf vor dem alten Abschlusstest
-   und optionale Zusatzmodule aus dem Hauptlernfluss halten. */
+/* Ukrainischkurs für Joel · Professional Lesson Path v2
+   Inhaltsbewusster Lernweg über ALLE bestehenden Lektionen, ohne D, Tagesindizes
+   oder bestehende Mastery-Gates zu verändern.
+   Ziele: adaptive Mini-Portionen, konkretes Can-do-Ziel je Lektion, Transliteration
+   nur als Notfallhilfe, interleaved delayed recall und Respekt vor spezialisierten
+   späteren Mastery-Modulen. */
 (()=>{
-  const VERSION=1,core=window.UKRAINIAN_LEARNING_CORE;
+  const VERSION=2,core=window.UKRAINIAN_LEARNING_CORE;
   if(!core||!Array.isArray(D))return;
   const COURSE_LENGTH=D.length;
   const OPTIONAL_IDS=['designerAlphabetLesson','fashionBridgeLesson','resalePracticeLesson','realConversationBox','personalWordsBox'];
   const norm=v=>core.normalize?core.normalize(String(v||''),{stripStress:true}):String(v||'').trim().toLocaleLowerCase('uk');
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ukWords=v=>(String(v||'').match(/[А-Яа-яІіЇїЄєҐґ’ʼ'-]+/g)||[]);
   const firstSeen=new Map();
   D.forEach((day,di)=>(day?.[3]||[]).forEach(card=>{const key=norm(card?.[0]);if(key&&!firstSeen.has(key))firstSeen.set(key,di)}));
-  const audit=D.map((day,di)=>{const items=day?.[3]||[],repeated=items.filter(c=>(firstSeen.get(norm(c?.[0]))??di)<di).length;return {day:di,title:String(day?.[0]||''),items:items.length,newItems:items.length-repeated,repeatedItems:repeated,heavy:items.length>3}});
+  function classify(day,di){
+    const title=String(day?.[0]||''),desc=[day?.[1],day?.[2]].join(' '),items=day?.[3]||[],allText=(title+' '+desc+' '+items.map(x=>x?.[1]||'').join(' ')).toLocaleLowerCase('de');
+    const avgWords=items.length?items.reduce((a,c)=>a+ukWords(c?.[0]).length,0)/items.length:0;
+    const sentenceHeavy=avgWords>=2.4||items.some(c=>ukWords(c?.[0]).length>=5);
+    let type='vocabulary';
+    if(di<14)type='alphabet';
+    else if(/zahl|preis|menge|uhr|zeit/.test(allText))type='numbers';
+    else if(/fragen|nachfragen|klären|bedeutet|versteh/.test(allText))type='clarification';
+    else if(/restaurant|café|laden|einkauf|service|hotel|apotheke|verkehr|bus|zug|ticket|fahrkarte|termin/.test(allText))type='transaction';
+    else if(/ort|weg|richtung|haltestelle|links|rechts|stadtverkehr/.test(allText))type='location';
+    else if(/gestern|vergangen|erlebnis|rückblick|erzählen/.test(allText))type='past';
+    else if(/morgen|plan|zukunft|verabred/.test(allText))type='future';
+    else if(/meinung|vorlieb|vergleich|begründe|grund/.test(allText))type='opinion';
+    else if(/familie|menschen|vorstellen|über dich|mich genauer/.test(allText))type='personal';
+    else if(/gesundheit|hilfe|beschwerde/.test(allText))type='help';
+    else if(/arbeit|schicht/.test(allText))type='work';
+    else if(/telefon|nachricht/.test(allText))type='communication';
+    else if(/ablauf|verbinden|tagesplan|reihenfolge/.test(allText))type='sequence';
+    else if(/grammatik|genitiv|vernein|possessiv|verb|fall|form/.test(allText))type='grammar';
+    else if(/dialog|gespräch|smalltalk|interaktion/.test(allText))type='interaction';
+    else if(/abschluss|prüfung|checkpoint|review|wiederhol/.test(allText))type='review';
+    return {type,sentenceHeavy,avgWords:Number(avgWords.toFixed(2)),batchSize:sentenceHeavy?2:3};
+  }
+  function canDo(profile,day){
+    const map={
+      alphabet:'die heutigen Zeichen sicher erkennen und den richtigen Laut zuordnen.',
+      numbers:'Zahlen, Mengen oder Uhrzeiten verstehen und selbst nennen.',
+      clarification:'eine einfache Rückfrage stellen, wenn du etwas nicht verstehst.',
+      transaction:'eine konkrete Alltagssituation mit kurzen ukrainischen Sätzen bewältigen.',
+      location:'nach einem Ort oder Weg fragen und eine einfache Ortsangabe verstehen.',
+      past:'über etwas Vergangenes in mehreren einfachen Sätzen sprechen.',
+      future:'einen einfachen Plan nennen, ändern oder zeitlich einordnen.',
+      opinion:'eine einfache Meinung äußern und kurz begründen.',
+      personal:'über dich oder vertraute Personen in einfachen Sätzen sprechen.',
+      help:'ein Problem klar benennen und um passende Hilfe bitten.',
+      work:'bei der Arbeit Status, Problem oder nächsten Schritt erklären.',
+      communication:'eine kurze Nachricht oder ein einfaches Telefonat bewältigen.',
+      sequence:'mehrere bekannte Aussagen zu einem kurzen Ablauf verbinden.',
+      grammar:'das heutige Sprachmuster in einer eigenen Antwort korrekt anwenden.',
+      interaction:'ein kurzes Gespräch beginnen, beantworten und weiterführen.',
+      review:'frühere Inhalte ohne Hilfe sicher wieder abrufen.',
+      vocabulary:'die heutigen Ausdrücke verstehen und ohne Übersetzungshilfe selbst abrufen.'
+    };
+    return 'Heute kannst du '+(map[profile.type]||map.vocabulary);
+  }
+  const profiles=D.map((day,di)=>classify(day,di));
+  const audit=D.map((day,di)=>{const items=day?.[3]||[],repeated=items.filter(c=>(firstSeen.get(norm(c?.[0]))??di)<di).length,p=profiles[di],warnings=[];if(items.length>p.batchSize)warnings.push('raw-load-batched');if(p.sentenceHeavy&&items.length>2)warnings.push('sentence-heavy-batched');if(items.filter(c=>String(c?.[2]||'').trim()).length)warnings.push('romanization-present-hidden');return {day:di,title:String(day?.[0]||''),items:items.length,newItems:items.length-repeated,repeatedItems:repeated,type:p.type,sentenceHeavy:p.sentenceHeavy,batchSize:p.batchSize,canDo:canDo(p,day),warnings};});
   function ensure(){
     if(!s.professionalPath||typeof s.professionalPath!=='object')s.professionalPath={version:VERSION,days:{},extrasVisible:false};
     s.professionalPath.version=VERSION;s.professionalPath.days=s.professionalPath.days||{};return s.professionalPath
   }
-  function dayState(di=Number(s.day)||0){const root=ensure(),k=String(di);if(!root.days[k]){const items=D[di]?.[3]||[],known=items.map((_,ci)=>!!s.known?.[typeof id==='function'?id(di,ci):`d${di}-${ci}`]);let stage='core';if(known.length&&known.every(Boolean))stage='recall';else if(known.slice(0,Math.min(3,known.length)).every(Boolean)&&items.length>3)stage='extra';root.days[k]={stage,translit:false,recallPassed:false,recallBest:0,recallAttempts:0,coreViewed:false,extraViewed:false}}return root.days[k]}
+  function migrateDayState(raw,di){
+    const items=D[di]?.[3]||[],p=profiles[di],batchCount=Math.max(1,Math.ceil(items.length/p.batchSize));
+    if(!raw||typeof raw!=='object')return {stage:'study',batch:0,translit:false,helpUnlocked:false,recallPassed:false,recallBest:0,recallAttempts:0,batchesViewed:[]};
+    if(['core','extra'].includes(raw.stage)){raw.batch=raw.stage==='extra'?1:0;raw.stage='study'}
+    if(!['study','recall','done'].includes(raw.stage))raw.stage='study';
+    raw.batch=Math.max(0,Math.min(batchCount-1,Number(raw.batch)||0));raw.translit=!!raw.translit;raw.helpUnlocked=!!raw.helpUnlocked;raw.batchesViewed=Array.isArray(raw.batchesViewed)?raw.batchesViewed:[];return raw
+  }
+  function dayState(di=Number(s.day)||0){const root=ensure(),k=String(di);root.days[k]=migrateDayState(root.days[k],di);const st=root.days[k],items=D[di]?.[3]||[];if(!root.days[k]._init){const known=items.map((_,ci)=>!!s.known?.[typeof id==='function'?id(di,ci):`d${di}-${ci}`]);if(known.length&&known.every(Boolean)&&st.stage==='study')st.stage='recall';st._init=true}return st}
   function guidedAlphabet(){return document.body.classList.contains('guided-alphabet')||((Number(s.day)||0)<14&&typeof alphabetReady==='function'&&!alphabetReady())}
   function contentLesson(){const d=D[Number(s.day)||0];return !guidedAlphabet()&&!!d&&Array.isArray(d[3])&&d[3].length>0}
   function activate(ci){const di=Number(s.day)||0,k=typeof id==='function'?id(di,ci):`d${di}-${ci}`;if(s.known?.[k])return;try{activateItem({di,ci,c:D[di][3][ci],k})}catch{} }
   function saveSafe(){try{save()}catch{}}
-  function setStage(stage){const st=dayState();st.stage=stage;saveSafe();patch()}
   function markRange(indices){indices.forEach(activate);saveSafe()}
   function phaseLabel(di,title){if(di<14)return 'Alphabet';if(/abschluss|prüfung|checkpoint/i.test(title))return 'Nachweis';if(/geschichte|dialog|gespräch|conversation|interaktion|erzählen/i.test(title))return 'Anwenden';if(di>=Math.max(14,COURSE_LENGTH-44))return 'Selbstständiger werden';return 'Grundlagen aufbauen'}
   function updateTheme(){document.body.classList.add('professional-path');const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content','#2f7d57')}
@@ -34,35 +87,40 @@
   }
   function duplicateBadges(cards){const di=Number(s.day)||0,items=D[di]?.[3]||[];cards.forEach((card,ci)=>{card.querySelector('.pro-repeat-badge')?.remove();const first=firstSeen.get(norm(items[ci]?.[0]));if(Number.isFinite(first)&&first<di){const badge=document.createElement('span');badge.className='pro-repeat-badge';badge.textContent='↻ Wiederholung';card.append(badge)}})}
   function pronunciation(st){document.body.classList.toggle('pro-translit-on',!!st.translit);document.querySelectorAll('#cards details.pronunciation').forEach(d=>{d.open=!!st.translit});}
-  function visibleIndices(st,count){if(st.stage==='core')return Array.from({length:Math.min(3,count)},(_,i)=>i);if(st.stage==='extra')return Array.from({length:Math.max(0,count-3)},(_,i)=>i+3);return st.stage==='done'?Array.from({length:count},(_,i)=>i):[]}
+  function batchIndices(di,st){const count=D[di]?.[3]?.length||0,size=profiles[di].batchSize,start=st.batch*size;return Array.from({length:Math.max(0,Math.min(size,count-start))},(_,i)=>start+i)}
+  function totalBatches(di){return Math.max(1,Math.ceil((D[di]?.[3]?.length||0)/profiles[di].batchSize))}
   function lessonCoach(cards){
-    const di=Number(s.day)||0,d=D[di],items=d[3],st=dayState(di),info=audit[di],host=document.getElementById('cards');if(!host)return;
+    const di=Number(s.day)||0,d=D[di],items=d[3],st=dayState(di),profile=profiles[di],host=document.getElementById('cards');if(!host)return;
     let box=document.getElementById('professionalLessonCoach');if(!box){box=document.createElement('section');box.id='professionalLessonCoach';box.className='pro-coach';host.insertAdjacentElement('beforebegin',box)}
-    const indices=visibleIndices(st,items.length),newNow=indices.filter(i=>(firstSeen.get(norm(items[i]?.[0]))??di)===di).length,reviewNow=indices.length-newNow;
-    let title='';let text='';let action='';
-    if(st.stage==='core'){title=items.length>3?'Erst 3 Kernbausteine':'Diese Bausteine zuerst';text='Nicht alles auf einmal. Schau, hör und versteh nur diese kleine Gruppe.';action=items.length>3?'Weiter zu den nächsten '+(items.length-3):'Weiter zum Erinnern'}
-    else if(st.stage==='extra'){title='Jetzt nur noch '+Math.max(0,items.length-3);text='Die erste Gruppe ist weggeräumt. Konzentriere dich nur auf den Rest.';action='Jetzt aus dem Kopf'}
-    else if(st.stage==='recall'){title='Ohne Hilfe erinnern';text='Zwei kurze Antworten aus dem Kopf. Erst danach kommt der normale Abschlusstest.';action='2× erinnern starten'}
-    else {title='Karten-Teil geschafft';text='Du hast die heutige Sprache nicht nur gesehen, sondern aktiv abgerufen. Jetzt folgt die nächste Kursaufgabe.';action='Zum kurzen Abschlusstest'}
-    box.innerHTML='<div class="pro-top"><div><div class="pro-eyebrow">'+esc(phaseLabel(di,d[0]))+' · Schritt für Schritt</div><h3>'+esc(title)+'</h3><p>'+esc(text)+'</p></div><div class="pro-dots"><i class="on"></i><i class="'+(['extra','recall','done'].includes(st.stage)?'on':'')+'"></i><i class="'+(['recall','done'].includes(st.stage)?'on':'')+'"></i></div></div>'+(indices.length?'<div class="pro-load">'+(newNow?'<span>'+newNow+' neu</span>':'')+(reviewNow?'<span>'+reviewNow+' Wiederholung</span>':'')+'</div>':'')+'<div class="pro-actions"><button class="primary" id="proMainAction">'+esc(action)+'</button><button class="ghost" id="proPronunciation">'+(st.translit?'Aussprachehilfe aus':'Aussprachehilfe')+'</button></div>';
-    const main=document.getElementById('proMainAction');if(main)main.onclick=()=>{if(st.stage==='core'){markRange(indices);st.coreViewed=true;setStage(items.length>3?'extra':'recall')}else if(st.stage==='extra'){markRange(indices);st.extraViewed=true;setStage('recall')}else if(st.stage==='recall')startRecall();else{const q=document.getElementById('startQuiz');if(q){q.scrollIntoView({behavior:'smooth',block:'center'});q.focus()}}};
+    const indices=st.stage==='study'?batchIndices(di,st):st.stage==='done'?Array.from({length:items.length},(_,i)=>i):[],newNow=indices.filter(i=>(firstSeen.get(norm(items[i]?.[0]))??di)===di).length,reviewNow=indices.length-newNow,batches=totalBatches(di);
+    let title='',text='',action='';
+    if(st.stage==='study'){title='Nur '+indices.length+' Baustein'+(indices.length===1?'':'e')+' jetzt';text='Konzentriere dich nur auf diese kleine Gruppe. Verstehen und laut lesen – noch nicht alles perfekt können.';action=st.batch+1<batches?'Nächste kleine Gruppe':'Jetzt aus dem Kopf'}
+    else if(st.stage==='recall'){title='Ohne Hilfe erinnern';text='Jetzt kommt heutiger Stoff gemischt mit etwas Älterem. So merkst du, ob es wirklich abrufbar ist.';action='Abruf starten'}
+    else {title='Karten-Teil geschafft';text='Du hast neue Sprache gelernt und ältere Sprache erneut abgerufen. Jetzt folgt die passende Kursaufgabe.';action='Weiter zur Anwendung'}
+    box.innerHTML='<div class="pro-cando">'+esc(canDo(profile,d))+'</div><div class="pro-top"><div><div class="pro-eyebrow">'+esc(phaseLabel(di,d[0]))+' · '+esc(profile.type)+'</div><h3>'+esc(title)+'</h3><p>'+esc(text)+'</p></div><div class="pro-dots">'+Array.from({length:Math.max(3,batches+2)},(_,i)=>'<i class="'+(i<=(st.stage==='study'?st.batch:st.stage==='recall'?batches:batches+1)?'on':'')+'"></i>').join('')+'</div></div>'+(indices.length?'<div class="pro-load">'+(newNow?'<span>'+newNow+' neu</span>':'')+(reviewNow?'<span>'+reviewNow+' Wiederholung</span>':'')+'</div>':'')+'<div class="pro-actions"><button class="primary" id="proMainAction">'+esc(action)+'</button>'+(st.helpUnlocked||st.translit?'<button class="ghost" id="proPronunciation">'+(st.translit?'Notfall-Lesehilfe aus':'Notfall-Lesehilfe')+'</button>':'')+'</div>';
+    const main=document.getElementById('proMainAction');if(main)main.onclick=()=>{if(st.stage==='study'){markRange(indices);st.batchesViewed=[...new Set([...(st.batchesViewed||[]),st.batch])];if(st.batch+1<batches)st.batch++;else st.stage='recall';saveSafe();patch()}else if(st.stage==='recall')startRecall();else{const specialized=document.querySelector('#foundationRule:not([hidden]),#a1Expansion2Rule:not([hidden]),#progressiveGrowthBox:not([hidden]),#independenceLadderBox:not([hidden]),[id*="Review"]:not([hidden])');if(specialized){specialized.scrollIntoView({behavior:'smooth',block:'center'});specialized.querySelector('button')?.focus();return}const q=document.getElementById('startQuiz');if(q){q.hidden=false;q.scrollIntoView({behavior:'smooth',block:'center'});q.focus()}}};
     const tr=document.getElementById('proPronunciation');if(tr)tr.onclick=()=>{st.translit=!st.translit;saveSafe();patch()};
     cards.forEach((card,ci)=>{card.hidden=!indices.includes(ci);card.classList.toggle('pro-current',indices.includes(ci))});duplicateBadges(cards);pronunciation(st)
   }
   let recall=null;
-  function recallPool(){const di=Number(s.day)||0,items=D[di]?.[3]||[],fresh=items.map((c,i)=>({c,i,fresh:(firstSeen.get(norm(c?.[0]))??di)===di}));return [...fresh.filter(x=>x.fresh),...fresh.filter(x=>!x.fresh)]}
-  function startRecall(){const st=dayState(),pool=recallPool(),offset=(Number(st.recallAttempts)||0)%Math.max(1,pool.length),items=[];for(let n=0;n<Math.min(2,pool.length);n++)items.push(pool[(offset+n)%pool.length]);recall={items,idx:0,first:0,retry:false};renderRecall()}
+  function priorCandidate(di){
+    try{const due=typeof priorDue==='function'?priorDue(di):[];if(due?.length){const x=due[0];return {c:x.c,di:x.di,ci:x.ci,source:'old'}}}catch{}
+    for(let d=di-1;d>=Math.max(14,di-8);d--){const items=D[d]?.[3]||[];if(items.length){const ci=(di+d)%items.length;return {c:items[ci],di:d,ci,source:'old'}}}
+    return null
+  }
+  function recallPool(){const di=Number(s.day)||0,items=D[di]?.[3]||[],fresh=items.map((c,i)=>({c,i,di,ci:i,source:'today',fresh:(firstSeen.get(norm(c?.[0]))??di)===di}));return [...fresh.filter(x=>x.fresh),...fresh.filter(x=>!x.fresh)]}
+  function startRecall(){const st=dayState(),di=Number(s.day)||0,pool=recallPool(),profile=profiles[di],todayCount=Math.min(profile.sentenceHeavy?3:2,pool.length),offset=(Number(st.recallAttempts)||0)%Math.max(1,pool.length),items=[];for(let n=0;n<todayCount;n++)items.push(pool[(offset+n)%pool.length]);const old=priorCandidate(di);if(old&&!items.some(x=>norm(x.c?.[0])===norm(old.c?.[0])))items.push(old);recall={items,idx:0,first:0,retry:false};renderRecall()}
   function renderRecall(){
     const host=document.getElementById('cards');if(!host)return;let box=document.getElementById('professionalRecall');if(!box){box=document.createElement('section');box.id='professionalRecall';box.className='pro-recall';host.insertAdjacentElement('afterend',box)}
-    if(!recall){box.hidden=true;return}box.hidden=false;const x=recall.items[recall.idx];box.innerHTML='<div class="pro-eyebrow">Aktiv erinnern · '+(recall.idx+1)+' / '+recall.items.length+'</div><h3>'+esc(x.c[1])+'</h3><p>Wie sagst du das auf Ukrainisch?</p><input id="proRecallInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="Ukrainisch aus dem Kopf …"><div id="proRecallFeedback" class="feedback"></div><div class="pro-actions"><button class="primary" id="proRecallCheck">Prüfen</button></div>';
-    const input=document.getElementById('proRecallInput'),check=document.getElementById('proRecallCheck');const submit=()=>{const value=input.value.trim();if(!value)return toast('Schreib zuerst deine Antwort.');const good=core.accepts(value,[x.c[0]]),repair=recall.retry;if(good&&!repair)recall.first++;window.UKRAINIAN_ERROR_MEMORY?.record?.({input:value,answers:[x.c[0]],prompt:x.c[1],correct:good,repair,module:'professional-recall',day:Number(s.day),weight:repair?.4:.65});if(!good){recall.retry=true;document.getElementById('proRecallFeedback').innerHTML='Fast. Schau kurz: <strong lang="uk">'+esc(x.c[0])+'</strong>. Tippe es jetzt selbst.';return}recall.retry=false;recall.idx++;if(recall.idx<recall.items.length)return renderRecall();finishRecall()};check.onclick=submit;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit()}};setTimeout(()=>input.focus(),20)
+    if(!recall){box.hidden=true;return}box.hidden=false;const x=recall.items[recall.idx],old=x.source==='old';box.innerHTML='<div class="pro-eyebrow">'+(old?'↻ Älterer Abruf':'Aktiv erinnern')+' · '+(recall.idx+1)+' / '+recall.items.length+'</div><h3>'+esc(x.c[1])+'</h3><p>Wie sagst du das auf Ukrainisch?</p><input id="proRecallInput" class="typing-input" lang="uk" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="Ukrainisch aus dem Kopf …"><div id="proRecallFeedback" class="feedback"></div><div class="pro-actions"><button class="primary" id="proRecallCheck">Prüfen</button></div>';
+    const input=document.getElementById('proRecallInput'),check=document.getElementById('proRecallCheck');const submit=()=>{const value=input.value.trim();if(!value)return toast('Schreib zuerst deine Antwort.');const good=core.accepts(value,[x.c[0]]),repair=recall.retry;if(good&&!repair)recall.first++;window.UKRAINIAN_ERROR_MEMORY?.record?.({input:value,answers:[x.c[0]],prompt:x.c[1],correct:good,repair,module:'professional-recall',day:Number(s.day),weight:repair?.4:old?.75:.65});if(!good){recall.retry=true;const st=dayState();st.helpUnlocked=true;saveSafe();document.getElementById('proRecallFeedback').innerHTML='Fast. Schau kurz: <strong lang="uk">'+esc(x.c[0])+'</strong>. Tippe es jetzt selbst.';return}recall.retry=false;recall.idx++;if(recall.idx<recall.items.length)return renderRecall();finishRecall()};check.onclick=submit;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit()}};setTimeout(()=>input.focus(),20)
   }
-  function finishRecall(){const st=dayState(),total=recall.items.length,first=recall.first;st.recallAttempts=(Number(st.recallAttempts)||0)+1;st.recallBest=Math.max(Number(st.recallBest)||0,first);const passed=first===total;st.recallPassed=passed;try{core.recordSession({skills:['writing'],correct:first,total,passed,module:'professional-recall',day:Number(s.day),weight:.55,assisted:false})}catch{}recall=null;if(passed){st.stage='done';saveSafe();toast('Super. Beide Antworten kamen direkt aus dem Kopf.')}else{saveSafe();toast('Gut geübt. Für den sicheren Abruf probierst du die zwei gleich noch einmal.')}patch()}
+  function finishRecall(){const st=dayState(),total=recall.items.length,first=recall.first;st.recallAttempts=(Number(st.recallAttempts)||0)+1;st.recallBest=Math.max(Number(st.recallBest)||0,first);const passed=first===total;st.recallPassed=passed;try{core.recordSession({skills:['writing','recall'],correct:first,total,passed,module:'professional-recall',day:Number(s.day),weight:.7,assisted:false})}catch{}recall=null;if(passed){st.stage='done';saveSafe();toast('Sicher. Heute und früherer Stoff kamen direkt aus dem Kopf.')}else{saveSafe();toast('Noch nicht stabil. Starte den Abruf gleich noch einmal frisch.')}patch()}
   function optionalModules(){
     const root=ensure(),guided=guidedAlphabet(),found=OPTIONAL_IDS.map(id=>document.getElementById(id)).filter(Boolean);found.forEach(el=>{el.hidden=guided||!root.extrasVisible;el.classList.toggle('pro-optional',true)});
     let box=document.getElementById('professionalExtras');if(guided||!found.length){if(box)box.hidden=true;return}if(!box){box=document.createElement('section');box.id='professionalExtras';box.className='card pro-extras';const progress=document.getElementById('progress');(progress?.parentElement||document.querySelector('main'))?.append(box)}box.hidden=false;box.innerHTML='<div class="pro-eyebrow">Optional</div><h3>Zusatzübungen</h3><p>Mode, Resale und freie Szenarien sind Bonus. Sie unterbrechen deinen Hauptlernweg nicht.</p><button class="secondary" id="proExtrasToggle">'+(root.extrasVisible?'Zusatzübungen ausblenden':'Zusatzübungen anzeigen')+'</button>';document.getElementById('proExtrasToggle').onclick=()=>{root.extrasVisible=!root.extrasVisible;saveSafe();patch()}
   }
-  function simplifyChrome(st){const daily=document.getElementById('daily');if(daily)daily.hidden=true;const voice=document.getElementById('voiceState')?.closest('.audio');if(voice)voice.hidden=true;const speaking=document.querySelector('#learn .speaking');if(speaking)speaking.hidden=!['done'].includes(st.stage);const quiz=document.getElementById('startQuiz');if(quiz)quiz.hidden=st.stage!=='done';const next=document.getElementById('next');if(next)next.hidden=st.stage!=='done'}
+  function simplifyChrome(st){const daily=document.getElementById('daily');if(daily)daily.hidden=true;const voice=document.getElementById('voiceState')?.closest('.audio');if(voice)voice.hidden=true;const speaking=document.querySelector('#learn .speaking');if(speaking)speaking.hidden=st.stage!=='done';const quiz=document.getElementById('startQuiz');if(quiz)quiz.hidden=st.stage!=='done';const next=document.getElementById('next');if(next)next.hidden=st.stage!=='done'}
   function patch(){
     updateTheme();patchStaticCopy();optionalModules();if(guidedAlphabet()){document.getElementById('professionalLessonCoach')?.remove();document.getElementById('professionalRecall')?.remove();return}if(!contentLesson())return;
     const cards=[...document.querySelectorAll('#cards .word')];if(!cards.length)return;const st=dayState();lessonCoach(cards);simplifyChrome(st);renderRecall()
@@ -71,10 +129,10 @@
     body.professional-path{--b:#2f7d57;--d:#174a35;--l:#d9eadf;--g:#2f7d57;background:#f3f8f4}
     body.professional-path .primary{background:#2f7d57;box-shadow:0 5px 12px #2f7d5730}body.professional-path .secondary{background:#e8f3eb;color:#174a35}
     body.professional-path .tab[aria-selected=true]{background:#2f7d57}body.professional-path .progress i{background:#2f7d57}
-    .pro-coach,.pro-recall{margin:14px 0;padding:16px;border:1px solid #d7e8dc;border-radius:18px;background:#f8fcf9}.pro-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.pro-top h3,.pro-recall h3,.pro-extras h3{margin:3px 0 5px;font-size:1.18rem;color:#174a35}.pro-top p,.pro-recall p,.pro-extras p{margin:0;color:#60756a;font-size:.9rem}.pro-eyebrow{font-size:.74rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#2f7d57}.pro-dots{display:flex;gap:5px;margin-top:5px}.pro-dots i{width:8px;height:8px;border-radius:50%;background:#d7e4da}.pro-dots i.on{background:#2f7d57}.pro-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.pro-load{display:flex;gap:6px;margin-top:10px}.pro-load span,.pro-repeat-badge{display:inline-block;border-radius:99px;background:#edf6ef;color:#466252;font-size:.7rem;font-weight:800;padding:3px 7px}.pro-repeat-badge{position:absolute;left:10px;bottom:10px}.word{position:relative}.pro-recall .typing-input{text-align:left;font-size:1.05rem;margin-top:10px}.pro-extras{border-color:#dbe8df;background:#fbfdfb}body:not(.pro-translit-on) #cards .pronunciation,body:not(.pro-translit-on) #cards>.trans{display:none!important}
+    .pro-coach,.pro-recall{margin:14px 0;padding:16px;border:1px solid #d7e8dc;border-radius:18px;background:#f8fcf9}.pro-cando{margin:-2px 0 12px;padding:10px 12px;border-radius:13px;background:#eaf5ed;color:#174a35;font-weight:850;font-size:.88rem}.pro-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.pro-top h3,.pro-recall h3,.pro-extras h3{margin:3px 0 5px;font-size:1.18rem;color:#174a35}.pro-top p,.pro-recall p,.pro-extras p{margin:0;color:#60756a;font-size:.9rem}.pro-eyebrow{font-size:.74rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#2f7d57}.pro-dots{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;max-width:90px}.pro-dots i{width:8px;height:8px;border-radius:50%;background:#d7e4da}.pro-dots i.on{background:#2f7d57}.pro-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.pro-load{display:flex;gap:6px;margin-top:10px}.pro-load span,.pro-repeat-badge{display:inline-block;border-radius:99px;background:#edf6ef;color:#466252;font-size:.7rem;font-weight:800;padding:3px 7px}.pro-repeat-badge{position:absolute;left:10px;bottom:10px}.word{position:relative}.pro-recall .typing-input{text-align:left;font-size:1.05rem;margin-top:10px}.pro-extras{border-color:#dbe8df;background:#fbfdfb}body:not(.pro-translit-on) #cards .pronunciation,body:not(.pro-translit-on) #cards>.trans{display:none!important}
     @media(max-width:560px){.pro-top{display:block}.pro-dots{margin:8px 0}.pro-actions>*{width:100%}}
   `;document.head.append(css);
   const previousRender=render;render=function(){const out=previousRender.apply(this,arguments);patch();return out};
-  window.UKRAINIAN_PROFESSIONAL_PATH={version:VERSION,coversEveryLesson:true,lessonCount:COURSE_LENGTH,mutatesLessonData:false,progressiveReveal:true,coreChunkSize:3,transliterationEmergencyOnly:true,duplicatesMarked:true,optionalModulesCollapsed:true,activeRecallBeforeLegacyQuiz:true,greenSystemTheme:true,audit:()=>audit.map(x=>({...x}))};
+  window.UKRAINIAN_PROFESSIONAL_PATH={version:VERSION,coversEveryLesson:true,lessonCount:COURSE_LENGTH,mutatesLessonData:false,contentAware:true,adaptiveBatching:true,maxSimpleBatch:3,maxSentenceBatch:2,transliterationEmergencyOnly:true,helpUnlocksAfterRecallFailure:true,duplicatesMarked:true,optionalModulesCollapsed:true,activeRecallBeforeLegacyQuiz:true,interleavedDelayedRecall:true,canDoGoalEveryLesson:true,respectsSpecializedMastery:true,greenSystemTheme:true,audit:()=>audit.map(x=>({...x}))};
   ensure();patch();
 })();
