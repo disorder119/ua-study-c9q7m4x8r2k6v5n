@@ -83,6 +83,7 @@
     window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     await loadScript('./ukrainischkurs-selftest-v58.js?v=1','v58 Zusatz-Selbsttest');
     await loadScript('./ukrainischkurs-simple-foundation.js?v=1','Einfacher Alphabet-Start');
+    await loadScript('./ukrainischkurs-guided-start.js?v=1','Geführter bildlicher Alphabet-Start');
   }catch(error){
     window.UKRAINIAN_COURSE_LOADER.version=Number(VERSION);
     console.error('Ukrainischkurs-Upgrade konnte nicht geladen werden',error);
