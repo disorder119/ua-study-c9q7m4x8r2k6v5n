@@ -1,14 +1,14 @@
 /* Ukrainischkurs für Joel · Guided Flow Hardening v1
    Repariert den geführten Anfängerfluss ohne Lern-Gates zu umgehen.
    Der nächste erlaubte Alphabet-Tag wird ausschließlich über den bestehenden
-   geschützten Weiter-Handler gestartet; kein direktes s.day++ und kein Bypass. */
+   geschützten Weiter-Handler gestartet; der Kurstag wird hier niemals direkt verändert. */
 (()=>{
   const VERSION=1;
   function state(){const day=Number(s?.day)||0;return s?.guidedAlphabet?.days?.[String(day)]||null}
   function guided(){return document.body.classList.contains('guided-alphabet')}
   function advanceSafely(){
     const next=document.getElementById('next');
-    if(!next){toast?.('Der nächste Lerntag konnte nicht geöffnet werden. Bitte die App einmal neu öffnen.');return}
+    if(!next){if(typeof toast==='function')toast('Der nächste Lerntag konnte nicht geöffnet werden. Bitte die App einmal neu öffnen.');return}
     const before=Number(s.day)||0;next.click();
     queueMicrotask(()=>{
       if((Number(s.day)||0)>before){
@@ -21,9 +21,9 @@
     if(!guided())return;const st=state();if(st?.stage!=='complete')return;
     const root=document.getElementById('guidedAlphabetStart');if(!root)return;
     const buttons=[...root.querySelectorAll('button.guided-primary')];
-    const button=buttons.find(b=>(b.textContent||'').trim()==='Morgen weitermachen'||b.dataset.guidedAdvance==='1');
+    const button=buttons.find(b=>(b.textContent||'').trim()==='Morgen weitermachen'||b.getAttribute?.('data-guided-advance')==='1');
     if(!button)return;
-    button.dataset.guidedAdvance='1';button.textContent='Weiter mit den nächsten Buchstaben';button.disabled=false;button.onclick=advanceSafely;
+    button.setAttribute('data-guided-advance','1');button.textContent='Weiter mit den nächsten Buchstaben';button.disabled=false;button.onclick=advanceSafely;
     let note=document.getElementById('guidedAdvanceNote');if(!note){note=document.createElement('div');note.id='guidedAdvanceNote';note.className='guided-advance-note';button.insertAdjacentElement('beforebegin',note)}
     note.textContent='Der nächste Lerntag ist jetzt freigeschaltet.';
   }
