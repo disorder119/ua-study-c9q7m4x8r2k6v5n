@@ -1,11 +1,11 @@
 /* Ukrainischkurs für Joel · freie menschliche ukrainische Aussprache-Referenzen
    Quellen: Lingua Libre / Wikimedia Commons sowie Shtooka / Wikimedia Commons.
-   Für den geführten Anfängerstart werden bevorzugt exakt zum angezeigten Wort
-   passende menschliche Aufnahmen verwendet. */
+   Der geführte Anfängerstart verwendet nur exakt zum angezeigten Wort passende
+   menschliche Aufnahmen; kein synthetisches Audio zählt als Referenz. */
 (() => {
   const BASE='https://commons.wikimedia.org/wiki/Special:Redirect/file/';
   const PAGE='https://commons.wikimedia.org/wiki/File:';
-  const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'Freie Creative-Commons-Lizenz; genaue Lizenz auf der Dateiseite'};
+  const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'CC BY-SA 4.0'};
   const SH={speaker:'Галя Раптова',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US'};
   const rows={
     'А':{file:'Uk-автобус.ogg',label:'автобус',...SH},
@@ -21,7 +21,7 @@
     'И':{file:'Uk-син.ogg',label:'син',...SH},
     'І':{file:'Uk-ім’я.ogg',label:'ім’я',...SH},
     'Ї':{file:'Uk-їжа.ogg',label:'їжа',...SH},
-    'Й':{file:'LL-Q8798 (ukr)-Tohaomg-Йорданія.wav',label:'Йорданія',...LL,note:'Kein Exakt-Audio für das Anfängerwort йогурт; die geführte UI spielt diese Aufnahme deshalb nicht ab.'},
+    'Й':{file:'LL-Q8798 (ukr)-Tohaomg-йогурт.wav',label:'йогурт',...LL},
     'К':{file:'Uk-кіт.ogg',label:'кіт',...SH},
     'Л':{file:'Uk-лампа.ogg',label:'лампа',...SH},
     'М':{file:'Uk-мама.ogg',label:'мама',...SH},
@@ -32,7 +32,7 @@
     'С':{file:'Uk-сир.ogg',label:'сир',...SH},
     'Т':{file:'Uk-так.ogg',label:'так',...SH},
     'У':{file:'Uk-урок.ogg',label:'урок',...SH},
-    'Ф':{file:'LL-Q8798 (ukr)-Tohaomg-Франція.wav',label:'Франція',...LL,note:'Kein Exakt-Audio für das Anfängerwort фото; die geführte UI spielt diese Aufnahme deshalb nicht ab.'},
+    'Ф':{file:'LL-Q8798 (ukr)-Tohaomg-Франція.wav',label:'Франція',...LL},
     'Х':{file:'Uk-хата.ogg',label:'хата',...SH},
     'Ц':{file:'Uk-це.ogg',label:'це',...SH},
     'Ч':{file:'Uk-чай.ogg',label:'чай',...SH},
