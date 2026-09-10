@@ -164,6 +164,10 @@
   Object.values(s.known || {}).forEach(normalizeSpacingMeta);
   Object.values(s.sentences || {}).forEach(normalizeSpacingMeta);
 
+  // learningStatus/scheduleMeta hier ersetzen die Basisversionen aus ukrainisch-lernen.html vollständig
+  // (diese werden dadurch tot). ukrainischkurs-adaptive-srs.js lädt danach und ersetzt scheduleMeta
+  // seinerseits vollständig, komponiert aber bewusst auf dieser Version von learningStatus/dueCards
+  // via oldStatus()/oldDue() — adaptive-srs.js ist die tatsächlich aktive Quelle für alle drei.
   learningStatus = function(meta){
     if (!meta) return 'Neu';
     normalizeSpacingMeta(meta);

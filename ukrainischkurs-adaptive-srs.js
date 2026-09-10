@@ -1,6 +1,9 @@
 /* Ukrainischkurs für Joel · Adaptive SRS v2
    Stabilitätsorientierte Wiederholung mit echter Fehler-Reparatur.
-   Eine Korrektur direkt nach einem Fehler gilt nicht als neuer Stabilitätsbeweis. */
+   Eine Korrektur direkt nach einem Fehler gilt nicht als neuer Stabilitätsbeweis.
+   Lädt nach ukrainisch-lernen.html und ukrainischkurs-v2-core.js und ist die tatsächlich
+   aktive Quelle für scheduleMeta/dueCards/learningStatus (ersetzt scheduleMeta vollständig,
+   komponiert dueCards/learningStatus/freshMeta bewusst auf der vorherigen Schicht). */
 (() => {
   const VERSION=2;
   const BASE=[1,2,4,7,14,30,60,90];
