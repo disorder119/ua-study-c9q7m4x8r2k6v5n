@@ -66,7 +66,6 @@
   const oldWords = OLD_D.slice(7);
   D.splice(0, D.length, ...NEW_ALPHABET, ...oldWords);
   LETTERS.splice(0, LETTERS.length, ...ORDER.map(letter => [letter, LETTER_INFO[letter].sound]));
-  SRS_INTERVALS.splice(0, SRS_INTERVALS.length, 1, 2, 4, 7, 14, 30);
   WEEKLY_REVIEW_DAYS.splice(0, WEEKLY_REVIEW_DAYS.length, 20, 27, D.length - 1);
 
   // Wort-/Dialog-Funktionen behalten ihre Inhalte, verschieben sich aber hinter die 14 Alphabettage.
@@ -179,35 +178,8 @@
     if (days >= 2) return 'Fast sicher';
     return 'Lernen';
   };
-  learningStatusClass = function(meta){ return learningStatus(meta).toLocaleLowerCase('de').replace(/ /g,'-'); };
-  scheduleMeta = function(meta, correct){
-    normalizeSpacingMeta(meta);
-    meta.answers++;
-    trackAnswer(correct);
-    const today = date();
-    if (correct) {
-      const newDay = !meta.successDates.includes(today);
-      if (newDay) {
-        meta.successDates.push(today);
-        meta.stage = Math.min(SRS_INTERVALS.length, (meta.stage||0) + 1);
-      }
-      const wait = SRS_INTERVALS[Math.max(0, (meta.stage||1)-1)] || 1;
-      const nextDate = new Date(); nextDate.setDate(nextDate.getDate()+wait);
-      meta.due = dayKey(nextDate);
-      meta.correct++;
-      meta.hits=(meta.hits||0)+1;
-      meta.wrongStreak=0;
-    } else {
-      meta.stage=Math.max(0,(meta.stage||0)-1);
-      meta.due=today;
-      meta.wrong++;
-      meta.errors=(meta.errors||0)+1;
-      meta.wrongStreak=(meta.wrongStreak||0)+1;
-    }
-    meta.lastAnswer=correct?'richtig':'falsch';
-    meta.last=today;
-    meta.reviews=(meta.reviews||0)+1;
-  };
+  // learningStatusClass/scheduleMeta wurden hier zuvor nochmal vollständig neu definiert (identisch
+  // tot, sobald adaptive-srs.js dieselben Namen seinerseits ersetzt) — entfernt, siehe Kommentar oben.
 
   migrateState();
   syncLessons();
