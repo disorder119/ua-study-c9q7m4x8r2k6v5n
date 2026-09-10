@@ -24,3 +24,5 @@ jobs:
         run: node tests/validate-v73-linguistic-polish.mjs
       - name: A1-Auswahloptionen validieren
         run: node tests/validate-a1-options.mjs
+      - name: A1-Gate Stage-Logik validieren (Qualifikation/Bestätigung tatsächlich bestehbar)
+        run: node tests/validate-a1-gate-stage-logic.mjs
