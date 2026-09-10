@@ -22,6 +22,7 @@
     if(!trace||!letter)return;
 
     const canvas=oldCanvas.cloneNode(false);canvas.dataset.writingQuality='1';oldCanvas.replaceWith(canvas);
+    canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Zeichenfläche: Buchstabe '+letter+' mit der Maus oder dem Finger nachfahren.');
     const oldClear=document.getElementById('guidedClear'),oldDone=document.getElementById('guidedStrokeDone');
     if(!oldClear||!oldDone)return;
     const clear=oldClear.cloneNode(true),done=oldDone.cloneNode(true);oldClear.replaceWith(clear);oldDone.replaceWith(done);
@@ -30,8 +31,11 @@
     const fakeSteps=document.querySelector('.guided-drawsteps');if(fakeSteps)fakeSteps.hidden=true;
     const guide=document.getElementById('guidedStrokeGuide');if(guide)guide.innerHTML='<b>✏️</b><span>Druckschrift: Fahre die ganze helle Form nach.</span>';
     let note=document.getElementById('guidedWritingQualityNote');
-    if(!note){note=document.createElement('div');note.id='guidedWritingQualityNote';note.className='guided-writing-note';done.insertAdjacentElement('beforebegin',note)}
+    if(!note){note=document.createElement('div');note.id='guidedWritingQualityNote';note.className='guided-writing-note';note.setAttribute('aria-live','polite');done.insertAdjacentElement('beforebegin',note)}
     note.textContent='Noch offen: Verteile deine Linie über den ganzen Buchstaben.';
+    let skip=document.getElementById('guidedWritingSkip');
+    if(!skip){skip=document.createElement('button');skip.id='guidedWritingSkip';skip.type='button';skip.className='guided-writing-skip';skip.textContent='Ich kann hier nicht zeichnen (Tastatur/Screenreader) — trotzdem weiter';done.insertAdjacentElement('afterend',skip)}
+    skip.onclick=()=>advance();
 
     const ctx=canvas.getContext('2d'),mask=document.createElement('canvas'),mctx=mask.getContext('2d');
     let drawing=false,last=null,distance=0,total=0,hits=0,occupied=new Set(),visited=new Set(),minDistance=180;
@@ -79,7 +83,7 @@
   }
   const observer=new MutationObserver(()=>queueMicrotask(patchCopy));
   function start(){observer.observe(document.documentElement,{childList:true,subtree:true});patchCopy()}
-  const css=document.createElement('style');css.textContent='.guided-writing-note{max-width:470px;margin:10px auto 2px;padding:10px 12px;border-radius:13px;background:#f2f8f2;color:#607468;font-size:.82rem;font-weight:750}.guided-writing-note+button{margin-top:10px}';document.head.append(css);
+  const css=document.createElement('style');css.textContent='.guided-writing-note{max-width:470px;margin:10px auto 2px;padding:10px 12px;border-radius:13px;background:#f2f8f2;color:#607468;font-size:.82rem;font-weight:750}.guided-writing-note+button{margin-top:10px}.guided-writing-skip{display:block;margin:10px auto 0;background:none;border:none;color:#607468;font-size:.78rem;text-decoration:underline;cursor:pointer;padding:4px}.guided-writing-skip:focus-visible{outline:3px solid #1558b5;outline-offset:2px}';document.head.append(css);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   window.UKRAINIAN_GUIDED_WRITING_HARDENING={version:VERSION,printFirst:true,normativeStrokeOrderClaim:false,spatialCoverageRequired:true,minHitRatio:.72,minCoverage:.34,grid:GRID,antiScribble:true};
 })();
