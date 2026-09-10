@@ -30,9 +30,8 @@
   const hash=value=>{let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
   const rng=seed=>{let x=seed>>>0;return()=>{x+=0x6D2B79F5;let t=x;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
   function examListeningDay(){const start=Number(s.a1Exam?.start);return Number.isFinite(start)&&Number(s.day)===start+1}
-  function examState(){return s.a1Exam?.domains?.listening||null}
   function ensure(){if(!s.a1HumanListening||typeof s.a1HumanListening!=='object')s.a1HumanListening={version:VERSION,qualification:null,confirmation:null,best:0,attempts:0};const st=s.a1HumanListening;st.version=VERSION;st.best=Number(st.best)||0;st.attempts=Number(st.attempts)||0;return st}
-  function stage(){return examState()?.qualified?'confirmation':'qualification'}
+  function stage(){return ensure().qualification?.passed?'confirmation':'qualification'}
   function stageProof(){return ensure()[stage()]||null}
   function stageDone(){const p=stageProof();return !!(p&&p.passed&&p.date)}
   function fullyPassed(){const st=ensure();return !!(st.qualification?.passed&&st.confirmation?.passed&&st.qualification.date&&st.confirmation.date&&st.qualification.date!==st.confirmation.date)}

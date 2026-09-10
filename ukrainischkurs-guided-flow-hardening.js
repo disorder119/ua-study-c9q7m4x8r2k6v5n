@@ -12,7 +12,7 @@
     const before=Number(s.day)||0;next.click();
     queueMicrotask(()=>{
       if((Number(s.day)||0)>before){
-        const st=s?.guidedAlphabet?.days?.[String(s.day)];if(st&&st.stage==='complete')st.stage='welcome';
+        const st=s?.guidedAlphabet?.days?.[String(s.day)];if(st&&st.stage==='complete'){st.stage='welcome';st.index=0;st.done=[]}
         try{save()}catch{}try{render()}catch{}
       }
     })

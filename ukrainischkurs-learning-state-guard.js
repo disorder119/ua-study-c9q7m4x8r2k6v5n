@@ -5,6 +5,7 @@
   const VERSION=1,ALPHABET_DAYS=14;
   const lessonDay=()=>Math.max(0,Number(s.day)||0);
   const scopeKey=(d,day)=>String(d||'')+'|'+String(day);
+  const byScopeKey=(a,b)=>{const[ad,an]=a.split('|'),[bd,bn]=b.split('|');return ad===bd?Number(an)-Number(bn):(ad<bd?-1:1)};
   const validDate=x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x||''));
 
   function evidenceDates(){
@@ -55,7 +56,7 @@
     if(!current||current.date!==d||Number(current.day)!==day)s.daily=wanted?{...dailyTemplate(d,day),...wanted,date:d,day}:dailyTemplate(d,day);
     else s.daily={...dailyTemplate(d,day),...current,date:d,day};
     s.dailyByLesson[scopeKey(d,day)]={...s.daily};
-    const keys=Object.keys(s.dailyByLesson);if(keys.length>80)keys.sort().slice(0,keys.length-80).forEach(k=>delete s.dailyByLesson[k]);
+    const keys=Object.keys(s.dailyByLesson);if(keys.length>80)keys.sort(byScopeKey).slice(0,keys.length-80).forEach(k=>delete s.dailyByLesson[k]);
     return s.daily;
   }
   ensureDaily=ensureDailyScoped;
@@ -74,7 +75,7 @@
     if(!current||current.date!==d||Number(current.day)!==day)s.pronunciation.daily=wanted?{...pronunciationTemplate(d,day),...wanted,date:d,day,reference:[...(wanted.reference||[])]}:pronunciationTemplate(d,day);
     else s.pronunciation.daily={...pronunciationTemplate(d,day),...current,date:d,day,reference:[...(current.reference||[])]};
     s.pronunciation.dailyByLesson[scopeKey(d,day)]={...s.pronunciation.daily,reference:[...(s.pronunciation.daily.reference||[])]};
-    const keys=Object.keys(s.pronunciation.dailyByLesson);if(keys.length>80)keys.sort().slice(0,keys.length-80).forEach(k=>delete s.pronunciation.dailyByLesson[k]);
+    const keys=Object.keys(s.pronunciation.dailyByLesson);if(keys.length>80)keys.sort(byScopeKey).slice(0,keys.length-80).forEach(k=>delete s.pronunciation.dailyByLesson[k]);
   }
 
   const baseSyncLesson=syncLesson;
