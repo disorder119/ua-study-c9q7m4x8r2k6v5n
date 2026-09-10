@@ -37,7 +37,7 @@
     if(!skip){skip=document.createElement('button');skip.id='guidedWritingSkip';skip.type='button';skip.className='guided-writing-skip';skip.textContent='Ich kann hier nicht zeichnen (Tastatur/Screenreader) — trotzdem weiter';done.insertAdjacentElement('afterend',skip)}
     skip.onclick=()=>advance();
 
-    const ctx=canvas.getContext('2d'),mask=document.createElement('canvas'),mctx=mask.getContext('2d');
+    const ctx=canvas.getContext('2d'),mask=document.createElement('canvas'),mctx=mask.getContext('2d',{willReadFrequently:true});
     let drawing=false,last=null,distance=0,total=0,hits=0,occupied=new Set(),visited=new Set(),minDistance=180;
     const key=(x,y)=>`${x}:${y}`;
     function fit(){
