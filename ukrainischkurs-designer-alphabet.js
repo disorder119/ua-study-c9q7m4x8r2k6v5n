@@ -43,7 +43,7 @@
     'Х':{brands:['Chloé → Хлое'],words:['худі · Hoodie','хороший стан · guter Zustand','хутро · Fell'],tip:'Х nicht wie X lesen. Хлое und худі koppeln die Form an den ch-Laut.'},
     'Ц':{brands:['Zimmermann → Ціммерман'],words:['ціна · Preis','це товар · das ist ein Artikel'],tip:'Ц bekommt einen transliterierten Fashion-Anker und das extrem nützliche Wort ціна.'},
     'Ч':{brands:['Champion → Чемпіон','Charles Jeffrey Loverboy → Чарльз Джеффрі'],words:['черевики · Boots','чорний · schwarz'],tip:'Ч lässt sich über ukrainisch geschriebene Ch-Namen plus черевики merken.'},
-    'Ш':{brands:['Chanel → Шанель'],words:['штани · Hose','шкіра · Leder','шарф · Schal'],tip:'Шanель/Шанель plus drei echte Shopwörter geben dir mehrere unabhängige Anker.'},
+    'Ш':{brands:['Chanel → Шанель'],words:['штани · Hose','шкіра · Leder','шарф · Schal'],tip:'Шанель plus drei echte Shopwörter geben dir mehrere unabhängige Anker.'},
     'Щ':{brands:[],words:['ще один товар · noch ein Artikel','ще · noch','що це? · was ist das?'],tip:'Щ ist Ш mit zusätzlichem Strich. Echte Wörter sind hier besser als eine erfundene Marke.'},
     'Ь':{brands:[],words:['пальто · Mantel','розмір · Größe','м’який · weich'],tip:'Ь hat keinen eigenen Laut. Modewörter zeigen dir, wo es die Aussprache des Nachbarn beeinflusst.'},
     'Ю':{brands:[],words:['люкс · Luxus','люксовий бренд · Luxusmarke','костюм · Anzug'],tip:'Ю wird über echte Modebegriffe im Wortinneren verankert.'},

@@ -26,7 +26,7 @@
     'О':{small:'о',word:'око',de:'Auge',icon:'👁️',sound:'O wie in Ofen',steps:['Einen großen Kreis malen']},
     'П':{small:'п',word:'парк',de:'Park',icon:'🌳',sound:'P wie in Park',steps:['Linker Strich','Oben nach rechts','Rechter Strich nach unten']},
     'Р':{small:'р',word:'рука',de:'Hand',icon:'✋',sound:'Gerolltes R',steps:['Langer Strich','Oben eine Rundung nach rechts']},
-    'С':{small:'с',word:'сир',de:'Käse',icon:'🧀',sound:'S wie in Sonne',steps:['Einen offenen Bogen malen']},
+    'С':{small:'с',word:'сир',de:'Käse',icon:'🧀',sound:'scharfes S wie in Hass',steps:['Einen offenen Bogen malen']},
     'Т':{small:'т',word:'так',de:'Ja',icon:'✅',sound:'T wie in Tag',steps:['Oben einen Strich','Von der Mitte nach unten']},
     'У':{small:'у',word:'урок',de:'Lektion',icon:'📚',sound:'U wie in Uhr',steps:['Zwei schräge Linien treffen lassen','Vom Treffpunkt nach unten']},
     'Ф':{small:'ф',word:'Франція',de:'Frankreich',icon:'🇫🇷',sound:'F wie in Foto',steps:['Kreis in die Mitte','Strich durch den Kreis']},
@@ -64,7 +64,9 @@
     const x=info(l),src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[l],meta=window.UKRAINIAN_PRONUNCIATION_META?.[l];
     if(!src||!meta||String(meta.label||'').trim().toLowerCase()!==String(x.word||'').trim().toLowerCase())return false;
     const a=new Audio(src);button?.classList.add('is-playing');
-    const done=()=>{button?.classList.remove('is-playing');onDone?.(meta)};
+    let settled=false;
+    const done=()=>{if(settled)return;settled=true;clearTimeout(timeout);button?.classList.remove('is-playing');onDone?.(meta)};
+    const timeout=setTimeout(done,8000);
     a.onended=done;a.onerror=done;a.play().catch(done);return true;
   }
   function markLegacy(){const st=store();try{const k=id(day(),st.index);if(!s.known[k])s.known[k]=typeof freshMeta==='function'?freshMeta():{seen:1}}catch(_){}persist()}
