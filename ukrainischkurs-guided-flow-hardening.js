@@ -23,9 +23,9 @@
     const buttons=[...root.querySelectorAll('button.guided-primary')];
     const button=buttons.find(b=>(b.textContent||'').trim()==='Morgen weitermachen'||b.getAttribute?.('data-guided-advance')==='1');
     if(!button)return;
-    button.setAttribute('data-guided-advance','1');button.textContent='Weiter mit den nächsten Buchstaben';button.disabled=false;button.onclick=advanceSafely;
+    button.setAttribute('data-guided-advance','1');if(button.textContent!=='Weiter mit den nächsten Buchstaben')button.textContent='Weiter mit den nächsten Buchstaben';button.disabled=false;button.onclick=advanceSafely;
     let note=document.getElementById('guidedAdvanceNote');if(!note){note=document.createElement('div');note.id='guidedAdvanceNote';note.className='guided-advance-note';button.insertAdjacentElement('beforebegin',note)}
-    note.textContent='Der nächste Lerntag ist jetzt freigeschaltet.';
+    const noteText='Der nächste Lerntag ist jetzt freigeschaltet.';if(note.textContent!==noteText)note.textContent=noteText;
   }
   const observer=new MutationObserver(()=>queueMicrotask(patchComplete));
   function start(){observer.observe(document.documentElement,{childList:true,subtree:true});patchComplete()}

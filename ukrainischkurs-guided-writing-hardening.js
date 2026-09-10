@@ -74,12 +74,13 @@
     canvas.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();if(last)distance+=Math.hypot(p.x-last.x,p.y-last.y);last=p;total++;if(near(p)){hits++;markCoverage(p)}refresh()});
     const end=e=>{if(!drawing)return;e.preventDefault();drawing=false;last=null;refresh()};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
     clear.onclick=()=>resetProgress(true);done.onclick=()=>{if(done.disabled)return;advance()};
-    fit();
+    if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>fit());ro.observe(canvas)}else fit();
   }
+  const LEAD_TEXT='Druckschrift zuerst. Fahre die helle Form möglichst vollständig nach.';
   function patchCopy(){
     if(!document.body.classList.contains('guided-alphabet'))return;
     const trace=document.getElementById('guidedCanvas');if(trace)patchTrace();
-    const lead=trace?.closest('.guided-card')?.querySelector('.guided-lead');if(lead)lead.textContent='Druckschrift zuerst. Fahre die helle Form möglichst vollständig nach.';
+    const lead=trace?.closest('.guided-card')?.querySelector('.guided-lead');if(lead&&lead.textContent!==LEAD_TEXT)lead.textContent=LEAD_TEXT;
   }
   const observer=new MutationObserver(()=>queueMicrotask(patchCopy));
   function start(){observer.observe(document.documentElement,{childList:true,subtree:true});patchCopy()}
