@@ -41,8 +41,10 @@
   function playHuman(letter,rate=.76,{recordHeard=true,onReady=null}={}){
     const src=NATIVE[letter],meta=META[letter];if(!src||!meta){toast('Für diesen Laut fehlt eine geprüfte menschliche Referenz. Der Hörnachweis wird nicht gezählt.');return false}
     stopAudio();const a=new Audio(src);currentAudio=a;a.playbackRate=rate<.7?.82:1;try{a.preservesPitch=true}catch{}
-    a.onended=()=>{if(currentAudio===a)currentAudio=null};a.onerror=()=>{if(currentAudio===a)currentAudio=null;toast('Die menschliche Referenz konnte nicht geladen werden. Bitte erneut versuchen.')};
-    const p=a.play();if(p&&typeof p.then==='function')p.then(()=>{if(recordHeard){record(letter,'heard');markListened()}onReady?.(meta)}).catch(()=>{if(currentAudio===a)currentAudio=null;toast('Die menschliche Referenz konnte nicht abgespielt werden. Kein TTS-Ersatz wird für den Hörnachweis verwendet.')});else{if(recordHeard){record(letter,'heard');markListened()}onReady?.(meta)}return true
+    let settled=false;
+    const stuck=setTimeout(()=>{if(settled)return;settled=true;if(currentAudio===a)currentAudio=null;toast('Die menschliche Referenz reagiert nicht. Bitte erneut versuchen.')},8000);
+    a.onended=()=>{if(currentAudio===a)currentAudio=null};a.onerror=()=>{if(settled)return;settled=true;clearTimeout(stuck);if(currentAudio===a)currentAudio=null;toast('Die menschliche Referenz konnte nicht geladen werden. Bitte erneut versuchen.')};
+    const p=a.play();if(p&&typeof p.then==='function')p.then(()=>{if(settled)return;settled=true;clearTimeout(stuck);if(recordHeard){record(letter,'heard');markListened()}onReady?.(meta)}).catch(()=>{if(settled)return;settled=true;clearTimeout(stuck);if(currentAudio===a)currentAudio=null;toast('Die menschliche Referenz konnte nicht abgespielt werden. Kein TTS-Ersatz wird für den Hörnachweis verwendet.')});else{settled=true;clearTimeout(stuck);if(recordHeard){record(letter,'heard');markListened()}onReady?.(meta)}return true
   }
   function alternatives(target){const intro=introducedLetters(),pair=PAIR[target],result=[target];if(pair&&intro.includes(pair))result.push(pair);const rest=intro.filter(x=>!result.includes(x)).sort(()=>Math.random()-.5);while(result.length<Math.min(4,intro.length)&&rest.length)result.push(rest.shift());return result.sort(()=>Math.random()-.5)}
   function startEar(letter){earTask={letter,answer:letter,options:alternatives(letter),audioReady:false};renderMastery();setTimeout(()=>playHuman(letter,.72,{recordHeard:false,onReady:()=>{if(earTask?.letter===letter){earTask.audioReady=true;renderMastery()}}}),80)}

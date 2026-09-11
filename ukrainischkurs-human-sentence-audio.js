@@ -44,7 +44,9 @@
     try{
       const audio=new Audio(item.url),playback={audio,button,released:false};current=playback;let failed=false;
       if(button){button.disabled=true;button.dataset.humanAudio='1';button.dataset.audioSource='loading';button.title='Menschliche Aufnahme wird geladen · '+item.speaker}
-      const done=()=>release(playback),failOnce=()=>{if(failed||playback.released)return;failed=true;release(playback);fallback(item,button)};
+      const failOnce=()=>{if(failed||playback.released)return;failed=true;clearTimeout(timeout);release(playback);fallback(item,button)};
+      const done=()=>{clearTimeout(timeout);release(playback)};
+      const timeout=setTimeout(failOnce,8000);
       audio.onended=done;audio.onerror=failOnce;const p=audio.play();
       if(p&&typeof p.then==='function')p.then(()=>{if(failed||playback.released)return;if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}).catch(failOnce);
       else if(!playback.released){if(button){button.dataset.audioSource='human';button.title='Menschliche Aufnahme · '+item.speaker}announce(item,'human')}

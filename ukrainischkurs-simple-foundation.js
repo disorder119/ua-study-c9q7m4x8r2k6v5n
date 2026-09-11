@@ -31,7 +31,7 @@
     const row=EXAMPLE[letter];if(!row)return;
     const nativeMeta=window.UKRAINIAN_PRONUNCIATION_META?.[letter],nativeSrc=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];
     if(nativeSrc&&nativeMeta?.label===row[0]){
-      const audio=new Audio(nativeSrc);button?.classList.add('playing');audio.onended=()=>button?.classList.remove('playing');audio.onerror=()=>button?.classList.remove('playing');audio.play().then(markListened).catch(()=>button?.classList.remove('playing'));return;
+      const audio=new Audio(nativeSrc);button?.classList.add('playing');let settled=false;const done=()=>{if(settled)return;settled=true;clearTimeout(stuck);button?.classList.remove('playing')};const stuck=setTimeout(done,8000);audio.onended=done;audio.onerror=done;audio.play().then(()=>{if(!settled)markListened()}).catch(done);return;
     }
     const voice=('speechSynthesis'in window)&&speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('uk'));
     if(!voice){toast('Für dieses Beispiel ist keine sichere ukrainische Stimme verfügbar. Lesen und Schreiben funktionieren trotzdem.');return}
