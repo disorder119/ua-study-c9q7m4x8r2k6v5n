@@ -26,7 +26,7 @@ assert(!sw.includes('ignoreSearch:true'),'Service Worker ignoriert wieder Versio
 assert(sw.includes('await cache.put(request,response.clone())'),'Service-Worker Cache-Schreibvorgang wird nicht abgewartet');
 
 const guard=read('ukrainischkurs-learning-state-guard.js');
-for(const marker of ['startOnFirstStudy:true','perDayDailyState:true','perDayPronunciationState:true','strictAlphabetCalendar:true','completionDates:true','completed<date()'])assert(guard.includes(marker),`Learning State Guard vermisst ${marker}`);
+for(const marker of ['startOnFirstStudy:true','perDayDailyState:true','perDayPronunciationState:true','strictAlphabetCalendar:true','completionDates:true'])assert(guard.includes(marker),`Learning State Guard vermisst ${marker}`);
 assert(guard.includes("s.courseStartDate=dates[0]||(hasLearningEvidence()?before:'')"),'Leerer Kurs startet weiterhin beim bloßen Öffnen');
 assert(guard.includes('if(!s.courseStartDate)s.courseStartDate=date()'),'Erste echte Lernaktivität verankert den Kursstart nicht');
 assert(guard.includes('current.date!==d||Number(current.day)!==day'),'Allgemeiner Tagesstatus ist nicht Datum + Lektion scoped');
@@ -48,8 +48,9 @@ try{
   state.pronunciation.daily.recorded=true;state.day=1;ctx.render();assert(state.pronunciation.daily.day===1&&state.pronunciation.daily.recorded===false,'Aussprache-Aufnahme läuft in den nächsten Kurstag über');
   state.day=0;ctx.render();assert(state.pronunciation.daily.recorded===true,'Aussprache-Status des ursprünglichen Kurstags wird nicht wiederhergestellt');
   state.lessonProgress[0]={testPassed:true,spoken:true,reviewDone:true,testDate:'2026-09-05'};ctx.syncLesson(0);assert(state.lessonProgress[0].completedDate==='2026-09-05','Abschlussdatum wird nicht gestempelt');
-  assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(1)===false,'Tag 2 öffnet sich noch am selben Kalendertag wie Tag 1');
-  today='2026-09-06';assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(1)===true,'Tag 2 öffnet sich am Folgetag nicht');
+  assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(1)===true,'Tag 2 öffnet sich nicht sofort nach Abschluss von Tag 1 (kein Tages-Limit gewünscht)');
+  assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(0)===true,'Tag 1 ist nicht erreichbar');
+  assert(ctx.window.UKRAINIAN_LEARNING_STATE_GUARD.alphabetDayAllowed(2)===false,'Tag 3 öffnet sich, bevor Tag 2 abgeschlossen ist');
 }catch(e){errors.push(`Learning-State-Simulation: ${e.stack||e.message}`)}
 
 // v48 führte Spoken Transfer ein. Die später gehärtete v2 behält alle v48-Regeln

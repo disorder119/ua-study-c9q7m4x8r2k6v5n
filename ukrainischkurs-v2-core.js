@@ -189,7 +189,7 @@
     return Math.max(0, Math.floor((b-a)/86400000));
   }
   function calendarAge(){ return dayNumberDiff(s.courseStartDate || date(), date()); }
-  function calendarAllows(di){ return di >= ALPHABET_DAYS || di <= calendarAge() || !!s.done[di]; }
+  function calendarAllows(di){ return true; }
   function introducedCount(){ return Math.min(33, Math.max(0, (Math.min(s.day, INTRO_DAYS-1)+1)*3)); }
   function introducedAlphabetItems(){
     const max = Math.min(33, Math.max(3, introducedCount()));

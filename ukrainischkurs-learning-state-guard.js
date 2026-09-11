@@ -89,9 +89,7 @@
   function alphabetDayAllowed(di){
     di=Number(di);
     if(di<=0||di>=ALPHABET_DAYS||s.done?.[di])return true;
-    if(!s.done?.[di-1])return false;
-    const p=s.lessonProgress?.[di-1]||{},completed=validDate(p.completedDate)?p.completedDate:(validDate(p.testDate)?p.testDate:'');
-    return !!completed&&completed<date();
+    return !!s.done?.[di-1];
   }
 
   calendar=function(){
