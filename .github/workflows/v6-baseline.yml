@@ -11,4 +11,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node tests/measure-alphabet-lab-performance.mjs
+      - name: CPU baseline
+        run: node tests/measure-alphabet-lab-performance.mjs | tee v5-node-baseline.txt
+      - name: Generate V6 bundles
+        run: node scripts/build-alphabet-lab.mjs
+      - name: Install Playwright
+        run: npm install --no-save @playwright/test@latest && npx playwright install --with-deps chromium
+      - name: Browser baseline
+        run: npx playwright test --config=playwright.v6-baseline.config.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v6-build-and-baseline
+          path: |
+            alphabet-core.bundle.js
+            alphabet-app.bundle.js
+            v5-node-baseline.txt
+            test-results/v5-browser-baseline.json
+          if-no-files-found: warn
