@@ -1,4 +1,13 @@
 'use strict';
+const noveltyScoreV4Base=noveltyScore;
+noveltyScore=function(task,state,session){
+  let score=noveltyScoreV4Base(task,state,session),family=task.family||task.type;
+  const recent=(session.mainAnswers||[]).slice(-3).map(x=>x.family||x.type);
+  if(recent.at(-1)===family)score-=32;
+  if(recent.length>=2&&recent.slice(-2).every(f=>f===family))score-=85;
+  if(recent.length>=3&&recent.every(f=>f===family))score-=180;
+  return score;
+};
 globalThis.AlphabetCoreV2=Object.freeze({
   VERSION:3,SCHEMA_VERSION:V4_VERSION,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS,KIND_SKILL,SKILL_LABELS,INTERVALS,
   WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,LEARNING_STATE_LABELS,
