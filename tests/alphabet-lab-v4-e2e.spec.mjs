@@ -101,7 +101,7 @@ test('microphone practice records locally without creating mastery evidence',asy
     class FakeRecorder{constructor(){this.state='inactive';this.mimeType='audio/webm'}start(){this.state='recording'}stop(){this.state='inactive';this.ondataavailable?.({data:new Blob(['voice'],{type:'audio/webm'})});this.onstop?.()}}
     window.MediaRecorder=FakeRecorder;URL.createObjectURL=()=> 'blob:alphabet-lab-e2e';URL.revokeObjectURL=()=>{};
   });
-  await openLab(page);await page.getByRole('button',{name:'Alphabet'}).click();await page.locator('.letter-chip').first().click();
+  await openLab(page);await page.getByRole('button',{name:'Alphabet',exact:true}).click();await page.locator('.letter-chip').first().click();
   await expect(page.getByText('Aussprache selbst vergleichen')).toBeVisible();const before=await page.evaluate(()=>window.AlphabetLab.state().letters.А.seen);
   await page.getByRole('button',{name:/Aufnahme starten/}).click();await expect(page.getByText(/Aufnahme läuft/)).toBeVisible();await page.getByRole('button',{name:/Stoppen/}).click();await expect(page.locator('#micPlayback')).toBeVisible();await expect(page.getByText(/ohne automatische Note/)).toBeVisible();
   const after=await page.evaluate(()=>window.AlphabetLab.state().letters.А.seen);expect(after).toBe(before);
