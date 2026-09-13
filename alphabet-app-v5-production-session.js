@@ -4,14 +4,17 @@ function submitProductionRating(t,rating,metrics={}){
   if(session.locked)return;session.locked=true;const isRepair=!!t.isRepair;
   const row=C.recordProductionSelfCheck(S,{letter:t.letter,family:t.family,rating,isRepair,repairId:t.repairId||'',sessionId:session.sessionId,questionId:t.questionId,audioSource:t.family==='audio-to-writing'?'human':'',...metrics});
   session.productionAnswers.push({...row,masteryAfter:C.productionMastery(S,t.letter),confidenceAfter:C.productionConfidence(S,t.letter)});session.lastProductionLetter=t.letter;
-  if(isRepair&&session.repairCurrent){session.repairCurrent.done=rating==='pass';session.repairCurrent.resolved=rating==='pass';if(rating==='pass')session.repairsResolved++;else session.repairsFailed++}
-  else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
-  persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
+  if(isRepair&&session.repairCurrent){
+    const current=session.repairCurrent;current.done=true;current.resolved=rating==='pass';
+    if(rating==='pass')session.repairsResolved++;
+    else{session.repairsFailed++;C.scheduleProductionRepairForSession(session,t,S,row.repairId||t.repairId,Math.random)}
+  }else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
+  persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
 }
 
 const currentTaskV5Base=currentTask;
 currentTask=function(){
-  if(!session)return null;C.initProductionSession(session);
+  if(!session)return null;C.initProductionSession(session,S);
   const repair=dueRepair();if(repair){session.repairCurrent=repair;return repair.task}session.repairCurrent=null;
   if(session.productionCurrent)return session.productionCurrent;
   if(C.shouldInsertProduction(S,session,Date.now())){session.productionCurrent=C.selectProductionTask(S,session,Math.random,Date.now());if(session.productionCurrent)return session.productionCurrent}
