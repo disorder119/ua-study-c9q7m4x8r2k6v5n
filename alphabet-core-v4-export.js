@@ -1,46 +1,37 @@
 'use strict';
 const familyCandidatesRunBase=familyCandidates;
 familyCandidates=function(state,letter,skill,difficulty,session){
-  const families=familyCandidatesRunBase(state,letter,skill,difficulty,session);
-  const recent=(session?.mainAnswers||[]).slice(-2).map(x=>x.family||x.type);
+  const families=familyCandidatesRunBase(state,letter,skill,difficulty,session),recent=(session?.mainAnswers||[]).slice(-2).map(x=>x.family||x.type);
   if(recent.length===2&&recent[0]===recent[1]){
-    const alternatives=families.filter(f=>f!==recent[0]);
-    if(alternatives.length)return alternatives;
-    const sameSkillAlternatives=Object.entries(QUESTION_FAMILIES)
-      .filter(([f,m])=>f!==recent[0]&&m.skill===skill&&familyAllowedFor(letter,f))
-      .filter(([f,m])=>!m.usesAudio||f==='letter-to-audio-choice'||WORD_BANK.some(w=>w.letter===letter&&w.audioKey===letter))
-      .map(([f])=>f);
+    const alternatives=families.filter(f=>f!==recent[0]);if(alternatives.length)return alternatives;
+    const sameSkillAlternatives=Object.entries(QUESTION_FAMILIES).filter(([f,m])=>f!==recent[0]&&m.skill===skill&&familyAllowedFor(letter,f)).filter(([f,m])=>!m.usesAudio||f==='letter-to-audio-choice'||WORD_BANK.some(w=>w.letter===letter&&w.audioKey===letter)).map(([f])=>f);
     if(sameSkillAlternatives.length)return sameSkillAlternatives;
   }
   return families;
 };
 const noveltyScoreV4Base=noveltyScore;
-noveltyScore=function(task,state,session){
-  let score=noveltyScoreV4Base(task,state,session),family=task.family||task.type;
-  const recent=(session.mainAnswers||[]).slice(-3).map(x=>x.family||x.type);
-  if(recent.at(-1)===family)score-=32;
-  if(recent.length>=2&&recent.slice(-2).every(f=>f===family))score-=85;
-  if(recent.length>=3&&recent.every(f=>f===family))score-=180;
-  return score;
-};
-const completionAudioLetters=typeof HUMAN_LETTER_AUDIO_LETTERS!=='undefined'?HUMAN_LETTER_AUDIO_LETTERS:[];
-const completionMacroPhases=typeof MACRO_PHASES!=='undefined'?MACRO_PHASES:[];
-const completionCreateMacro=typeof createMacroSession==='function'?createMacroSession:null;
-const completionMacroPhase=typeof macroPhase==='function'?macroPhase:null;
-const completionAudioSupported=typeof isolatedHumanAudioSupported==='function'?isolatedHumanAudioSupported:()=>false;
+noveltyScore=function(task,state,session){let score=noveltyScoreV4Base(task,state,session),family=task.family||task.type,recent=(session.mainAnswers||[]).slice(-3).map(x=>x.family||x.type);if(recent.at(-1)===family)score-=32;if(recent.length>=2&&recent.slice(-2).every(f=>f===family))score-=85;if(recent.length>=3&&recent.every(f=>f===family))score-=180;return score};
+const completionAudioLetters=typeof HUMAN_LETTER_AUDIO_LETTERS!=='undefined'?HUMAN_LETTER_AUDIO_LETTERS:[],completionMacroPhases=typeof MACRO_PHASES!=='undefined'?MACRO_PHASES:[],completionCreateMacro=typeof createMacroSession==='function'?createMacroSession:null,completionMacroPhase=typeof macroPhase==='function'?macroPhase:null,completionAudioSupported=typeof isolatedHumanAudioSupported==='function'?isolatedHumanAudioSupported:()=>false;
+const v5Available=typeof V5_VERSION!=='undefined';
+const exportSchema=v5Available?V5_VERSION:V4_VERSION,exportSkills=v5Available?V5_SKILLS:SKILLS,exportSkillLabels=v5Available?V5_SKILL_LABELS:SKILL_LABELS;
+const exportFresh=v5Available?freshStateV5:freshStateV4,exportMigrate=v5Available?migrateV5:migrateV4;
+const exportSkillMastery=v5Available?skillMasteryV5:skillMasteryV4,exportSkillConfidence=v5Available?skillConfidenceV5:skillConfidence;
+const exportMastered=v5Available?masteredV5:masteredV4,exportSummary=v5Available?summaryForLetterV5:summaryForLetterV4;
+function exportDifficulty(state,c,skill,now=Date.now()){return v5Available&&skill==='writtenProduction'?productionDifficulty(state,c,now):difficultyFor(state,c,skill,now)}
+const maybe=(name,fallback=null)=>typeof globalThis[name]==='function'?globalThis[name]:fallback;
 globalThis.AlphabetCoreV2=Object.freeze({
-  VERSION:3,SCHEMA_VERSION:V4_VERSION,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS,KIND_SKILL,SKILL_LABELS,INTERVALS,
-  WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,LEARNING_STATE_LABELS,HUMAN_LETTER_AUDIO_LETTERS:completionAudioLetters,MACRO_PHASES:completionMacroPhases,
+  VERSION:3,SCHEMA_VERSION:exportSchema,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS:exportSkills,KIND_SKILL,SKILL_LABELS:exportSkillLabels,INTERVALS,
+  WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,PRODUCTION_FAMILIES:v5Available?PRODUCTION_FAMILIES:{},LEARNING_STATE_LABELS,HUMAN_LETTER_AUDIO_LETTERS:completionAudioLetters,MACRO_PHASES:completionMacroPhases,
   uniq,clamp,shuffle,id,localDateKey,todayFrom,daysBetween,skillForKind,
-  freshState:freshStateV4,migrate:migrateV4,touchStudy,recentAccuracy,independentAccuracy,avgSkillLatency,
-  skillMastery:skillMasteryV4,skillConfidence,coreSkillScores:coreSkillScoresV4,retentionDaysForLetter,letterMastery:letterMasteryV4,
-  letterReady:letterReadyV4,letterStatus:letterStatusV4,learningState,problemFlag,
-  recordAnswer:recordAnswerV4,recordWriting,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters:secureLettersV4,
-  calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor,wordsForLetter,pickWord,familyCandidates,
-  buildDistractors,makeTask,variantizeTask,buildExam,buildV4Task,questionSignature,noveltyScore,noteExposure,detectLatinTrap,
+  freshState:exportFresh,migrate:exportMigrate,touchStudy,recentAccuracy,independentAccuracy,avgSkillLatency,
+  skillMastery:exportSkillMastery,skillConfidence:exportSkillConfidence,productionMastery:v5Available?productionMastery:()=>0,productionConfidence:v5Available?productionConfidence:()=>0,productionStage:v5Available?productionStage:()=> 'locked',productionStatusLabel:v5Available?productionStatusLabel:()=> 'noch nicht sinnvoll',coreSkillScores:coreSkillScoresV4,retentionDaysForLetter,letterMastery:letterMasteryV4,
+  letterReady:letterReadyV4,letterStatus:letterStatusV4,learningState,problemFlag,writtenProductionReady:v5Available?writtenProductionReady:()=>false,audioWrittenProductionReady:v5Available?audioWrittenProductionReady:()=>false,productionNeed:v5Available?productionNeed:()=>-999,productionDifficulty:v5Available?productionDifficulty:()=>0,productionFamiliesFor:v5Available?productionFamiliesFor:()=>[],productionGate:v5Available?productionGate:()=>({done:false}),
+  recordAnswer:recordAnswerV4,recordWriting,recordProductionSelfCheck:v5Available?recordProductionSelfCheck:()=>null,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters:secureLettersV4,
+  calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor:exportDifficulty,wordsForLetter,pickWord,pickNegativeWordV5:v5Available?pickNegativeWordV5:()=>null,familyCandidates,
+  buildDistractors,makeTask,variantizeTask,buildExam,buildV4Task,questionSignature,noveltyScore,noteExposure,detectLatinTrap,productionTask:v5Available?productionTask:()=>null,selectProductionTask:v5Available?selectProductionTask:()=>null,productionQuotaForSession:v5Available?productionQuotaForSession:()=>0,shouldInsertProduction:v5Available?shouldInsertProduction:()=>false,initProductionSession:v5Available?initProductionSession:s=>s,createProductionTestSession:v5Available?createProductionTestSession:()=>null,productionTestAvailability:v5Available?productionTestAvailability:()=>({ready:0}),productionSummary:v5Available?productionSummary:()=>({total:0,pass:0,unsure:0,again:0,repairTotal:0,repairPass:0}),
   selectNextMainQuestion,selectLetterV4,selectSkillV4,selectFamilyV4,overexposurePenalty,createAdaptiveSession,createFocusedSession,createBattleSession,createMacroSession:completionCreateMacro,macroPhase:completionMacroPhase,isolatedHumanAudioSupported:completionAudioSupported,sessionQualityMetrics,sessionDelta,
-  repairTask:repairTaskV4,registerRepair,openRepairIds,syncRepairPending,scheduleRepairForSession:scheduleRepairForSessionV4,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,
+  repairTask:repairTaskV4,registerRepair,openRepairIds,syncRepairPending,scheduleRepairForSession:scheduleRepairForSessionV4,productionRepairTask:v5Available?productionRepairTask:()=>null,scheduleProductionRepairForSession:v5Available?scheduleProductionRepairForSession:()=>null,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,
   buildDiagnostic,buildExamV4:buildRealExamV4,buildCertification:buildCertificationV4,buildAudioCertification,buildFakeCertification,buildFinalCertification:buildFinalCertificationV4,
-  recordExam,addMasteryCheck,averageRecognitionMs,mastered:masteredV4,statsToday,summaryForLetter:summaryForLetterV4,openMasteryItems:openMasteryItemsV4,
+  recordExam,addMasteryCheck,averageRecognitionMs,mastered:exportMastered,statsToday,summaryForLetter:exportSummary,openMasteryItems:openMasteryItemsV4,
   createExamSession,toggleBookmark,isBookmarked,taskFromBookmark,plausibleSyllable,technicalAudioFailureDecision,makeAudioFallback,snapshotMastery
 });
