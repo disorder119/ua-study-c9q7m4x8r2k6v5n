@@ -1,21 +1,6 @@
 'use strict';
-if(typeof V4_VERSION!=='undefined'){
-  globalThis.AlphabetCoreV2=Object.freeze({
-    VERSION:3,SCHEMA_VERSION:V4_VERSION,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS,KIND_SKILL,SKILL_LABELS,INTERVALS,
-    WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,LEARNING_STATE_LABELS,
-    uniq,clamp,shuffle,id,localDateKey,todayFrom,daysBetween,skillForKind,
-    freshState:freshStateV4,migrate:migrateV4,touchStudy,recentAccuracy,independentAccuracy,avgSkillLatency,
-    skillMastery:skillMasteryV4,skillConfidence,coreSkillScores:coreSkillScoresV4,retentionDaysForLetter,letterMastery:letterMasteryV4,
-    letterReady:letterReadyV4,letterStatus:letterStatusV4,learningState,problemFlag,
-    recordAnswer:recordAnswerV4,recordWriting,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters:secureLettersV4,
-    calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor,wordsForLetter,pickWord,familyCandidates,
-    buildDistractors,makeTask,variantizeTask,buildExam,buildV4Task,questionSignature,noveltyScore,noteExposure,detectLatinTrap,
-    selectNextMainQuestion,selectLetterV4,selectSkillV4,selectFamilyV4,overexposurePenalty,createAdaptiveSession,createFocusedSession,createBattleSession,sessionQualityMetrics,sessionDelta,
-    repairTask:repairTaskV4,registerRepair,openRepairIds,syncRepairPending,scheduleRepairForSession:scheduleRepairForSessionV4,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,
-    buildDiagnostic,buildExamV4:buildRealExamV4,buildCertification:buildCertificationV4,buildAudioCertification,buildFakeCertification,buildFinalCertification:buildFinalCertificationV4,
-    recordExam,addMasteryCheck,averageRecognitionMs,mastered:masteredV4,statsToday,summaryForLetter:summaryForLetterV4,openMasteryItems:openMasteryItemsV4,
-    createExamSession,toggleBookmark,isBookmarked,taskFromBookmark,plausibleSyllable,technicalAudioFailureDecision,makeAudioFallback,snapshotMastery
-  });
+if(typeof document!=='undefined'&&typeof document.write==='function'){
+  ['alphabet-wordbank-v4.js','alphabet-core-v4-model-a.js','alphabet-core-v4-model-b.js','alphabet-core-v4-tasks-a.js','alphabet-core-v4-tasks-b.js','alphabet-core-v4-selector-a.js','alphabet-core-v4-selector-b.js','alphabet-core-v4-export.js'].forEach(src=>document.write('<script src="./'+src+'"><\\/script>'));
 }else{
   globalThis.AlphabetCoreV2=Object.freeze({VERSION,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS,KIND_SKILL,SKILL_LABELS,INTERVALS,uniq,clamp,shuffle,id,localDateKey,todayFrom,daysBetween,skillForKind,freshState,migrate,touchStudy,recentAccuracy,independentAccuracy,avgSkillLatency,skillMastery,coreSkillScores,retentionDaysForLetter,letterMastery,letterReady,letterStatus,problemFlag,recordAnswer,recordWriting,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters,buildDistractors,makeTask,variantizeTask,buildExam,repairTask,buildDiagnostic,buildCertification,buildAudioCertification,buildFakeCertification,buildFinalCertification,recordExam,addMasteryCheck,averageRecognitionMs,mastered,statsToday,summaryForLetter,openMasteryItems,createExamSession,scheduleRepairForSession,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,toggleBookmark,isBookmarked,taskFromBookmark,plausibleSyllable});
 }
