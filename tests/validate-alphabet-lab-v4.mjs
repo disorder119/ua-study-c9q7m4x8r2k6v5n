@@ -97,12 +97,16 @@ for(let seed=101;seed<=200;seed++){
   const st=C.freshState(),sess=C.createFocusedSession(st,'А',{size:20}),rng=rngFor(44);const a=C.pickWord(st,'А',sess,rng);sess.usedWordIds.push(a.id);const b=C.pickWord(st,'А',sess,rng);assert.notEqual(a.id,b.id);
 }
 
-// Live adaptivity: independent correct audio evidence in the same session reduces audio need immediately.
+// Live adaptivity: same-session independent audio successes immediately reduce audio priority.
 {
   const st=C.freshState();st.learningPlan.introducedLetters=['А'];st.learningPlan.activeLetters=['А'];seedSkill(st,'А','visualToSound',10,10);seedSkill(st,'А','soundToLetter',10,10);seedSkill(st,'А','caseRecognition',10,10);seedSkill(st,'А','confusionDiscrimination',8,10);seedSkill(st,'А','audioToLetter',2,8,{days:1});
-  const sess=C.createFocusedSession(st,'А',{size:20}),before=C.calculateLearningNeed(st,'А','audioToLetter',NOW,sess),rng=rngFor(808);
-  for(let i=0;i<8;i++){const task=C.buildV4Task(st,'А','audioToLetter',2,'audio-to-letter',sess,rng,{scheduledReason:'live-test'});C.recordAnswer(st,{attemptId:`audio-${i}`,questionId:task.questionId,sessionId:sess.sessionId,letter:'А',skill:'audioToLetter',type:'audio',kind:'audio',task,family:task.family,evidenceWeight:1,firstAttempt:true,isRepair:false,selected:'А',expected:'А',good:true,latencyMs:900,latencyValid:true,now:NOW+i*1000,source:'live-test'})}
-  const after=C.calculateLearningNeed(st,'А','audioToLetter',NOW+9000,sess);assert(after<before-15,`audio need did not fall enough: ${before} -> ${after}`);sess.mainIndex=1;const next=C.selectNextMainQuestion(st,sess,rng,NOW+10000);assert(next.needScore<=Math.max(...C.CORE_SKILLS.map(k=>C.calculateLearningNeed(st,'А',k,NOW+10000,sess)))+30);
+  const sess=C.createFocusedSession(st,'А',{size:20}),beforeNeed=C.calculateLearningNeed(st,'А','audioToLetter',NOW,sess);
+  const beforeAudioPicks=Array.from({length:40},(_,i)=>C.selectSkillV4(st,'А',sess,rngFor(800+i),NOW).skill).filter(k=>k==='audioToLetter').length;
+  const rng=rngFor(808);
+  for(let i=0;i<8;i++){const task=C.buildV4Task(st,'А','audioToLetter',2,'audio-to-letter',sess,rng,{scheduledReason:'live-test'});const row=C.recordAnswer(st,{attemptId:`audio-${i}`,questionId:task.questionId,sessionId:sess.sessionId,letter:'А',skill:'audioToLetter',type:'audio',kind:'audio',task,family:task.family,evidenceWeight:1,firstAttempt:true,isRepair:false,selected:'А',expected:'А',good:true,latencyMs:900,latencyValid:true,now:NOW+i*1000,source:'live-test'});C.applyMainAnswer(sess,{...row,family:task.family,signature:C.questionSignature(task)})}
+  const afterNeed=C.calculateLearningNeed(st,'А','audioToLetter',NOW+9000,sess);const afterAudioPicks=Array.from({length:40},(_,i)=>C.selectSkillV4(st,'А',sess,rngFor(900+i),NOW+9000).skill).filter(k=>k==='audioToLetter').length;
+  assert(afterNeed<beforeNeed-15,`audio need did not fall enough: ${beforeNeed} -> ${afterNeed}`);assert(beforeAudioPicks>afterAudioPicks,`audio selection did not fall: ${beforeAudioPicks} -> ${afterAudioPicks}`);
+  sess.mainIndex=8;const next=C.selectNextMainQuestion(st,sess,rngFor(999),NOW+10000);assert(next&&next.skill!=='audioToLetter','after strong audio evidence the next task should shift to another current need');
 }
 
 // Secure letter is not an active blocker; a new letter starts at low difficulty.
