@@ -79,6 +79,7 @@ const FOCUSED_APPLICATION=['word-position','count-target','multi-select','missin
 const FOCUSED_ADVANCED=['audio-to-letter','sound-contrast','visual-contrast','word-position','count-target','multi-select','missing-letter','pseudoword','font-recognition','flash-recognition','memory-pair','word-choice','tap-target','multi-occurrence','same-different','error-correction','writing-recall','sound-to-letter'];
 const SOFT_FOCUSED=['word-image','word-plain','word-position','word-contains','tap-target','multi-occurrence','count-target','missing-letter','word-choice','visual-contrast','odd-one-out','error-correction','same-different','pair-match','audio-word-position','memory-pair','writing-recall'];
 const BATTLE_COVERAGE=['visual-contrast','sound-contrast','audio-to-letter','word-plain','pseudoword','flash-recognition','sound-to-letter','multi-select','memory-pair','word-position'];
+const DIRECT_CASE_FAMILIES=new Set(['upper-to-lower','lower-to-upper','pair-match']);
 
 function familySkillFor(letter,family){
   if(letter!=='Ь')return QUESTION_FAMILIES[family]?.skill||'visualToSound';
@@ -99,10 +100,10 @@ function familyAllowedFor(letter,family){
 }
 function focusedFamilyOrder(state,letter,session,now){
   if(letter==='Ь')return SOFT_FOCUSED;
-  const mastery=letterMasteryV4(state,letter,now);
+  const mastery=letterMasteryV4(state,letter,now),caseStrong=skillMasteryV4(state,letter,'caseRecognition',now)>=75&&!openRepairIds(state,letter,'caseRecognition').length;
   const primary=mastery<35?FOCUSED_BEGINNER:mastery<75?FOCUSED_APPLICATION:FOCUSED_ADVANCED;
   const secondary=mastery<35?FOCUSED_APPLICATION:mastery<75?FOCUSED_ADVANCED:FOCUSED_APPLICATION;
-  return uniq([...primary,...secondary]).filter(f=>familyAllowedFor(letter,f));
+  return uniq([...primary,...secondary]).filter(f=>familyAllowedFor(letter,f)).filter(f=>!caseStrong||!DIRECT_CASE_FAMILIES.has(f));
 }
 function candidateFamiliesFor(state,letter,skill,difficulty,session,now){
   if(session.focused)return focusedFamilyOrder(state,letter,session,now);
@@ -134,32 +135,31 @@ selectNextMainQuestion=function(state,session,rng=Math.random,now=Date.now()){
   let bestUnique=null,bestAny=null;
   for(const family of families){
     const skill=familySkillFor(letter,family),meta=QUESTION_FAMILIES[family]||{},raw=difficultyFor(state,letter,skill,now),difficulty=clamp(raw,meta.min??0,meta.max??5);
-    const need=calculateLearningNeed(state,letter,skill,now,session);
+    const need=calculateLearningNeed(state,letter,skill,now,session),coverageBonus=session.coverageState.familyCounts[family]?0:24;
     for(let attempt=0;attempt<5;attempt++){
       const task=buildV4Task(state,letter,skill,difficulty,family,session,rng,{scheduledReason:letterPick.reason});
       task.needScore=Math.round(need);task.selectionReason=`${letterPick.reason}; ${SKILL_LABELS[skill]||skill} need ${Math.round(need)}; diversity-aware`;
-      const sig=questionSignature(task),novelty=noveltyScore(task,state,session)+(session.coverageState.familyCounts[family]?0:20);
-      const row={task,novelty,sig};
-      if(!bestAny||novelty>bestAny.novelty)bestAny=row;
-      if(!usedSignatures.has(sig)&&(!bestUnique||novelty>bestUnique.novelty))bestUnique=row;
+      const sig=questionSignature(task),novelty=noveltyScore(task,state,session),priority=novelty+coverageBonus+clamp(need,0,160)*.9;
+      const row={task,novelty,priority,sig};
+      if(!bestAny||priority>bestAny.priority)bestAny=row;
+      if(!usedSignatures.has(sig)&&(!bestUnique||priority>bestUnique.priority))bestUnique=row;
     }
-    if(bestUnique&&bestUnique.novelty>=105&&!session.coverageState.familyCounts[family])break;
   }
   if(!bestUnique){
     const broad=Object.keys(QUESTION_FAMILIES).filter(f=>familyAllowedFor(letter,f));
     for(const family of broad){
-      const skill=familySkillFor(letter,family),meta=QUESTION_FAMILIES[family],difficulty=clamp(difficultyFor(state,letter,skill,now),meta.min??0,meta.max??5);
+      const skill=familySkillFor(letter,family),meta=QUESTION_FAMILIES[family],difficulty=clamp(difficultyFor(state,letter,skill,now),meta.min??0,meta.max??5),need=calculateLearningNeed(state,letter,skill,now,session);
       for(let attempt=0;attempt<8;attempt++){
         const task=buildV4Task(state,letter,skill,difficulty,family,session,rng,{scheduledReason:letterPick.reason});
-        task.needScore=Math.round(calculateLearningNeed(state,letter,skill,now,session));task.selectionReason=`${letterPick.reason}; duplicate-avoidance fallback`;
-        const sig=questionSignature(task),novelty=noveltyScore(task,state,session);
-        if(!usedSignatures.has(sig)&&(!bestUnique||novelty>bestUnique.novelty))bestUnique={task,novelty,sig};
+        task.needScore=Math.round(need);task.selectionReason=`${letterPick.reason}; duplicate-avoidance fallback`;
+        const sig=questionSignature(task),novelty=noveltyScore(task,state,session),priority=novelty+clamp(need,0,160)*.75;
+        if(!usedSignatures.has(sig)&&(!bestUnique||priority>bestUnique.priority))bestUnique={task,novelty,priority,sig};
       }
     }
   }
   const chosen=bestUnique||bestAny;
   if(!chosen)throw new Error(`No adaptive task available for ${letter}`);
-  return registerSelectedTask(state,session,chosen.task,{novelty:Math.round(chosen.novelty)},now);
+  return registerSelectedTask(state,session,chosen.task,{novelty:Math.round(chosen.novelty),priority:Math.round(chosen.priority)},now);
 };
 
 const masteredV4Base=masteredV4;
