@@ -1,4 +1,4 @@
-const CACHE='alphabet-lab-v4-complete';
+const CACHE='alphabet-lab-v4-complete-2';
 const PREFIX='alphabet-lab-';
 const CORE=['./alphabet-lab.html','./alphabet-core-v3-data.js','./alphabet-core-v3-model.js','./alphabet-core-v3-exam.js','./alphabet-core-v2.js','./alphabet-wordbank-v4.js','./alphabet-core-v4-model-a.js','./alphabet-core-v4-model-b.js','./alphabet-core-v4-tasks-a.js','./alphabet-core-v4-tasks-b.js','./alphabet-core-v4-selector-a.js','./alphabet-core-v4-selector-b.js','./alphabet-core-v4-hardening.js','./alphabet-core-v4-completion.js','./alphabet-core-v4-export.js','./alphabet-app-v3-shell.js','./alphabet-app-v3-exam.js','./alphabet-app-v3-ui.js','./alphabet-app-v2.js','./alphabet-app-v4-style.js','./alphabet-app-v4-a.js','./alphabet-app-v4-b.js','./alphabet-app-v4-c.js','./alphabet-app-v4-d.js','./alphabet-app-v4-completion.js','./alphabet-app-v4-init.js','./alphabet-lab.webmanifest','./ukrainischkurs-native-audio.js','./ukrainisch-icon-192.png','./ukrainisch-icon-512.png'];
 const isAsset=url=>/\.(?:js|css|webmanifest)$/i.test(url.pathname);
