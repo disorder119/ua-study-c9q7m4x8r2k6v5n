@@ -1,4 +1,14 @@
 'use strict';
+const familyCandidatesRunBase=familyCandidates;
+familyCandidates=function(state,letter,skill,difficulty,session){
+  const families=familyCandidatesRunBase(state,letter,skill,difficulty,session);
+  const recent=(session?.mainAnswers||[]).slice(-2).map(x=>x.family||x.type);
+  if(recent.length===2&&recent[0]===recent[1]){
+    const alternatives=families.filter(f=>f!==recent[0]);
+    if(alternatives.length)return alternatives;
+  }
+  return families;
+};
 const noveltyScoreV4Base=noveltyScore;
 noveltyScore=function(task,state,session){
   let score=noveltyScoreV4Base(task,state,session),family=task.family||task.type;
