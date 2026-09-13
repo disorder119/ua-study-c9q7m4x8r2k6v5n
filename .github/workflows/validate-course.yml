@@ -42,3 +42,20 @@ jobs:
         run: node tests/validate-alphabet-lab-v4.mjs
       - name: Alphabet Lab V4 Joel Persona-Simulationen
         run: node tests/validate-alphabet-lab-v4-personas.mjs
+
+  browser:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Playwright installieren
+        run: npm install --no-save @playwright/test@latest
+      - name: Chromium und WebKit installieren
+        run: npx playwright install --with-deps chromium webkit
+      - name: Alphabet Lab V4 echte Browser-E2E
+        run: npx playwright test --config=playwright.config.mjs
