@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync(new URL('../alphabet-lab.html',import.meta.url),'utf8');
+const js=fs.readFileSync(new URL('../alphabet-lab.js',import.meta.url),'utf8');
+const manifest=JSON.parse(fs.readFileSync(new URL('../alphabet-lab.webmanifest',import.meta.url),'utf8'));
+const alphabet='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ь Ю Я'.split(' ');
+for(const c of alphabet) assert(js.includes(`'${c}':{lower:`),`missing letter data: ${c}`);
+assert.equal(alphabet.length,33);
+for(const token of ['retrieval','Spacing','Handschrift','Verwechslungs','successDays','writeDays','Mastery']) assert(js.toLowerCase().includes(token.toLowerCase()),`missing method token ${token}`);
+for(const pair of ['Г/Ґ','І/И','Ш/Щ','Ц/Ч']) assert(html.includes(pair)||js.includes(pair),`missing contrast ${pair}`);
+assert(html.includes('ukrainischkurs-native-audio.js'));
+assert(html.includes('alphabet-lab.webmanifest'));
+assert.equal(manifest.display,'standalone');
+assert.equal(manifest.start_url,'./alphabet-lab.html');
+console.log('Alphabet Lab static validation: OK');
