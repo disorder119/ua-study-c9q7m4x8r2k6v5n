@@ -1,7 +1,7 @@
 /* Ukrainischkurs für Joel · freie menschliche ukrainische Aussprache-Referenzen
-   Quellen: Lingua Libre / Wikimedia Commons sowie Shtooka / Wikimedia Commons.
-   Der geführte Anfängerstart verwendet nur exakt zum angezeigten Wort passende
-   menschliche Aufnahmen; kein synthetisches Audio zählt als Referenz. */
+   Wortquellen: Lingua Libre / Wikimedia Commons sowie Shtooka / Wikimedia Commons.
+   Isolierte Buchstabenaussprache: Tabrus / Wikimedia Commons, CC BY-SA 4.0.
+   Ь hat keinen eigenen Laut und erhält deshalb bewusst keine isolierte Buchstabenaufnahme. */
 (() => {
   const BASE='https://commons.wikimedia.org/wiki/Special:Redirect/file/';
   const PAGE='https://commons.wikimedia.org/wiki/File:';
@@ -50,4 +50,17 @@
   });
   window.UKRAINIAN_PRONUNCIATION_AUDIO=Object.freeze(audio);
   window.UKRAINIAN_PRONUNCIATION_META=Object.freeze(meta);
+
+  // Wikimedia Commons category “Ukrainian pronunciation of letters by a young male uploaded by Tabrus”
+  // contains exactly 32 sound-bearing Ukrainian letters. The soft sign Ь is intentionally absent.
+  const alphabet='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ю Я'.split(' ');
+  const letterAudio={},letterMeta={};
+  alphabet.forEach(letter=>{
+    const lower=letter.toLocaleLowerCase('uk');
+    const file=`${letter}${lower} – ukrainian.ogg`;
+    letterAudio[letter]=BASE+encodeURIComponent(file).replace(/%2F/g,'/');
+    letterMeta[letter]={file,label:`${letter}${lower}`,speaker:'Tabrus',project:'Wikimedia Commons',license:'CC BY-SA 4.0',kind:'isolated-letter-pronunciation',source:PAGE+encodeURIComponent(file).replace(/%2F/g,'/')};
+  });
+  window.UKRAINIAN_LETTER_AUDIO=Object.freeze(letterAudio);
+  window.UKRAINIAN_LETTER_AUDIO_META=Object.freeze(letterMeta);
 })();

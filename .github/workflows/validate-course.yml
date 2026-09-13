@@ -32,9 +32,32 @@ jobs:
         run: node tests/validate-alphabet-lab-v2.mjs
       - name: Alphabet Lab v3 Behavioral Tests
         run: node tests/validate-alphabet-lab-v3.mjs
-      - name: Alphabet Lab v3 Service Worker Tests
+      - name: Alphabet Lab Service Worker Regression
         run: node tests/validate-alphabet-lab-sw-v3.mjs
       - name: Alphabet Lab v3 leichte DOM-Smoke-Tests
         run: node tests/validate-alphabet-lab-dom-smoke.mjs
       - name: Alphabet Lab v3 Persona-Simulationen
         run: node tests/validate-alphabet-lab-personas-v3.mjs
+      - name: Alphabet Lab V4 adaptive Engine und Diversity
+        run: node tests/validate-alphabet-lab-v4.mjs
+      - name: Alphabet Lab V4 Joel Persona-Simulationen
+        run: node tests/validate-alphabet-lab-v4-personas.mjs
+      - name: Alphabet Lab V4 Abschlussfunktionen
+        run: node tests/validate-alphabet-lab-v4-completion.mjs
+
+  browser:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Playwright installieren
+        run: npm install --no-save @playwright/test@latest
+      - name: Chromium und WebKit installieren
+        run: npx playwright install --with-deps chromium webkit
+      - name: Alphabet Lab V4 echte Browser-E2E
+        run: npx playwright test --config=playwright.config.mjs
