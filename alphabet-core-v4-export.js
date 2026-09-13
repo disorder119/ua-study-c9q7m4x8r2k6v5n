@@ -6,6 +6,11 @@ familyCandidates=function(state,letter,skill,difficulty,session){
   if(recent.length===2&&recent[0]===recent[1]){
     const alternatives=families.filter(f=>f!==recent[0]);
     if(alternatives.length)return alternatives;
+    const sameSkillAlternatives=Object.entries(QUESTION_FAMILIES)
+      .filter(([f,m])=>f!==recent[0]&&m.skill===skill&&familyAllowedFor(letter,f))
+      .filter(([f,m])=>!m.usesAudio||WORD_BANK.some(w=>w.letter===letter&&w.audioKey===letter))
+      .map(([f])=>f);
+    if(sameSkillAlternatives.length)return sameSkillAlternatives;
   }
   return families;
 };
