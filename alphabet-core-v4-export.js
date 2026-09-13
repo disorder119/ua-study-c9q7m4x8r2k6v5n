@@ -23,9 +23,14 @@ noveltyScore=function(task,state,session){
   if(recent.length>=3&&recent.every(f=>f===family))score-=180;
   return score;
 };
+const completionAudioLetters=typeof HUMAN_LETTER_AUDIO_LETTERS!=='undefined'?HUMAN_LETTER_AUDIO_LETTERS:[];
+const completionMacroPhases=typeof MACRO_PHASES!=='undefined'?MACRO_PHASES:[];
+const completionCreateMacro=typeof createMacroSession==='function'?createMacroSession:null;
+const completionMacroPhase=typeof macroPhase==='function'?macroPhase:null;
+const completionAudioSupported=typeof isolatedHumanAudioSupported==='function'?isolatedHumanAudioSupported:()=>false;
 globalThis.AlphabetCoreV2=Object.freeze({
   VERSION:3,SCHEMA_VERSION:V4_VERSION,DAY,HOUR,MIN,ALPHABET,LEARN_ORDER,FAKE_FRIENDS,LATIN_TRAPS,HARD,VOWELS,CONSONANTS,SPECIAL,DATA,SOUND_GROUPS,CONTRASTS,CORE_SKILLS,SKILLS,KIND_SKILL,SKILL_LABELS,INTERVALS,
-  WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,LEARNING_STATE_LABELS,HUMAN_LETTER_AUDIO_LETTERS,MACRO_PHASES,
+  WORD_BANK,LETTER_PEDAGOGY,FONT_VARIANTS,QUESTION_FAMILIES,LEARNING_STATE_LABELS,HUMAN_LETTER_AUDIO_LETTERS:completionAudioLetters,MACRO_PHASES:completionMacroPhases,
   uniq,clamp,shuffle,id,localDateKey,todayFrom,daysBetween,skillForKind,
   freshState:freshStateV4,migrate:migrateV4,touchStudy,recentAccuracy,independentAccuracy,avgSkillLatency,
   skillMastery:skillMasteryV4,skillConfidence,coreSkillScores:coreSkillScoresV4,retentionDaysForLetter,letterMastery:letterMasteryV4,
@@ -33,7 +38,7 @@ globalThis.AlphabetCoreV2=Object.freeze({
   recordAnswer:recordAnswerV4,recordWriting,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters:secureLettersV4,
   calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor,wordsForLetter,pickWord,familyCandidates,
   buildDistractors,makeTask,variantizeTask,buildExam,buildV4Task,questionSignature,noveltyScore,noteExposure,detectLatinTrap,
-  selectNextMainQuestion,selectLetterV4,selectSkillV4,selectFamilyV4,overexposurePenalty,createAdaptiveSession,createFocusedSession,createBattleSession,createMacroSession,macroPhase,isolatedHumanAudioSupported,sessionQualityMetrics,sessionDelta,
+  selectNextMainQuestion,selectLetterV4,selectSkillV4,selectFamilyV4,overexposurePenalty,createAdaptiveSession,createFocusedSession,createBattleSession,createMacroSession:completionCreateMacro,macroPhase:completionMacroPhase,isolatedHumanAudioSupported:completionAudioSupported,sessionQualityMetrics,sessionDelta,
   repairTask:repairTaskV4,registerRepair,openRepairIds,syncRepairPending,scheduleRepairForSession:scheduleRepairForSessionV4,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,
   buildDiagnostic,buildExamV4:buildRealExamV4,buildCertification:buildCertificationV4,buildAudioCertification,buildFakeCertification,buildFinalCertification:buildFinalCertificationV4,
   recordExam,addMasteryCheck,averageRecognitionMs,mastered:masteredV4,statsToday,summaryForLetter:summaryForLetterV4,openMasteryItems:openMasteryItemsV4,
