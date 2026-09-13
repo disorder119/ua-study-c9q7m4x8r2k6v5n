@@ -42,6 +42,8 @@ jobs:
         run: node tests/validate-alphabet-lab-v4.mjs
       - name: Alphabet Lab V4 Joel Persona-Simulationen
         run: node tests/validate-alphabet-lab-v4-personas.mjs
+      - name: Alphabet Lab V4 Abschlussfunktionen
+        run: node tests/validate-alphabet-lab-v4-completion.mjs
 
   browser:
     needs: validate
