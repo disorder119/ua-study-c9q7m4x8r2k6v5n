@@ -24,9 +24,17 @@ jobs:
         run: node tests/validate-v73-linguistic-polish.mjs
       - name: A1-Auswahloptionen validieren
         run: node tests/validate-a1-options.mjs
-      - name: A1-Gate Stage-Logik validieren (Qualifikation/Bestätigung tatsächlich bestehbar)
+      - name: A1-Gate Stage-Logik validieren
         run: node tests/validate-a1-gate-stage-logic.mjs
       - name: Alphabet Lab Legacy-Regeln validieren
         run: node tests/validate-alphabet-lab.mjs
-      - name: Alphabet Lab v2 Prüfungssimulator und Lernlogik validieren
+      - name: Alphabet Lab v2 Kompatibilität validieren
         run: node tests/validate-alphabet-lab-v2.mjs
+      - name: Alphabet Lab v3 Behavioral Tests
+        run: node tests/validate-alphabet-lab-v3.mjs
+      - name: Alphabet Lab v3 Service Worker Tests
+        run: node tests/validate-alphabet-lab-sw-v3.mjs
+      - name: Alphabet Lab v3 leichte DOM-Smoke-Tests
+        run: node tests/validate-alphabet-lab-dom-smoke.mjs
+      - name: Alphabet Lab v3 Persona-Simulationen
+        run: node tests/validate-alphabet-lab-personas-v3.mjs

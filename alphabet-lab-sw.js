@@ -1,5 +1,13 @@
-const CACHE='alphabet-lab-v2';
-const CORE=['./alphabet-lab.html','./alphabet-core-v2.js','./alphabet-app-v2.js','./alphabet-lab.webmanifest','./ukrainischkurs-native-audio.js','./ukrainisch-icon-192.png','./ukrainisch-icon-512.png'];
+const CACHE='alphabet-lab-v3';
+const PREFIX='alphabet-lab-';
+const CORE=['./alphabet-lab.html','./alphabet-core-v3-data.js','./alphabet-core-v3-model.js','./alphabet-core-v3-exam.js','./alphabet-core-v2.js','./alphabet-app-v3-shell.js','./alphabet-app-v3-exam.js','./alphabet-app-v3-ui.js','./alphabet-app-v2.js','./alphabet-lab.webmanifest','./ukrainischkurs-native-audio.js','./ukrainisch-icon-192.png','./ukrainisch-icon-512.png'];
+const isAsset=url=>/\.(?:js|css|webmanifest)$/i.test(url.pathname);
+const isImage=url=>/\.(?:png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname);
+async function put(req,res){if(res&&res.ok){const c=await caches.open(CACHE);await c.put(req,res.clone())}return res}
+async function networkFirst(req,fallback){try{return await put(req,await fetch(req))}catch(_){const hit=await caches.match(req);if(hit)return hit;if(fallback){const page=await caches.match(fallback);if(page)return page}return new Response('',{status:503,statusText:'Offline'})}}
+async function staleWhileRevalidate(req){const hit=await caches.match(req);const net=fetch(req).then(res=>put(req,res)).catch(()=>null);return hit||await net||new Response('',{status:503,statusText:'Offline asset unavailable'})}
+async function cacheFirst(req){const hit=await caches.match(req);return hit||networkFirst(req)}
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('alphabet-lab-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const url=new URL(e.request.url);if(url.origin!==location.origin)return;e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return res;}).catch(()=>caches.match('./alphabet-lab.html'))));});
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const url=new URL(e.request.url);if(url.origin!==location.origin)return;if(e.request.mode==='navigate'){e.respondWith(networkFirst(e.request,'./alphabet-lab.html'));return}if(isAsset(url)){e.respondWith(staleWhileRevalidate(e.request));return}if(isImage(url)){e.respondWith(cacheFirst(e.request));return}e.respondWith(networkFirst(e.request));});
+self.__ALPHABET_SW_TEST__={CACHE,PREFIX,isAsset,isImage,networkFirst,staleWhileRevalidate,cacheFirst};
