@@ -84,3 +84,30 @@ test('human-audio question exposes accessible controls without requiring a syste
   const hasTextInput=await page.locator('input[type="text"], textarea').count();
   expect(hasTextInput).toBe(0);
 });
+
+test('letter-to-audio-choice uses four unlabeled human candidates and never soft sign',async({page})=>{
+  await openLab(page);
+  const task=await startFamily(page,'Р','letter-to-audio-choice',{size:1});
+  expect(task.interaction).toBe('audioChoice');expect(task.audioChoiceLetters).toHaveLength(4);expect(task.audioChoiceLetters).not.toContain('Ь');
+  await expect(page.locator('[data-play-letter-audio]')).toHaveCount(4);
+  await expect(page.locator('.audio-pick-candidate')).toHaveCount(4);
+  for(let i=0;i<4;i++)expect(await page.locator('.audio-pick-candidate').nth(i).isDisabled()).toBeTruthy();
+  await expect(page.getByText('0/4 Aufnahmen gehört.')).toBeVisible();
+});
+
+test('microphone practice records locally without creating mastery evidence',async({page})=>{
+  await page.addInitScript(()=>{
+    Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:async()=>({getTracks:()=>[{stop(){}}]})}});
+    class FakeRecorder{constructor(){this.state='inactive';this.mimeType='audio/webm'}start(){this.state='recording'}stop(){this.state='inactive';this.ondataavailable?.({data:new Blob(['voice'],{type:'audio/webm'})});this.onstop?.()}}
+    window.MediaRecorder=FakeRecorder;URL.createObjectURL=()=> 'blob:alphabet-lab-e2e';URL.revokeObjectURL=()=>{};
+  });
+  await openLab(page);await page.getByRole('button',{name:'Alphabet'}).click();await page.locator('.letter-chip').first().click();
+  await expect(page.getByText('Aussprache selbst vergleichen')).toBeVisible();const before=await page.evaluate(()=>window.AlphabetLab.state().letters.А.seen);
+  await page.getByRole('button',{name:/Aufnahme starten/}).click();await expect(page.getByText(/Aufnahme läuft/)).toBeVisible();await page.getByRole('button',{name:/Stoppen/}).click();await expect(page.locator('#micPlayback')).toBeVisible();await expect(page.getByText(/ohne automatische Note/)).toBeVisible();
+  const after=await page.evaluate(()=>window.AlphabetLab.state().letters.А.seen);expect(after).toBe(before);
+});
+
+test('20-minute intensive mode is phased but still generates only the next live question',async({page})=>{
+  await openLab(page);await page.getByRole('button',{name:'Prüfen'}).click();await expect(page.getByText('20-Minuten Intensiv')).toBeVisible();await page.getByRole('button',{name:'INTENSIV STARTEN'}).click();
+  const s=await page.evaluate(()=>window.AlphabetLab.debugSession());expect(s.macro).toBeTruthy();expect(s.targetMainCount).toBe(36);expect(s.phasePlan).toHaveLength(5);expect(s.mainTasks.filter(Boolean).length).toBe(1);await expect(page.getByText(/Phase: Warm-up/)).toBeVisible();
+});
