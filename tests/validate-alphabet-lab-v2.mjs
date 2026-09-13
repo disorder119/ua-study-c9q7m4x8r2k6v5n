@@ -29,6 +29,7 @@ let fast=C.freshState(),slow=C.freshState();for(let i=0;i<14;i++){const t=now+i*
 
 const rng=(()=>{let x=123456789;return()=>{x=(1103515245*x+12345)%2147483648;return x/2147483648}})();
 const exam=C.buildExam(s,{size:50,scope:'standard',feedback:'learning',rng,now});assert.equal(exam.tasks.length,50);assert(exam.tasks.every(t=>C.ALPHABET.includes(t.letter)));assert(new Set(exam.tasks.map(t=>t.type)).size>=5,'standard exam should mix question types');
+const variants=new Set(exam.tasks.map(t=>t.variant).filter(Boolean));for(const v of ['visual-chaos','nonsense-syllable','pair-match','odd-one-out','alphabet-order','sound-contrast'])assert(variants.has(v),`missing exam variant ${v}`);
 const fake=C.buildExam(s,{size:30,scope:'fake',rng,now});assert(fake.tasks.every(t=>C.FAKE_FRIENDS.includes(t.letter)),'fake-friend exam leaked unrelated letters');
 const errors=C.buildExam(s,{size:20,scope:'errors',rng,now});assert(errors.tasks.some(t=>t.letter==='Р'),'error exam should draw from persistent errors');
 const diag=C.buildDiagnostic(C.freshState(),{size:50,rng});assert.equal(diag.tasks.length,50);for(const c of C.ALPHABET)assert(diag.tasks.some(t=>t.letter===c),`diagnostic must cover ${c}`);
@@ -37,6 +38,7 @@ const repair=C.repairTask({letter:'Р',type:'visual'},s,rng);assert.equal(repair
 let down=C.freshState();for(let day=0;day<5;day++){for(const kind of ['visual','reverse','audio','lowercase','uppercase','contrast'])C.recordAnswer(down,{letter:'Ш',good:true,kind,selected:'Ш',ms:700,now:now+day*C.DAY});}C.recordWriting(down,'Ш',now);const high=C.letterMastery(down,'Ш',now+5*C.DAY);for(let i=0;i<4;i++)C.recordAnswer(down,{letter:'Ш',good:false,kind:'visual',selected:'Щ',confusedWith:'Щ',ms:900,now:now+5*C.DAY+i*1000});const low=C.letterMastery(down,'Ш',now+5*C.DAY+5000);assert(low<high,'mastery must decrease after fresh errors');assert.equal(C.topConfusions(down,1)[0][0],'Ш ↔ Щ');
 
 for(const token of ['Lernprüfung','Realprüfung','MEINE FEHLER TRAINIEREN','PRÜFUNG STARTEN','Startdiagnose','Schwächen-Battle','Speed-Prüfung','Audio-Prüfung'])assert(appSrc.includes(token)||html.includes(token),`missing UI capability: ${token}`);
+for(const token of ['visual-chaos','nonsense-syllable','pair-match','odd-one-out','alphabet-order','sound-contrast'])assert(coreSrc.includes(token),`missing rich question variant ${token}`);
 assert(html.includes('alphabet-core-v2.js'));assert(html.includes('alphabet-app-v2.js'));assert(!html.includes('<script src="alphabet-lab.js"></script>'),'legacy monolith must not be active');
 assert(appSrc.includes("uk-alpha-lab-v1"),'legacy storage migration path missing');
 assert(appSrc.includes('resolveConfusedLetter'),'confusion normalization missing');
