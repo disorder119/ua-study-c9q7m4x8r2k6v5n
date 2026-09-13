@@ -44,8 +44,12 @@ jobs:
         run: node tests/validate-alphabet-lab-v4-personas.mjs
       - name: Alphabet Lab V4 Abschlussfunktionen
         run: node tests/validate-alphabet-lab-v4-completion.mjs
-      - name: Alphabet Lab V5 freie Produktion
+      - name: Alphabet Lab V5 Production Core
         run: node tests/validate-alphabet-lab-v5-production.mjs
+      - name: Alphabet Lab V5 Mastery und Migration
+        run: node tests/validate-alphabet-lab-v5-mastery.mjs
+      - name: Alphabet Lab V5 Persona-Simulationen A-F
+        run: node tests/validate-alphabet-lab-v5-personas.mjs
 
   browser:
     needs: validate
