@@ -1,7 +1,7 @@
 {
   "name": "Alphabet Lab · Ukrainisch",
   "short_name": "Alphabet Lab",
-  "description": "Ukrainisches Alphabet für deutschsprachige Erwachsene: adaptiv, wissenschaftlich orientiert und installierbar.",
+  "description": "Prüfungsbasierter Trainer für die 33 ukrainischen Buchstaben: Fehler, Repairs, Skill-SRS, Audio und Langzeit-Mastery.",
   "lang": "de",
   "start_url": "./alphabet-lab.html",
   "scope": "./",

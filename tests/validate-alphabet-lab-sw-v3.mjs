@@ -1,0 +1,7 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const src=fs.readFileSync(new URL('../alphabet-lab-sw.js',import.meta.url),'utf8');
+const cacheMap=new Map([['./alphabet-lab.html',new Response('<!doctype html><title>Alphabet</title>',{headers:{'content-type':'text/html'}})]]);
+const cacheObj={addAll:async()=>{},put:async(req,res)=>cacheMap.set(typeof req==='string'?req:req.url,res.clone())};
+const caches={open:async()=>cacheObj,keys:async()=>['alphabet-lab-v2','alphabet-lab-v3'],delete:async()=>true,match:async req=>cacheMap.get(typeof req==='string'?req:req.url)};
+const listeners={};const self={addEventListener:(n,fn)=>listeners[n]=fn,skipWaiting:async()=>{},clients:{claim:async()=>{}}};
+const sandbox={self,caches,fetch:async()=>{throw new Error('offline')},Response,Request,URL,location:{origin:'https://example.test'},console};vm.runInNewContext(src,sandbox);const T=self.__ALPHABET_SW_TEST__;assert(T);assert(T.isAsset(new URL('https://example.test/alphabet-app-v2.js')));const jsReq=new Request('https://example.test/alphabet-app-v2.js');const jsRes=await T.staleWhileRevalidate(jsReq);assert.equal(jsRes.status,503);assert.notEqual(jsRes.headers.get('content-type'),'text/html');const navReq=new Request('https://example.test/anything');const navRes=await T.networkFirst(navReq,'./alphabet-lab.html');assert((await navRes.text()).includes('Alphabet'));assert.equal(T.CACHE,'alphabet-lab-v3');console.log('Alphabet Lab v3 service worker tests: OK');
