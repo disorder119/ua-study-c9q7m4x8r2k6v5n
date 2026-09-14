@@ -1,0 +1,50 @@
+name: Build Alphabet Lab artifacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'alphabet-core-v*.js'
+      - 'alphabet-app-v*.js'
+      - 'alphabet-wordbank-v4.js'
+      - 'alphabet-lab.template.html'
+      - 'alphabet-lab-sw.template.js'
+      - 'alphabet-lab.webmanifest'
+      - 'ukrainischkurs-native-audio.js'
+      - 'scripts/build-alphabet-lab.mjs'
+      - '.github/workflows/build-alphabet-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphabet-lab-artifacts-main
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Alphabet Lab deterministisch bauen
+        run: node scripts/build-alphabet-lab.mjs
+      - name: Generierte Artefakte committen
+        shell: bash
+        run: |
+          files=(alphabet-core.bundle.js alphabet-app.bundle.js alphabet-lab.html alphabet-lab-sw.js alphabet-build.json)
+          if git diff --quiet -- "${files[@]}"; then
+            echo 'Alphabet-Lab-Artefakte bereits aktuell.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "${files[@]}"
+          git commit -m 'Generiere Alphabet-Lab-Artefakte'
+          git pull --rebase origin main
+          git push
