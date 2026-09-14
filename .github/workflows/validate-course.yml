@@ -18,8 +18,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Alphabet Lab generated artifacts prüfen
-        run: node scripts/build-alphabet-lab.mjs --check
+      - name: Alphabet Lab deterministisch lokal bauen
+        run: node scripts/build-alphabet-lab.mjs
       - name: App-Hülle deterministisch lokal generieren
         run: node scripts/build-app-shell.mjs
       - name: Kurs, Lektionen, Sprachpolitur und alle bisherigen Regressionen vollständig validieren
@@ -77,6 +77,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Alphabet Lab deterministisch lokal bauen
+        run: node scripts/build-alphabet-lab.mjs
       - name: Browser-Testabhängigkeiten installieren
         run: npm ci
       - name: Chromium und WebKit installieren
@@ -94,6 +96,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Alphabet Lab deterministisch lokal bauen
+        run: node scripts/build-alphabet-lab.mjs
       - name: Browser-Testabhängigkeiten installieren
         run: npm ci
       - name: Chromium installieren
