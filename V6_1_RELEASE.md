@@ -15,7 +15,9 @@ V6.1 is a technical hardening release. It deliberately keeps the existing V4/V5/
 - Node performance measurement still loaded the V5 engine;
 - CI could modify the PR branch to update generated bundles;
 - Playwright was installed from `@latest`;
-- audio instances had insufficient generation guards against late events from a previous question.
+- audio instances had insufficient generation guards against late events from a previous question;
+- V6 progression could deadlock after the initial learning field because the V5 bounded-log unlock counter and the V6 durable unlock counter used incompatible scales;
+- a V6.1 migration regression test reassigned a `const` binding and prevented the later release-gate suites from running.
 
 ## Architecture
 
@@ -39,6 +41,10 @@ On migration/reload:
 - current open repairs are rebuilt exactly from the current repair ledger;
 - readiness caches are invalidated whenever repair truth changes.
 
+## Learning progression
+
+V6 owns the unlock throttle on the durable `independentMainCount` scale. The V4 learning-plan selector remains responsible for deciding whether the current active field is ready for another letter, while the obsolete V5 bounded-log throttle is not applied a second time. This keeps the intended spacing rule — normally at least five independent main questions plus evidence on the newest letter — without allowing a learner to become permanently stuck after the first five letters.
+
 ## Storage and quota
 
 V6 is the sole normal write target. Legacy keys are migration-only. Persistence is debounced with immediate flushes at lifecycle boundaries. Quota recovery compacts only bounded history; mastery, skill counts, repairs, learning plan, Production state and durable aggregates are preserved. A second failure exposes a small user-visible warning.
@@ -46,6 +52,10 @@ V6 is the sole normal write target. Legacy keys are migration-only. Persistence 
 ## Service worker and update safety
 
 Critical assets are build-versioned. HTML, bundle URLs, build metadata and the service-worker cache share one build ID. A missing JS request never falls back to HTML. External human audio may fail technically without becoming a learner error.
+
+## Build synchronization
+
+Pull-request validation remains read-only. On `main`, `.github/workflows/build-alphabet-lab.yml` deterministically rebuilds and commits only the generated Alphabet-Lab artifacts when declared source files change. This prevents source/bundle drift while keeping generated files out of PR-side mutation.
 
 ## CI and tests
 
