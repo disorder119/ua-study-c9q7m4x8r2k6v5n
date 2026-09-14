@@ -16,16 +16,11 @@
   </style>
 </head>
 <body>
-  <main class="app" id="app" aria-live="polite"></main>
-  <script src="ukrainischkurs-native-audio.js"></script>
-  <script src="alphabet-core-v3-data.js"></script>
-  <script src="alphabet-core-v3-model.js"></script>
-  <script src="alphabet-core-v3-exam.js"></script>
-  <script src="alphabet-core-v2.js"></script>
-  <script src="alphabet-app-v3-shell.js"></script>
-  <script src="alphabet-app-v3-exam.js"></script>
-  <script src="alphabet-app-v3-ui.js"></script>
-  <script src="alphabet-app-v2.js"></script>
+  <main class="app" id="app"></main>
+  <script>try{const v6=localStorage.getItem('uk-alpha-lab-v6');if(v6)localStorage.setItem('uk-alpha-lab-v3',v6)}catch(_){}</script>
+  <script defer src="ukrainischkurs-native-audio.js"></script>
+  <script defer src="alphabet-core.bundle.js"></script>
+  <script defer src="alphabet-app.bundle.js"></script>
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./alphabet-lab-sw.js').catch(()=>{});}</script>
 </body>
 </html>
