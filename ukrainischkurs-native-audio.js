@@ -1,12 +1,18 @@
-/* Ukrainischkurs für Joel · freie menschliche ukrainische Aussprache-Referenzen
+/* Ukrainischkurs für Joel · menschliche ukrainische Originalaufnahmen
+   Harte Audio-Policy für das Alphabet Lab:
+   - kein Browser-TTS / keine KI-Stimme als Aussprache-Ersatz
+   - nur echte menschliche Aufnahmen mit öffentlicher Quellen- und Lizenzzuordnung
+   - Quellenstatus wird transparent gespeichert; eine formale Sprecher-Zertifizierung wird
+     nur behauptet, wenn die jeweilige Quelle sie ausdrücklich nachweist.
    Wortquellen: Lingua Libre / Wikimedia Commons sowie Shtooka / Wikimedia Commons.
    Isolierte Buchstabenaussprache: Tabrus / Wikimedia Commons, CC BY-SA 4.0.
    Ь hat keinen eigenen Laut und erhält deshalb bewusst keine isolierte Buchstabenaufnahme. */
 (() => {
   const BASE='https://commons.wikimedia.org/wiki/Special:Redirect/file/';
   const PAGE='https://commons.wikimedia.org/wiki/File:';
-  const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'CC BY-SA 4.0'};
-  const SH={speaker:'Галя Раптова',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US'};
+  const AUDIO_POLICY=Object.freeze({mode:'human-only',ttsAllowed:false,aiVoiceAllowed:false,publicSourceRequired:true,formalCertificationClaimed:false,label:'Menschliche Originalaufnahme · Quelle geprüft'});
+  const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'CC BY-SA 4.0',human:true,language:'uk',sourceVerified:true,verification:'Lingua Libre/Wikimedia kennzeichnet die Datei als ukrainische menschliche Ausspracheaufnahme.'};
+  const SH={speaker:'Галя Раптова',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US',human:true,language:'uk',sourceVerified:true,speakerOrigin:'Kyiv, Ukraine',verification:'Wikimedia Commons: ukrainische Aussprache, menschliche Sprecherin aus Kyiv, Ukraine.'};
   const rows={
     'А':{file:'Uk-автобус.ogg',label:'автобус',...SH},
     'Б':{file:'Uk-бабуся.ogg',label:'бабуся',...SH},
@@ -38,7 +44,7 @@
     'Ч':{file:'Uk-чай.ogg',label:'чай',...SH},
     'Ш':{file:'Uk-школа.ogg',label:'школа',...SH},
     'Щ':{file:'Uk-щука.ogg',label:'щука',...SH},
-    'Ь':{file:'Uk-кінь.ogg',label:'кінь',...SH,note:'Ь hat keinen eigenen Laut; die Aufnahme zeigt die Weichheit des vorherigen Konsonanten.'},
+    'Ь':{file:'Uk-кінь.ogg',label:'кінь',...SH,note:'Ь hat keinen eigenen Laut; die menschliche Aufnahme zeigt die Weichheit des vorherigen Konsonanten.'},
     'Ю':{file:'Uk-юнак.ogg',label:'юнак',...SH},
     'Я':{file:'Uk-яблуко.ogg',label:'яблуко',...SH}
   };
@@ -46,20 +52,23 @@
   Object.entries(rows).forEach(([letter,row])=>{
     const file=row.file;
     audio[letter]=BASE+encodeURIComponent(file).replace(/%2F/g,'/');
-    meta[letter]={...row,source:PAGE+encodeURIComponent(file).replace(/%2F/g,'/')};
+    meta[letter]={...row,kind:'human-word-pronunciation',policy:'human-only',source:PAGE+encodeURIComponent(file).replace(/%2F/g,'/')};
   });
+  window.UKRAINIAN_AUDIO_POLICY=AUDIO_POLICY;
   window.UKRAINIAN_PRONUNCIATION_AUDIO=Object.freeze(audio);
   window.UKRAINIAN_PRONUNCIATION_META=Object.freeze(meta);
 
   // Wikimedia Commons category “Ukrainian pronunciation of letters by a young male uploaded by Tabrus”
-  // contains exactly 32 sound-bearing Ukrainian letters. The soft sign Ь is intentionally absent.
+  // contains exactly 32 sound-bearing Ukrainian letters. The files are original human recordings by
+  // the uploader and are licensed CC BY-SA 4.0. Commons does not document a formal teaching/speaker
+  // certification, so the UI must not invent such a credential. The soft sign Ь is intentionally absent.
   const alphabet='А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ю Я'.split(' ');
   const letterAudio={},letterMeta={};
   alphabet.forEach(letter=>{
     const lower=letter.toLocaleLowerCase('uk');
     const file=`${letter}${lower} – ukrainian.ogg`;
     letterAudio[letter]=BASE+encodeURIComponent(file).replace(/%2F/g,'/');
-    letterMeta[letter]={file,label:`${letter}${lower}`,speaker:'Tabrus',project:'Wikimedia Commons',license:'CC BY-SA 4.0',kind:'isolated-letter-pronunciation',source:PAGE+encodeURIComponent(file).replace(/%2F/g,'/')};
+    letterMeta[letter]={file,label:`${letter}${lower}`,speaker:'Tabrus',project:'Wikimedia Commons',license:'CC BY-SA 4.0',human:true,language:'uk',sourceVerified:true,formalCertificationVerified:false,verification:'Wikimedia Commons führt die Datei als menschliche Aussprache des ukrainischen Buchstabens und als Originalwerk des Uploaders.',kind:'isolated-letter-pronunciation',policy:'human-only',source:PAGE+encodeURIComponent(file).replace(/%2F/g,'/')};
   });
   window.UKRAINIAN_LETTER_AUDIO=Object.freeze(letterAudio);
   window.UKRAINIAN_LETTER_AUDIO_META=Object.freeze(letterMeta);
