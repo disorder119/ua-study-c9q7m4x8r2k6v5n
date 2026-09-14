@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 
 async function openLab(page){
   await page.goto('/alphabet-lab.html?debugLearning=1');
-  await page.waitForFunction(()=>window.AlphabetLab?.version===5);
+  await page.waitForFunction(()=>window.AlphabetLab?.version===6);
 }
 
 async function startFamily(page,letter,family,opts={}){
@@ -43,7 +43,7 @@ test('home, adaptive training, mobile layout and service worker are operational'
   await expect(page.getByText('Warum diese Frage?')).toBeVisible();
 });
 
-test('multi-select produces a real result and V5 progress survives reload',async({page})=>{
+test('multi-select produces a real result and V6 progress survives reload',async({page})=>{
   await openLab(page);
   const task=await startFamily(page,'А','multi-select',{size:1});
   expect(task.interaction).toBe('multiSelect');
@@ -54,13 +54,13 @@ test('multi-select produces a real result and V5 progress survives reload',async
   await expect(page.getByText('✓ Richtig')).toBeVisible();
   await expect(page.getByText('PRÜFUNGSERGEBNIS')).toBeVisible({timeout:4000});
   await expect(page.getByText(/1\/1/).first()).toBeVisible();
-  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('uk-alpha-lab-v3')||'null'));
-  expect(stored?.version).toBe(5);
+  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('uk-alpha-lab-v6')||'null'));
+  expect(stored?.version).toBe(6);
   expect(stored?.letters?.А?.seen).toBeGreaterThan(0);
   await page.reload();
-  await page.waitForFunction(()=>window.AlphabetLab?.version===5);
+  await page.waitForFunction(()=>window.AlphabetLab?.version===6);
   const after=await page.evaluate(()=>window.AlphabetLab.state());
-  expect(after.version).toBe(5);
+  expect(after.version).toBe(6);
   expect(after.letters.А.seen).toBeGreaterThan(0);
   expect(after.letters.А.skills.writtenProduction).toBeTruthy();
 });
@@ -128,7 +128,7 @@ test('20-minute intensive mode is phased but still generates only the next live 
   const s=await page.evaluate(()=>window.AlphabetLab.debugSession());expect(s.macro).toBeTruthy();expect(s.targetMainCount).toBe(36);expect(s.phasePlan).toHaveLength(5);expect(s.mainTasks.filter(Boolean).length).toBe(1);await expect(page.getByText(/Phase: Warm-up/)).toBeVisible();
 });
 
-test('V5 visual-memory writing hides the reference, requires drawing, and stores self-check outside objective score',async({page})=>{
+test('V6 visual-memory writing hides the reference, requires drawing, and stores self-check outside objective score',async({page})=>{
   await openLab(page);await primeProduction(page,'А');const task=await startProduction(page,'А','visual-memory-writing');
   expect(task.interaction).toBe('writtenProduction');expect(task.display).toBe('А');
   await expect(page.locator('#productionReference')).toHaveClass(/hidden/);await expect(page.getByRole('button',{name:'Jetzt vergleichen'})).toBeDisabled();
@@ -138,7 +138,7 @@ test('V5 visual-memory writing hides the reference, requires drawing, and stores
   const state=await page.evaluate(()=>window.AlphabetLab.state());const sess=await page.evaluate(()=>window.AlphabetLab.debugSession());expect(state.letters.А.skills.writtenProduction.independentAttempts).toBeGreaterThan(0);expect(sess.mainCorrect).toBe(before)
 });
 
-test('V5 audio-to-writing uses a human audio gate and reveals no target before drawing',async({page})=>{
+test('V6 audio-to-writing uses a human audio gate and reveals no target before drawing',async({page})=>{
   await page.addInitScript(()=>{class FakeAudio{constructor(src){this.src=src;this.onended=null;this.onerror=null}play(){setTimeout(()=>this.onended?.(),20);return Promise.resolve()}pause(){}}window.Audio=FakeAudio});
   await openLab(page);await primeProduction(page,'Р');const task=await startProduction(page,'Р','audio-to-writing');
   expect(task.requiresHumanLetterAudio).toBeTruthy();expect(task.display).toBe('');expect(task.audioStimulusId).toBe('isolated-letter-Р');
