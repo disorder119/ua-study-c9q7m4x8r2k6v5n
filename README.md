@@ -1,183 +1,115 @@
-# Aktueller Fokus: Alphabet Lab V5
+# Alphabet Lab V6.1
 
-Dieses Repository enthält weiterhin den vollständigen Ukrainisch-A1-Kurs. Der aktuelle Haupteinstieg ist jedoch bewusst das **Alphabet Lab**: eine statische, installierbare GitHub-Pages-App für deutschsprachige Anfänger, die zuerst ausschließlich die **33 ukrainischen Buchstaben** sicher beherrschen sollen.
+Dieses Repository enthält zwei getrennte Lernoberflächen:
 
-Start: `alphabet-lab.html` bzw. die Repository-Root. Der vollständige spätere Kurs bleibt unter `ukrainischkurs-app.html` erreichbar.
+- `alphabet-lab.html` – aktueller Haupteinstieg zum sicheren Lernen aller 33 ukrainischen Buchstaben.
+- `ukrainischkurs-app.html` – der bestehende vollständige A1-Kurs; er bleibt unabhängig erhalten.
+
+Die Repository-Root führt zum Alphabet Lab.
 
 ## Lernprinzip
 
-Der Hauptweg folgt einer prüfungsbasierten Führerschein-Lernlogik:
+Der Hauptweg bleibt prüfungsbasiert:
 
 **sehen → erkennen → unterscheiden → hören → erinnern → selbst produzieren → automatisieren**
 
-Fehler werden getrennt repariert und später unabhängig erneut abgerufen. V5 baut auf der live-adaptiven V4-Engine auf und führt freie Zeichenproduktion erst ein, wenn der jeweilige Buchstabe genügend Recognition-, Reverse-, Audio- und Kontext-Evidenz besitzt.
+30 Hauptfragen bleiben 30 unabhängige Hauptfragen. Repairs laufen getrennt, verändern den Hauptscore nicht und zählen nicht wie ein späterer unabhängiger Recall. Recognition-Skills und `writtenProduction` bleiben getrennte Evidenzspuren. `Ь` besitzt keinen erfundenen isolierten Eigenlaut. Human-Audio-Zertifizierung und Audio→Writing verwenden nur menschliche Referenzaufnahmen.
 
-Eine unmittelbar richtige Reparatur ist nur kurzfristige Evidenz und zählt **nicht** wie ein späterer unabhängiger Abruf.
+## V6.1-State und Persistenz
 
-## Mein Training
+Aktueller State: **Schema 6**. Kanonischer Browser-Key ist ausschließlich:
 
-Der Standardweg ist **MEIN TRAINING STARTEN** mit 20 adaptiven, objektiv automatisch bewerteten Hauptfragen.
+`uk-alpha-lab-v6`
 
-Die App pflegt ein persistentes aktuelles Lernfeld mit typischerweise etwa 4–8 Buchstaben. Sichere Buchstaben blockieren den Fortschritt nicht; fällige ältere Buchstaben können sofort wieder als Review oder Schwäche zurückkehren. Neue Buchstaben werden nicht stumpf nach Tagen freigeschaltet: Seit der letzten Einführung müssen normalerweise genügend unabhängige Hauptfragen vergangen sein und der zuletzt neue Buchstabe muss erste Abrufe besitzen oder das Lernfeld außergewöhnlich stabil sein.
+V1/V2/V3/V4/V5-Zustände werden nur als Migrationsquelle gelesen. Nach erfolgreicher Migration wird normal ausschließlich V6 gespeichert. Ein alter Legacy-Key wird nicht dauerhaft gespiegelt.
 
-Die Auswahlpipeline ist:
+V6.1 trennt bewusst:
 
-1. aktuelles Lernfeld / Due-Reviews / Kontrollzeichen bewerten,
-2. Buchstabenbedarf bestimmen,
-3. schwächsten sinnvollen Skill bestimmen,
-4. Schwierigkeit **für diesen Skill** bestimmen,
-5. passende Aufgabenfamilien auswählen,
-6. kürzlich benutzte Familien, Wörter, Fonts und Signaturen abwerten bzw. blockieren,
-7. optional eine didaktisch freigeschaltete Production-Aufgabe einstreuen,
-8. erst dann die konkrete Aufgabe erzeugen.
+- langfristigen kanonischen Lernzustand,
+- begrenzte Diagnose-/History-Logs,
+- daraus abgeleiteten State,
+- reine Performance-Caches.
 
-`?debugLearning=1` aktiviert ausschließlich für Entwicklung zusätzliche Diagnose-/E2E-Hooks.
+Kumulative Aggregate wie unabhängige Hauptantworten und langfristige Production-Coverage dürfen nach History-Truncation oder Reload nicht zurückgehen. Aktuell offene Repairs werden dagegen aus der tatsächlichen Repair-Ledger exakt synchronisiert.
 
-## Skill-Mastery und Difficulty
+Persistenz ist debounced, wird bei `pagehide`, `visibilitychange`, `beforeunload` und Prüfungsabschluss unmittelbar geflusht und besitzt einen kontrollierten Quota-Fallback. Bei dauerhaft fehlgeschlagenem Speichern erscheint eine kleine sichtbare Warnung statt eines stillen Console-only-Fehlers.
 
-Pflichtskills bleiben getrennt:
+## Adaptive Engine und Production
 
-- Zeichen → Laut
-- Laut → Zeichen
-- Groß/Klein
-- Audio → Zeichen
-- Verwechslungsunterscheidung
+V4/V5/V6-Lernlogik bleibt erhalten. Die nächste normale adaptive Hauptfrage wird live aus dem aktuellen Zustand gewählt. Pflichtskills bleiben getrennt; schwaches Audio oder eine konkrete Verwechslung kann nicht durch einen starken Case-Skill verdeckt werden.
 
-Zusätzliche Evidenz kommt unter anderem aus Schnellerkennung, visuellem Finden und Kurzgedächtnis. V5 ergänzt bewusst separat:
+Freie Production wird erst nach einem Recognition-/Audio-/Retention-Gate freigeschaltet und läuft außerhalb des objektiven Hauptscores. Unterstützt werden u. a.:
 
-- `writtenProduction`
+- Visual Memory → Writing
+- Sound → Writing
+- Human Audio → Writing
+- Confusion → Writing
+- Case → Writing
 
-Freies Schreiben ist damit **keine Variante von Recognition**, sondern eine eigene Kompetenz mit eigener Confidence, Due-Zeit, Retention, Repairs und Verlauf.
+Selbstbewertung: `Passt`, `Fast / unsicher`, `Nochmal`. Production-Repairs bleiben separate Repairs. Die Oberfläche bezeichnet langfristige Coverage als **ausprobiert**; erfolgreiche Pass-Coverage wird separat im State geführt.
 
-Ein Buchstabe kann beispielsweise visuell sehr stark, auditiv aber weiterhin schwach sein. Die Engine trainiert dann vor allem Audio und relevante Confusions statt erneut massenhaft Groß/Klein abzufragen.
+## Build
 
-## Freie Zeichenproduktion V5
+Die produktive App wird deterministisch aus Source-Dateien erzeugt:
 
-Production wird erst freigeschaltet, wenn sie didaktisch sinnvoll ist. Ein völlig neuer Buchstabe bekommt keine Audio→Zeichnen-Aufgabe.
+- `alphabet-lab.template.html` → `alphabet-lab.html`
+- `alphabet-lab-sw.template.js` → `alphabet-lab-sw.js`
+- Core-Sources → `alphabet-core.bundle.js`
+- App-Sources → `alphabet-app.bundle.js`
+- Build-Metadaten → `alphabet-build.json`
 
-Das Gate berücksichtigt unter anderem:
+Build:
 
-- Zeichen→Laut-Mastery,
-- Laut→Zeichen-Mastery,
-- Audio→Zeichen-Mastery,
-- mehrere unabhängige Hauptversuche,
-- erfolgreiche unterschiedliche Aufgabenfamilien,
-- bereits vorhandene normale Schreib-/Formpraxis,
-- offene schwere Repairs,
-- bei schwierigeren Buchstaben zusätzliche Confidence bzw. verteilte Lerntage.
+```bash
+node scripts/build-alphabet-lab.mjs
+```
 
-Aktuelle Production-Familien:
+Konsistenzprüfung ohne Schreiben:
 
-- **Visual Memory → Writing:** Buchstabe kurz sehen, Vorlage verschwindet, danach zeichnen.
-- **Sound → Writing:** Lautbeschreibung sehen, ohne sichtbaren Zielbuchstaben zeichnen.
-- **Human Audio → Writing:** echte menschliche Referenz hören, anschließend ohne Antwortoptionen zeichnen.
-- **Confusion → Writing:** problematische Verwechslungsgruppe ohne Multiple Choice abrufen.
-- **Case → Writing:** Groß- oder Kleinform selbst produzieren.
+```bash
+node scripts/build-alphabet-lab.mjs --check
+```
 
-Die Handschrift wird aktuell bewusst **nicht automatisch als korrekt behauptet**. Nach `Jetzt vergleichen` sieht der Nutzer seine Zeichnung und die Referenz und bewertet selbst:
+Der Build ist byte-deterministisch. `alphabet-build.json` enthält App-Version, Schema-Version, Aggregate-Schema, Build-ID und Bundle-Digests. Die Build-ID wird aus den tatsächlichen Source-Inhalten abgeleitet; es wird keine Uhrzeit eingebaut.
 
-- `Passt`
-- `Fast / unsicher`
-- `Nochmal`
+## Service Worker und Offline
 
-`Passt` liefert positive Production-Evidenz, `Fast / unsicher` nur Teil-Evidenz und `Nochmal` erzeugt eine spätere Reparatur. Ein einzelnes `Passt` kann Production-Mastery nicht hochfarmen.
+HTML und kritische lokale Assets verwenden dieselbe Build-ID. Bundles werden mit `?v=<buildId>` angefordert und in einem Build-spezifischen Cache gespeichert. Damit darf ein neues HTML nicht unbemerkt alte Core-/App-Bundles erhalten.
 
-Canvas-Metriken wie Stroke-Anzahl, Dauer und Bounding Box können temporär für eine spätere Formanalyse erfasst werden, fließen aber **nicht** als automatische Handschriftnote in Mastery ein.
+Offline gilt weiterhin:
 
-## Production-Repairs und Score-Trennung
+- bereits installierte App-Hülle und kritische lokale Assets starten aus dem Cache,
+- fehlendes JavaScript bekommt niemals HTML als Ersatz,
+- externe Wikimedia-Human-Audioquellen werden nur bedarfsgesteuert gecacht und dürfen technisch ausfallen, ohne einen Benutzerfehler zu erzeugen.
 
-Freie Production läuft außerhalb des objektiven Prüfungsscores. Ein Ergebnis wie `18/20` besteht ausschließlich aus objektiv automatisch bewertbaren Hauptfragen. Selbstbewertete Zeichnungen können daraus weder `19/20` noch `17/20` machen.
+## Tests und Performance
 
-Production-Ergebnisse werden separat zusammengefasst. Bei `Nochmal` wird eine Reparatur nach mehreren anderen Hauptfragen eingeplant. Reicht die Session dafür nicht mehr, bleibt sie persistent offen und wird in einer späteren Session mit Abstand rekonstruiert.
+Die Haupt-CI prüft in Reihenfolge A1/Kurs, Alphabet-Legacy, V2, V3, V4, V5 und anschließend V6.1. V6.1 ergänzt explizite Tests für:
 
-Production-Repairs zählen nicht als unabhängiger langfristiger Erstabruf.
+- langlebige Aggregate trotz begrenzter Logs,
+- sofortige Repair-/Readiness-Invalidierung,
+- neueste statt älteste Exam-History,
+- Migration und lokale Tagesgrenzen,
+- deterministischen Build und stale Artefakte,
+- Long-run Fuzz/Invarianten,
+- Wordbank/Unicode/Human-Audio-Metadaten,
+- Service-Worker-Generationen und Offline-Fallback,
+- Mastery/Unlock und viele feste Seeds,
+- Storage/Quota/Pagehide/Reset/Double-click,
+- Audio-Lifecycle und verspätete Events,
+- Chromium Desktop sowie WebKit mit iPhone-Viewport,
+- getrennte Chromium-Performance-Budgets.
 
-## Session-Mix
+Playwright ist über `package-lock.json` reproduzierbar gepinnt. CI verwendet `npm ci`; kein `@latest`.
 
-Normale Sessions bleiben überwiegend Recognition-/Transfer-Training. Production wird abhängig vom Lernstand eingestreut:
+Die Budgets stehen in `tests/performance-budget.json`. Gemessen werden u. a. Bundle-Größe, initiale JS-Requests, App-ready/Interactive, Renderpfade, Question Generation, Production Readiness/Quota, State-Serialisierung, LocalStorage-Schreibzeit und Long Tasks.
 
-- Anfänger: keine oder höchstens sehr wenige freie Aufgaben,
-- mittlerer Stand: einige Production-Aufgaben,
-- fortgeschritten: regelmäßig Production, aber weiterhin begrenzt,
-- 20-Minuten-Intensivmodus: keine Production im frühen Warm-up, später zunehmend mehr in Active/Mixed/Automation.
+Ein grüner Validator beweist die getesteten technischen und fachlichen Invarianten, nicht automatisch empirische Lernwirkung.
 
-Ein eigener Production-Test wird erst verfügbar, wenn genügend Buchstaben `writtenProductionReady` erfüllen; vorgesehen sind 5er-, 10er-, 20er- und später umfassendere Checks.
+## Debugmodus
 
-## Aufgabenvielfalt und Anti-Repetition
+`alphabet-lab.html?debugLearning=1` aktiviert zusätzliche Diagnose-Hooks für Tests/Entwicklung. Dort können u. a. App-/Schema-/Build-Version, Storage-Key, State-Größe, Persist-Fehler und aktuelle Session-/Selection-Daten geprüft werden. Es werden keine sensitiven externen Daten hinzugefügt.
 
-Die App besitzt mehr als 30 Recognition-/Transfer-Familien plus die neuen Production-Familien. Jede Hauptfrage erhält eine kognitive Signatur aus Buchstabe, Skill, Familie/Variante, Stimulus, Wort, Font, Confusion und Interaktion. Nur eine andere Promptformulierung macht daraus **keine** neue Aufgabe.
+## A1-Kurs
 
-Auch Production besitzt eigene Signaturen und Same-Letter-/Same-Family-Bremsen. Dadurch soll kein Muster wie `А zeichnen → А zeichnen → А zeichnen` entstehen.
-
-## Wortbank und Anfänger-Gates
-
-`alphabet-wordbank-v4.js` enthält **198 geprüfte Buchstabenkontexte: sechs pro jedem der 33 Zeichen**. Zielpositionen werden aus dem tatsächlichen Unicode-Wort berechnet und automatisch getestet. Russische Exklusivzeichen wie `ы`, `э`, `ё` und `ъ` sind ausgeschlossen.
-
-Wörter sind ausschließlich Transfermaterial für Buchstabenerkennung, **kein Vokabeltest**. Übersetzung und kleine Emoji/Piktogramm-Anker dienen nur als Gedächtnishilfe.
-
-V5 verschärft frühe Wortgates:
-
-- Difficulty 0: keine unbekannten Nebenbuchstaben,
-- Difficulty 1: höchstens ein unbekannter Nebenbuchstabe,
-- Difficulty 2: wenige unbekannte Zeichen,
-- Difficulty 3+: natürliche freie Wortwahl.
-
-Existiert kein didaktisch geeignetes Wort, wechselt die Engine die Aufgabenfamilie statt ein unnötig schweres Wort zu erzwingen. Auch negative `word-contains`-Stimuli verwenden Novelty-/Exposure-Logik.
-
-## Spezielle Buchstabenpädagogik
-
-Alle 33 Zeichen besitzen zentrale Pädagogikdaten mit sinnvollen Confusions und Lerntempo. Schwierige Zeichen wie Ґ, Є, Ж, И, Ї, Й, Ц, Ч, Ш, Щ und Ь werden langsamer und kontrastreicher aufgebaut.
-
-`Ь` ist ausdrücklich ein Sonderfall: Es besitzt keinen eigenen Laut. Es erhält niemals eine isolierte Audio→Writing-Aufgabe; Audio wird nur sinnvoll über Kontext und Weichheitsfunktion geprüft.
-
-## Audio
-
-Die menschlichen Referenzaufnahmen stammen aus `ukrainischkurs-native-audio.js` und verweisen auf Wikimedia Commons. In gewerteten Audio-Prüfungen und bei **Audio→Writing** werden nur echte menschliche Quellen akzeptiert. TTS ist ausschließlich ein freiwilliger Lern-Fallback außerhalb solcher Prüfungen.
-
-Technische Audiofehler sind kein Benutzerfehler. Nach begrenzten Retries wird normales Lernen durch eine passende Nicht-Audioaufgabe ersetzt; Zertifizierungen werden bei unvollständiger Human-Audio-Abdeckung nicht fälschlich bestanden.
-
-## Mastery V5
-
-Ein guter Gesamtdurchschnitt darf keinen schwachen Pflichtskill verdecken. Für Anfänger bleibt noch gesperrte Production neutral: `noch nicht sinnvoll` ist nicht dasselbe wie `schlecht`.
-
-Sobald Production didaktisch freigeschaltet ist, entwickelt sie sich separat von `offen` über `im Aufbau` bis `stabil`.
-
-Globales `UKRAINISCHES ALPHABET GEMEISTERT` kann langfristig **nicht mehr allein durch Multiple Choice** erreicht werden. Zusätzlich zu den bisherigen V4-Gates verlangt V5 repräsentative freie Production-Evidenz über mehrere Buchstaben und Tage, Human-Audio→Writing auf mehreren Zeichen, freie Abrufe bei problematischen Fake Friends und keine offenen schweren Production-Repairs.
-
-## Offline und Persistenz
-
-App-Hülle, V3-Basis, V4-Lernengine, V5-Production-Module, Wortbank, Manifest und lokale Assets werden als PWA gecacht. **Menschliche Audioquellen liegen extern auf Wikimedia und benötigen gegebenenfalls Netzwerkzugriff.** Der Service Worker liefert niemals HTML als Fallback für fehlgeschlagenes JavaScript.
-
-Der kompatible Browser-Key bleibt `uk-alpha-lab-v3`; der gespeicherte Zustand besitzt jetzt **Schema-Version 5**. V1-, V2-, V3- und V4-Lernstände werden ohne Fortschrittsverlust migriert.
-
-## Vollständiger A1-Kurs
-
-Der bestehende große Kurs bleibt vollständig erhalten unter `ukrainischkurs-app.html`. Alphabet Lab V5 verändert dessen Lernpfad, Prüfungsgrenzen und Module nicht.
-
-## Qualitätssicherung
-
-CI behält sämtliche bisherigen Kurs-, A1-, Legacy-, V2-, V3- und V4-Regressionen. V5 ergänzt insbesondere automatische Tests für:
-
-- Production-Gates und Audio→Writing-Freischaltung,
-- `Ь` ohne isolierte Audio-Production,
-- Visual-Memory-/Sound-/Audio-/Confusion-/Case-Writing,
-- dreistufige Selbstbewertung,
-- verzögerte und persistente Production-Repairs,
-- strikte Trennung vom objektiven Hauptscore,
-- Anfänger- vs. Fortgeschrittenen-Sessionmix,
-- Production-Diversity und Relapse,
-- strengere Wortgates und negative Wortvariation,
-- Progressionsbremse für neue Buchstaben,
-- V1/V2/V3/V4→V5-Migration,
-- finale Mastery, die nicht nur mit Multiple Choice erreichbar ist,
-- mehrere virtuelle Lerntage,
-- Persona A absoluter Anfänger,
-- Persona B fünf mittelstarke Buchstaben,
-- Persona C sehr starkes А,
-- Persona D Р/P Fake Friend,
-- Persona E Ш/Щ,
-- Persona F fast komplettes Alphabet.
-
-Playwright läuft gegen die echte statische App in **Desktop-Chromium** und **iPhone-WebKit** und prüft zusätzlich echte Canvas-Production, verborgenes Referenzzeichen, Selbstkontrolle, Human-Audio→Writing, Score-Trennung, Reload/Persistenz, Service Worker und mobiles Overflow-Verhalten.
-
-Ein grüner Validator beweist technische Konsistenz der geprüften Regeln, nicht automatisch empirische Lernwirkung. Die reale Lernwirkung muss weiterhin mit echten Nutzern und verzögerten Retentionstests beobachtet werden.
+`ukrainischkurs-app.html` bleibt der große A1-Kurs. Das V6.1-Hardening verändert dessen Lernpfad nicht. Der bestehende `build-app-shell.yml` besitzt weiterhin absichtlich seine historische Auto-Commit-Strategie ausschließlich für die A1-App-Hülle; der Alphabet-Lab-V6.1-Build-Check selbst ist read-only.
