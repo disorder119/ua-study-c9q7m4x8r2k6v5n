@@ -8,7 +8,7 @@ export const APP_SOURCES=['alphabet-app-v3-shell.js','alphabet-app-v3-exam.js','
 export const APP_VERSION='6.1.0';
 export const STATE_SCHEMA_VERSION=6;
 export const AGGREGATE_SCHEMA_VERSION=2;
-const SOURCE_ONLY=['alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js'];
+const SOURCE_ONLY=['alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js','scripts/build-alphabet-lab.mjs'];
 const normalize=s=>String(s).replace(/\r\n/g,'\n').replace(/\s+$/,'')+'\n';
 export const digest=text=>crypto.createHash('sha256').update(text).digest('hex');
 function rootFromArgs(argv=process.argv.slice(2)){const arg=argv.find(x=>x.startsWith('--root='));return path.resolve(arg?arg.slice(7):process.cwd())}
