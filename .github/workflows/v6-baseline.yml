@@ -11,6 +11,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Generate lockfile for pinned browser tests when missing
+        if: ${{ hashFiles('package-lock.json') == '' }}
+        run: npm install --package-lock-only --ignore-scripts
       - name: Verify generated Alphabet Lab artifacts are current
         id: generated_check
         continue-on-error: true
@@ -32,6 +35,7 @@ jobs:
             alphabet-lab.html
             alphabet-lab-sw.js
             alphabet-build.json
+            package-lock.json
       - name: Fail when generated artifacts were stale
         if: steps.generated_check.outcome != 'success'
         run: exit 1
