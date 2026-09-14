@@ -12,6 +12,24 @@ jobs:
         with:
           node-version: '22'
       - name: Verify generated Alphabet Lab artifacts are current
+        id: generated_check
+        continue-on-error: true
         run: node scripts/build-alphabet-lab.mjs --check
       - name: Run V6.1 hardening regressions
+        if: always()
         run: node tests/validate-alphabet-lab-v6-hardening.mjs
+      - name: Generate deterministic artifacts for review
+        if: always()
+        run: node scripts/build-alphabet-lab.mjs
+      - name: Upload generated Alphabet Lab artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alphabet-v6-1-generated
+          path: |
+            alphabet-core.bundle.js
+            alphabet-app.bundle.js
+            alphabet-lab.html
+      - name: Fail when generated artifacts were stale
+        if: steps.generated_check.outcome != 'success'
+        run: exit 1
