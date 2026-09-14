@@ -20,3 +20,11 @@ test('two technical human-audio failures replace learning task without user erro
 test('audio-choice double play stops prior candidate and stale candidate end does not count',async({page})=>{
   await openLab(page);await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Р','letter-to-audio-choice',{size:1}));const buttons=page.locator('[data-play-letter-audio]');await buttons.nth(0).click();await buttons.nth(1).click();expect(await page.evaluate(()=>window.__audioInstances[0].paused)).toBeTruthy();await page.evaluate(()=>window.__audioInstances[0].fireEnd());await expect(page.getByText('0/4 Aufnahmen gehört.')).toBeVisible();await page.evaluate(()=>window.__audioInstances[1].fireEnd());await expect(page.getByText('1/4 Aufnahmen gehört.')).toBeVisible()
 });
+
+test('sound-to-letter question shows a cue and can play isolated human letter audio',async({page})=>{
+  await openLab(page);const task=await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Х','sound-to-letter',{size:1}));expect(task.type).toBe('reverse');expect(task.display).toBeTruthy();await expect(page.getByText(task.display,{exact:true})).toBeVisible();const play=page.getByRole('button',{name:'Laut anhören'});await expect(play).toBeVisible();await play.click();await expect.poll(()=>page.evaluate(()=>window.__audioInstances.length)).toBe(1);expect(await page.evaluate(()=>window.__audioInstances[0].src)).toContain('ukrainian.ogg');await page.evaluate(()=>window.__audioInstances.at(-1).fireEnd());await expect(page.getByText('Nochmal anhören')).toBeVisible();const correct=page.locator(`[data-ans="${task.correct}"]`);await expect(correct).toBeEnabled()
+});
+
+test('soft sign sound-to-letter stays textual because Ь has no isolated sound',async({page})=>{
+  await openLab(page);const task=await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Ь','sound-to-letter',{size:1}));expect(task.display).toBe('kein eigener Laut');await expect(page.getByText('kein eigener Laut',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Laut anhören'})).toHaveCount(0)
+});
