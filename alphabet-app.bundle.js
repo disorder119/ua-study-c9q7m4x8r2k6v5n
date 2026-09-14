@@ -1,15 +1,16 @@
 'use strict';
-/* Alphabet Lab V6 app bundle · generated deterministically */
+/* Alphabet Lab V6.1 app bundle · generated deterministically */
 
 /* source: alphabet-app-v3-shell.js */
 'use strict';
 const C=window.AlphabetCoreV2;if(!C)throw new Error('AlphabetCoreV2 fehlt');
-const STORAGE='uk-alpha-lab-v3',LEGACY2='uk-alpha-lab-v2',LEGACY1='uk-alpha-lab-v1';
+const STORAGE=C.VERSION>=6?'uk-alpha-lab-v6':'uk-alpha-lab-v3',LEGACY3='uk-alpha-lab-v3',LEGACY2='uk-alpha-lab-v2',LEGACY1='uk-alpha-lab-v1';
 const app=document.getElementById('app');
 let S=load(),screen='home',session=null,selectedLetter='',selectedPair=null,toastTimer=null,memoryTimer=null,guidedLetter='',lastFocus=null;
 let timing={startedAt:0,invalid:false,audioDurationMs:0};
 
-function load(){let raw=null;for(const key of [STORAGE,LEGACY2,LEGACY1]){try{raw=JSON.parse(localStorage.getItem(key)||'null')}catch(_){raw=null}if(raw)break}const s=C.migrate(raw);persist(s);return s}
+function parseStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
+function load(){let raw=parseStored(STORAGE),source=raw?STORAGE:'';if(!raw){for(const key of [LEGACY3,LEGACY2,LEGACY1]){if(key===STORAGE)continue;raw=parseStored(key);if(raw){source=key;break}}}const s=C.migrate(raw);try{localStorage.setItem(STORAGE,JSON.stringify(s));window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh'}catch(_){}return s}
 function persist(state=S){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function esc(v){return String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
 function fmtMs(ms){return ms?`${(ms/1000).toFixed(ms<1000?2:1)} s`:'—'}
@@ -350,34 +351,95 @@ submitProductionRating=function(t,rating,metrics={}){
   persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
 };
 
+/* source: alphabet-app-v6-media.js */
+'use strict';
+
+let alphabetAudioGeneration=0,alphabetActiveAudio=null;
+function stopAlphabetAudio(){alphabetAudioGeneration++;if(alphabetActiveAudio){try{alphabetActiveAudio.onended=null;alphabetActiveAudio.onerror=null;alphabetActiveAudio.onplay=null;alphabetActiveAudio.pause?.();alphabetActiveAudio.currentTime=0}catch(_){}}alphabetActiveAudio=null}
+function createAlphabetAudio(src){stopAlphabetAudio();const generation=alphabetAudioGeneration,a=new Audio(src);alphabetActiveAudio=a;return {audio:a,isCurrent:()=>alphabetActiveAudio===a&&alphabetAudioGeneration===generation,release:()=>{if(alphabetActiveAudio===a)alphabetActiveAudio=null}}}
+
+const renderMediaBase=render;
+render=function(){stopAlphabetAudio();clearTimeout(memoryTimer);return renderMediaBase()};
+const renderExamMediaBase=renderExam;
+renderExam=function(){stopAlphabetAudio();clearTimeout(memoryTimer);return renderExamMediaBase()};
+
+setupAudioQuestion=function(t){const button=document.getElementById('playAudio'),status=document.getElementById('audioStatus');if(!button||!status)return;const qid=t.questionId;button.onclick=()=>{if(!session||currentTask()?.questionId!==qid)return;playHumanExamAudio(t,button,status)}};
+playHumanExamAudio=function(t,button,status){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter];if(!src){handleAudioFailure(t,'Keine menschliche Quelle verfügbar.');return}const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;button.disabled=true;status.textContent='Lädt …';let startedAt=0,settled=false;const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid;const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();tracked.release();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')},9000);a.onplay=()=>{if(!current())return;startedAt=performance.now();status.textContent='Audio läuft …'};a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human'};a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();handleAudioFailure(t,'Menschliche Aufnahme nicht erreichbar. Frage wird ersetzt.')};a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Autoplay blockiert. Tippe auf „Audio starten“.'})};
+
+const handleAudioFailureMediaBase=handleAudioFailure;
+handleAudioFailure=function(t,msg){if(!session||currentTask()?.questionId!==t.questionId)return;return handleAudioFailureMediaBase(t,msg)};
+
+playLearningAudio=function(c,button){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[c];if(!src){ttsWord(c);return}const tracked=createAlphabetAudio(src),a=tracked.audio;button.disabled=true;const current=()=>tracked.isCurrent()&&document.contains(button);const done=()=>{if(current())button.disabled=false;tracked.release()};a.onended=done;a.onerror=()=>{const valid=current();done();if(valid)ttsWord(c)};a.play().catch(()=>{const valid=current();done();if(valid)ttsWord(c)})};
+
+setupAudioChoice=function(t){const heard=new Set(),failures={},all=t.audioChoiceLetters||t.options||[],status=document.getElementById('audioChoiceStatus'),qid=t.questionId;const current=()=>session&&currentTask()?.questionId===qid;const refresh=()=>{if(!current())return;if(status)status.textContent=`${heard.size}/${all.length} Aufnahmen gehört.${heard.size===all.length?' Jetzt auswählen.':''}`;if(heard.size===all.length){app.querySelectorAll('.audio-pick-candidate').forEach(b=>b.disabled=false);beginTiming()}};app.querySelectorAll('[data-play-letter-audio]').forEach(btn=>btn.onclick=()=>{if(!current())return;const letter=btn.dataset.playLetterAudio,src=window.UKRAINIAN_LETTER_AUDIO?.[letter],small=app.querySelector(`[data-audio-choice-status="${CSS.escape(letter)}"]`);if(!src){fallbackAudioChoice(t,`Keine isolierte menschliche Buchstabenaufnahme für ${letter}.`);return}const tracked=createAlphabetAudio(src),a=tracked.audio;btn.disabled=true;if(small)small.textContent='lädt …';let settled=false;const valid=()=>current()&&tracked.isCurrent();const timeout=setTimeout(()=>{if(settled||!valid())return;settled=true;a.pause?.();tracked.release();fail()},9000);const fail=()=>{clearTimeout(timeout);if(!current())return;failures[letter]=(failures[letter]||0)+1;btn.disabled=false;if(small)small.textContent=failures[letter]<2?'Fehler · erneut versuchen':'nicht erreichbar';if(failures[letter]>=2)fallbackAudioChoice(t,`${letter}: Buchstabenaufnahme zweimal nicht erreichbar.`)};a.onplay=()=>{if(valid()&&small)small.textContent='läuft …'};a.onended=()=>{if(settled||!valid())return;settled=true;clearTimeout(timeout);tracked.release();heard.add(letter);btn.disabled=false;if(small)small.textContent='gehört ✓';refresh()};a.onerror=()=>{if(settled||!valid())return;settled=true;tracked.release();fail()};a.play().catch(()=>{if(settled||!valid())return;settled=true;clearTimeout(timeout);tracked.release();btn.disabled=false;if(small)small.textContent='Tippen zum Starten'})});refresh()};
+const fallbackAudioChoiceMediaBase=fallbackAudioChoice;
+fallbackAudioChoice=function(t,msg){if(!session||currentTask()?.questionId!==t.questionId)return;return fallbackAudioChoiceMediaBase(t,msg)};
+const replaceProductionAudioMediaBase=replaceProductionAudio;
+replaceProductionAudio=function(t,msg){if(!session||session.productionCurrent?.questionId!==t.questionId)return;return replaceProductionAudioMediaBase(t,msg)};
+
+window.AlphabetAudioLifecycle=Object.freeze({stop:stopAlphabetAudio,generation:()=>alphabetAudioGeneration,hasActive:()=>!!alphabetActiveAudio});
+
 /* source: alphabet-app-v6-runtime.js */
 'use strict';
 
 const V6_STORAGE_KEY='uk-alpha-lab-v6',V6_LEGACY_STORAGE_KEYS=['uk-alpha-lab-v3','uk-alpha-lab-v2','uk-alpha-lab-v1'];
 let v6PersistTimer=0,v6PersistPending=null,v6PersistError='';
 function compactV6State(state){
-  state.answerLog=Array.isArray(state.answerLog)?state.answerLog.slice(-1000):[];state.productionHistory=Array.isArray(state.productionHistory)?state.productionHistory.slice(-160):[];state.examHistory=Array.isArray(state.examHistory)?state.examHistory.slice(-60):[];state.sessionSnapshots=Array.isArray(state.sessionSnapshots)?state.sessionSnapshots.slice(-20):[];for(const c of C.ALPHABET){const m=state.letters[c];m.productionHistory=Array.isArray(m.productionHistory)?m.productionHistory.slice(-32):[];m.exposure.recentSignatures=Array.isArray(m.exposure?.recentSignatures)?m.exposure.recentSignatures.slice(-30):[]}return state
+  state.answerLog=Array.isArray(state.answerLog)?state.answerLog.slice(-1000):[];
+  state.productionHistory=Array.isArray(state.productionHistory)?state.productionHistory.slice(-160):[];
+  state.examHistory=Array.isArray(state.examHistory)?state.examHistory.slice(-60):[];
+  state.sessionSnapshots=Array.isArray(state.sessionSnapshots)?state.sessionSnapshots.slice(-20):[];
+  for(const c of C.ALPHABET){const m=state.letters[c];m.productionHistory=Array.isArray(m.productionHistory)?m.productionHistory.slice(-32):[];m.exposure=m.exposure||{};m.exposure.recentSignatures=Array.isArray(m.exposure.recentSignatures)?m.exposure.recentSignatures.slice(-30):[]}
+  return state
 }
-function flushPersist(state=v6PersistPending||S){clearTimeout(v6PersistTimer);v6PersistTimer=0;v6PersistPending=null;if(!state)return false;let raw='';try{raw=JSON.stringify(state);localStorage.setItem(V6_STORAGE_KEY,raw);localStorage.setItem('uk-alpha-lab-v3',raw);v6PersistError='';return true}catch(err){try{compactV6State(state);raw=JSON.stringify(state);localStorage.setItem(V6_STORAGE_KEY,raw);localStorage.setItem('uk-alpha-lab-v3',raw);v6PersistError='';return true}catch(err2){v6PersistError=String(err2?.name||err2||err);console.error('Alphabet Lab persistence failed',err2);return false}}}
+function setPersistWarning(message=''){
+  v6PersistError=message;
+  let el=document.getElementById('persistWarning');
+  if(!message){el?.remove();return}
+  if(!el){el=document.createElement('div');el.id='persistWarning';el.setAttribute('role','status');el.setAttribute('aria-live','polite');el.style.cssText='position:fixed;left:12px;right:12px;top:10px;z-index:90;max-width:720px;margin:auto;padding:10px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;font-weight:750;box-shadow:0 8px 24px rgba(0,0,0,.08)';document.body.append(el)}
+  el.textContent=message
+}
+function cleanupLegacyStorage(){for(const key of V6_LEGACY_STORAGE_KEYS){try{localStorage.removeItem(key)}catch(_){}}}
+function writeCanonicalV6(state){const raw=JSON.stringify(state);localStorage.setItem(V6_STORAGE_KEY,raw);return raw}
+function flushPersist(state=v6PersistPending||S){
+  clearTimeout(v6PersistTimer);v6PersistTimer=0;v6PersistPending=null;if(!state)return false;
+  try{writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err){
+    try{compactV6State(state);writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err2){
+      const code=String(err2?.name||err2||err);console.error('Alphabet Lab persistence failed',err2);setPersistWarning('Lernstand konnte auf diesem Gerät gerade nicht gespeichert werden.');v6PersistError=code;return false
+    }
+  }
+}
 persist=function(state=S,opts={}){v6PersistPending=state;if(opts===true||opts?.immediate)return flushPersist(state);clearTimeout(v6PersistTimer);v6PersistTimer=setTimeout(()=>flushPersist(),160);return true};
-function bootstrapV6Storage(){let raw=null;try{raw=JSON.parse(localStorage.getItem(V6_STORAGE_KEY)||'null')}catch(_){raw=null}if(!raw){for(const key of V6_LEGACY_STORAGE_KEYS){try{raw=JSON.parse(localStorage.getItem(key)||'null')}catch(_){raw=null}if(raw)break}}S=C.migrate(raw||S);flushPersist(S)}
+function readStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
+function bootstrapV6Storage(){
+  let raw=readStored(V6_STORAGE_KEY),source=raw?V6_STORAGE_KEY:'';
+  if(!raw){for(const key of V6_LEGACY_STORAGE_KEYS){raw=readStored(key);if(raw){source=key;break}}}
+  S=C.migrate(raw||S);window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh';flushPersist(S)
+}
 bootstrapV6Storage();
-addEventListener('pagehide',()=>flushPersist(),{capture:true});addEventListener('beforeunload',()=>flushPersist(),{capture:true});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPersist()});
+addEventListener('pagehide',()=>flushPersist(),{capture:true});
+addEventListener('beforeunload',()=>flushPersist(),{capture:true});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPersist()});
 
 const finishExamV6PersistBase=finishExam;
 finishExam=function(){const out=finishExamV6PersistBase();flushPersist();return out};
 
 const renderExamMenuV6Base=renderExamMenu;
-renderExamMenu=function(){renderExamMenuV6Base();const button=app.querySelector('[data-prod-test="33"]');if(button){button.textContent='Großer Produktionscheck';button.insertAdjacentHTML('afterend','<small class="muted production-check-note">20 repräsentative freie Produktionsaufgaben · Coverage wird über mehrere Durchgänge gespeichert.</small>')}const card=button?.closest('.production-tests');if(card){const cov=C.productionCoverageSummary(S);const line=document.createElement('p');line.className='muted';line.textContent=`Langzeit-Coverage: ${cov.totalLetters}/33 Buchstaben in mindestens einer freien Produktionsform.`;card.append(line)}};
+renderExamMenu=function(){renderExamMenuV6Base();const button=app.querySelector('[data-prod-test="33"]');if(button){button.textContent='Großer Produktionscheck';button.insertAdjacentHTML('afterend','<small class="muted production-check-note">20 repräsentative freie Produktionsaufgaben · Coverage wird über mehrere Durchgänge gespeichert.</small>')}const card=button?.closest('.production-tests');if(card){const cov=C.productionCoverageSummary(S);const line=document.createElement('p');line.className='muted';line.textContent=`Langzeit-Coverage: ${cov.totalLetters}/33 Buchstaben bereits ausprobiert.`;card.append(line)}};
 
-window.AlphabetLabV6Runtime=Object.freeze({APP_VERSION:'6.0.0',STATE_SCHEMA_VERSION:6,storageKey:V6_STORAGE_KEY,flushPersist,persistError:()=>v6PersistError,stateBytes:()=>{try{return new Blob([JSON.stringify(S)]).size}catch(_){return 0}}});
+window.AlphabetLabV6Runtime=Object.freeze({APP_VERSION:'6.1.0',STATE_SCHEMA_VERSION:6,storageKey:V6_STORAGE_KEY,legacyKeys:[...V6_LEGACY_STORAGE_KEYS],flushPersist,compactV6State,persistError:()=>v6PersistError,stateBytes:()=>{try{return new Blob([JSON.stringify(S)]).size}catch(_){return 0}},resetStorage(){for(const key of [V6_STORAGE_KEY,...V6_LEGACY_STORAGE_KEYS]){try{localStorage.removeItem(key)}catch(_){}}}});
 
 /* source: alphabet-app-v4-init.js */
 'use strict';
-const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,LEGACY2,LEGACY1].forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();screen='home';render()}},startExam,startMyTraining};
+const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,typeof LEGACY3!=='undefined'?LEGACY3:null,LEGACY2,LEGACY1].filter(Boolean).forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();screen='home';render()}},startExam,startMyTraining};
 if(typeof DEBUG_LEARNING!=='undefined'&&DEBUG_LEARNING){
   alphabetLabApi.debugCurrentTask=()=>session?structuredClone(currentTask()):null;
   alphabetLabApi.debugSession=()=>session?structuredClone(session):null;
+  alphabetLabApi.debugInfo=async()=>{
+    const current=session?currentTask():null;let swBuildId='';
+    try{const controller=navigator.serviceWorker?.controller;if(controller){swBuildId=await new Promise(resolve=>{const timer=setTimeout(()=>resolve(''),500);const onMessage=e=>{if(e.data?.type==='ALPHABET_BUILD_ID'){clearTimeout(timer);navigator.serviceWorker.removeEventListener('message',onMessage);resolve(e.data.buildId||'')}};navigator.serviceWorker.addEventListener('message',onMessage);controller.postMessage({type:'ALPHABET_BUILD_ID'})})}}catch(_){swBuildId=''}
+    return {appVersion:C.APP_VERSION||window.AlphabetLabV6Runtime?.APP_VERSION||'',schemaVersion:C.SCHEMA_VERSION||C.VERSION,buildId:window.__ALPHABET_BUILD_ID__||'',storageKey:window.AlphabetLabV6Runtime?.storageKey||STORAGE,stateBytes:window.AlphabetLabV6Runtime?.stateBytes?.()||0,persistError:window.AlphabetLabV6Runtime?.persistError?.()||'',aggregateRevision:S.metrics?.revision??null,productionReadinessRevision:S.metrics?.readinessRevision??null,activeLearningSet:[...(S.learningPlan?.activeLetters||[])],selectionReason:current?.selectionReason||current?.scheduledReason||'',serviceWorkerBuildId:swBuildId}
+  };
   alphabetLabApi.debugStartFamily=(letter,family,{size=1}={})=>{
     if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
     const meta=C.QUESTION_FAMILIES[family];if(!meta)throw new Error('Unknown family '+family);
