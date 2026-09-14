@@ -1,2 +1,3 @@
 'use strict';
-/* Compatibility marker only. Production uses alphabet-app.bundle.js. */
+window.AlphabetLab={version:C.VERSION,state:()=>structuredClone(S),startExam};
+render();
