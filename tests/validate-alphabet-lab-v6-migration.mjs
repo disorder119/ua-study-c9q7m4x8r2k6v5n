@@ -15,8 +15,8 @@ caseRun('V5 production and recognition survive V6.1 migration',()=>{
 });
 
 caseRun('existing V6 durable aggregates never shrink in V6.1',()=>{
-  const raw=C.freshState();primeLetter(C,raw,'А');raw=C.migrate(raw);raw.metrics.independentMainCount=2345;raw.metrics.aggregateReady=true;raw.metrics.aggregateSchemaVersion=1;raw.letters.А.learningAggregate.independentMainAttempts=400;raw.learningPlan.lastUnlockMainCount=2200;raw.answerLog=raw.answerLog.slice(-2);raw.metrics.productionCoverage.visualMemory={А:8,Р:2};raw.productionHistory=[{at:NOW,letter:'А',family:'visual-memory-writing',rating:'pass',isRepair:false}];
-  const m=C.migrate(JSON.parse(JSON.stringify(raw)));assert.equal(m.metrics.independentMainCount,2345);assert(m.metrics.productionCoverage.visualMemory.Р>=2);assert(m.learningPlan.lastUnlockMainCount>=2200);assert(m.letters.А.learningAggregate.independentMainAttempts>=400)
+  const raw=C.freshState();primeLetter(C,raw,'А');const migrated=C.migrate(raw);migrated.metrics.independentMainCount=2345;migrated.metrics.aggregateReady=true;migrated.metrics.aggregateSchemaVersion=1;migrated.letters.А.learningAggregate.independentMainAttempts=400;migrated.learningPlan.lastUnlockMainCount=2200;migrated.answerLog=migrated.answerLog.slice(-2);migrated.metrics.productionCoverage.visualMemory={А:8,Р:2};migrated.productionHistory=[{at:NOW,letter:'А',family:'visual-memory-writing',rating:'pass',isRepair:false}];
+  const m=C.migrate(JSON.parse(JSON.stringify(migrated)));assert.equal(m.metrics.independentMainCount,2345);assert(m.metrics.productionCoverage.visualMemory.Р>=2);assert(m.learningPlan.lastUnlockMainCount>=2200);assert(m.letters.А.learningAggregate.independentMainAttempts>=400)
 });
 
 caseRun('Europe/Berlin local day boundaries and DST are stable',()=>{
