@@ -10,9 +10,13 @@
 (() => {
   const BASE='https://commons.wikimedia.org/wiki/Special:Redirect/file/';
   const PAGE='https://commons.wikimedia.org/wiki/File:';
+  const norm=x=>String(x||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim();
   const AUDIO_POLICY=Object.freeze({mode:'human-only',ttsAllowed:false,aiVoiceAllowed:false,publicSourceRequired:true,formalCertificationClaimed:false,label:'Menschliche Originalaufnahme · Quelle geprüft'});
   const LL={speaker:'Tohaomg',project:'Lingua Libre / Wikimedia Commons',license:'CC BY-SA 4.0',human:true,language:'uk',sourceVerified:true,verification:'Lingua Libre/Wikimedia kennzeichnet die Datei als ukrainische menschliche Ausspracheaufnahme.'};
   const SH={speaker:'Галя Раптова',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US',human:true,language:'uk',sourceVerified:true,speakerOrigin:'Kyiv, Ukraine',verification:'Wikimedia Commons: ukrainische Aussprache, menschliche Sprecherin aus Kyiv, Ukraine.'};
+  const ZH={speaker:'Женя Музика',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US',human:true,language:'uk',sourceVerified:true,verification:'Wikimedia Commons/Shtooka: menschliche ukrainische Ausspracheaufnahme.'};
+  const SV={speaker:'Світлана Чурак',project:'Shtooka Project / Wikimedia Commons',license:'CC BY 3.0 US',human:true,language:'uk',sourceVerified:true,verification:'Wikimedia Commons/Shtooka: menschliche ukrainische Ausspracheaufnahme.'};
+  const VA={speaker:'Василь Бабич',project:'Wikimedia Commons',license:'Public Domain',human:true,language:'uk',sourceVerified:true,verification:'Wikimedia Commons: menschliche ukrainische Originalaufnahme.'};
   const rows={
     'А':{file:'Uk-автобус.ogg',label:'автобус',...SH},
     'Б':{file:'Uk-бабуся.ogg',label:'бабуся',...SH},
@@ -57,6 +61,35 @@
   window.UKRAINIAN_AUDIO_POLICY=AUDIO_POLICY;
   window.UKRAINIAN_PRONUNCIATION_AUDIO=Object.freeze(audio);
   window.UKRAINIAN_PRONUNCIATION_META=Object.freeze(meta);
+
+  // Additional common beginner words with already documented human recordings.
+  // They are used only when an exact word match exists. There is never a synthetic fallback.
+  const extraWords=[
+    {label:'привіт',file:'Uk-привіт.ogg',...SH},
+    {label:'дякую',file:'Uk-дякую.ogg',...SV},
+    {label:'ні',file:'Uk-ні.ogg',...SH},
+    {label:'добре',file:'Uk-добре.ogg',...SH},
+    {label:'до побачення',file:'Uk-до побачення.ogg',...ZH},
+    {label:'будь ласка',file:'Uk-будь ласка.ogg',...ZH},
+    {label:'Мене звати',file:'Uk-Мене звати.ogg',...VA},
+    {label:'звати',file:'Uk-звати.ogg',...SH},
+    {label:'Я не знаю',file:'Uk-я не знаю.ogg',...SV},
+    {label:'Німеччина',file:'Uk-Німеччина.ogg',...ZH},
+    {label:'вода',file:'Uk-вода.ogg',...SH},
+    {label:'аптека',file:'Uk-аптека.ogg',...SH},
+    {label:'магазин',file:'Uk-магазин.ogg',...SH},
+    {label:'автобус',file:'Uk-автобус.ogg',...SH},
+    {label:'лікар',file:'Uk-лікар.ogg',...SH},
+    {label:'тато',file:'Uk-тато.ogg',...SH},
+    {label:'брат',file:'Uk-брат.ogg',...SH},
+    {label:'туалет',file:'Uk-туалет.ogg',...SH},
+    {label:'Україна',file:'Uk-Україна.ogg',...ZH}
+  ];
+  const wordAudio={},wordMeta={};
+  const addWord=row=>{const key=norm(row.label);if(!key)return;const src=BASE+encodeURIComponent(row.file).replace(/%2F/g,'/');wordAudio[key]=src;wordMeta[key]={...row,kind:'human-word-pronunciation',policy:'human-only',source:PAGE+encodeURIComponent(row.file).replace(/%2F/g,'/')};};
+  Object.values(rows).forEach(addWord);extraWords.forEach(addWord);
+  window.UKRAINIAN_WORD_AUDIO=Object.freeze(wordAudio);
+  window.UKRAINIAN_WORD_AUDIO_META=Object.freeze(wordMeta);
 
   // Wikimedia Commons category “Ukrainian pronunciation of letters by a young male uploaded by Tabrus”
   // contains exactly 32 sound-bearing Ukrainian letters. The files are original human recordings by
