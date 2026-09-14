@@ -27,6 +27,11 @@ function flushPersist(state=v6PersistPending||S){
     }
   }
 }
+function flushPendingPersist(){
+  clearTimeout(v6PersistTimer);v6PersistTimer=0;
+  if(!v6PersistPending)return true;
+  return flushPersist(v6PersistPending)
+}
 persist=function(state=S,opts={}){v6PersistPending=state;if(opts===true||opts?.immediate)return flushPersist(state);clearTimeout(v6PersistTimer);v6PersistTimer=setTimeout(()=>flushPersist(),160);return true};
 function readStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
 function bootstrapV6Storage(){
@@ -35,9 +40,9 @@ function bootstrapV6Storage(){
   S=C.migrate(raw||S);window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh';flushPersist(S)
 }
 bootstrapV6Storage();
-addEventListener('pagehide',()=>flushPersist(),{capture:true});
-addEventListener('beforeunload',()=>flushPersist(),{capture:true});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPersist()});
+addEventListener('pagehide',()=>flushPendingPersist(),{capture:true});
+addEventListener('beforeunload',()=>flushPendingPersist(),{capture:true});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPendingPersist()});
 
 const finishExamV6PersistBase=finishExam;
 finishExam=function(){const out=finishExamV6PersistBase();flushPersist();return out};
@@ -45,4 +50,4 @@ finishExam=function(){const out=finishExamV6PersistBase();flushPersist();return 
 const renderExamMenuV6Base=renderExamMenu;
 renderExamMenu=function(){renderExamMenuV6Base();const button=app.querySelector('[data-prod-test="33"]');if(button){button.textContent='Großer Produktionscheck';button.insertAdjacentHTML('afterend','<small class="muted production-check-note">20 repräsentative freie Produktionsaufgaben · Coverage wird über mehrere Durchgänge gespeichert.</small>')}const card=button?.closest('.production-tests');if(card){const cov=C.productionCoverageSummary(S);const line=document.createElement('p');line.className='muted';line.textContent=`Langzeit-Coverage: ${cov.totalLetters}/33 Buchstaben bereits ausprobiert.`;card.append(line)}};
 
-window.AlphabetLabV6Runtime=Object.freeze({APP_VERSION:'6.1.0',STATE_SCHEMA_VERSION:6,storageKey:V6_STORAGE_KEY,legacyKeys:[...V6_LEGACY_STORAGE_KEYS],flushPersist,compactV6State,persistError:()=>v6PersistError,stateBytes:()=>{try{return new Blob([JSON.stringify(S)]).size}catch(_){return 0}},resetStorage(){for(const key of [V6_STORAGE_KEY,...V6_LEGACY_STORAGE_KEYS]){try{localStorage.removeItem(key)}catch(_){}}}});
+window.AlphabetLabV6Runtime=Object.freeze({APP_VERSION:'6.1.0',STATE_SCHEMA_VERSION:6,storageKey:V6_STORAGE_KEY,legacyKeys:[...V6_LEGACY_STORAGE_KEYS],flushPersist,flushPendingPersist,compactV6State,persistError:()=>v6PersistError,stateBytes:()=>{try{return new Blob([JSON.stringify(S)]).size}catch(_){return 0}},resetStorage(){for(const key of [V6_STORAGE_KEY,...V6_LEGACY_STORAGE_KEYS]){try{localStorage.removeItem(key)}catch(_){}}}});
