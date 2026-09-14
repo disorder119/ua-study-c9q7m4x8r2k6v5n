@@ -901,11 +901,10 @@ function ensureV6Metrics(state,{rebuild=false}={}){
 }
 function rebuildV6Metrics(state){return mergeDerivedV6Metrics(state)}
 function syncRepairAggregates(state,letter=null){
-  if(!state?.letters)return state?.metrics;state.metrics={...freshV6Metrics(),...(state.metrics||{})};const letters=letter?[letter]:ALPHABET;let changed=false;
-  for(const c of letters){if(!ALPHABET.includes(c))continue;const a=state.letters[c].learningAggregate=normalizeLetterAggregate(state.letters[c].learningAggregate);let open=0,severe=0;for(const r of Object.values(state.repairs||{})){if(!r?.open||r.originLetter!==c)continue;open++;if(V6_SEVERE_REPAIR_SKILLS.has(r.originSkill))severe++}
-    if(a.openRepairCount!==open||a.openSevereRepairCount!==severe)changed=true;a.openRepairCount=open;a.openSevereRepairCount=severe;
-    for(const k of [...CORE_SKILLS,'writtenProduction'])if(state.letters[c].skills?.[k])syncRepairPending(state,c,k);
-  }
+  if(!state?.letters)return state?.metrics;state.metrics={...freshV6Metrics(),...(state.metrics||{})};const letters=(letter?[letter]:ALPHABET).filter(c=>ALPHABET.includes(c)),counts={};for(const c of letters)counts[c]={open:0,severe:0,skills:{}};
+  for(const r of Object.values(state.repairs||{})){const bucket=r?.open?counts[r.originLetter]:null;if(!bucket)continue;bucket.open++;if(V6_SEVERE_REPAIR_SKILLS.has(r.originSkill))bucket.severe++;bucket.skills[r.originSkill]=(bucket.skills[r.originSkill]||0)+1}
+  let changed=false;
+  for(const c of letters){const a=state.letters[c].learningAggregate=normalizeLetterAggregate(state.letters[c].learningAggregate),bucket=counts[c];if(a.openRepairCount!==bucket.open||a.openSevereRepairCount!==bucket.severe)changed=true;a.openRepairCount=bucket.open;a.openSevereRepairCount=bucket.severe;for(const k of [...CORE_SKILLS,'writtenProduction']){const s=state.letters[c].skills?.[k];if(!s)continue;const pending=positive(bucket.skills[k])>0;if(s.repairPending!==pending)changed=true;s.repairPending=pending;if(!pending)s.repairTarget=''}}
   if(changed){state.metrics.revision=positive(state.metrics.revision)+1;state.metrics.readinessRevision=-1;state.metrics.readyProductionLetters=[]}return state.metrics;
 }
 function restoreV6Extensions(raw,state){
@@ -932,15 +931,16 @@ function recordAnswerV6(state,opts={}){ensureV6State(state);const row=recordAnsw
 function recordProductionSelfCheckV6(state,opts={}){ensureV6State(state);const row=recordProductionSelfCheck(state,opts),a=state.letters[row.letter].learningAggregate;a.productionFamilyExposure[row.family]=(a.productionFamilyExposure[row.family]||0)+1;if(!row.isRepair){const key=V6_PRODUCTION_COVERAGE_KEYS[row.family];if(key){state.metrics.productionCoverage[key][row.letter]=(state.metrics.productionCoverage[key][row.letter]||0)+1;if(row.rating==='pass')state.metrics.productionPassCoverage[key][row.letter]=(state.metrics.productionPassCoverage[key][row.letter]||0)+1}}state.metrics.productionRevision++;state.metrics.revision++;state.metrics.readinessRevision=-1;syncRepairAggregates(state,row.letter);return row}
 
 const writtenProductionReadyV6Base=writtenProductionReady;
-writtenProductionReady=function(state,c,now=Date.now()){
-  ensureV6Metrics(state);if(!ALPHABET.includes(c))return false;const m=state.letters[c],a=m.learningAggregate,visual=skillMasteryV4(state,c,'visualToSound',now),reverse=skillMasteryV4(state,c,'soundToLetter',now),audio=skillMasteryV4(state,c,'audioToLetter',now),families=Object.keys(a.successfulFamilies).length,hasWriting=(m.writeDays||[]).length>0,days=retentionDaysForLetter(state,c).length,conf=(skillConfidence(state,c,'visualToSound')+skillConfidence(state,c,'soundToLetter')+skillConfidence(state,c,'audioToLetter'))/3,severe=a.openSevereRepairCount>0;
+function writtenProductionReadySyncedV6(state,c,now=Date.now()){
+  if(!ALPHABET.includes(c))return false;const m=state.letters[c],a=m.learningAggregate,visual=skillMasteryV4(state,c,'visualToSound',now),reverse=skillMasteryV4(state,c,'soundToLetter',now),audio=skillMasteryV4(state,c,'audioToLetter',now),families=Object.keys(a.successfulFamilies).length,hasWriting=(m.writeDays||[]).length>0,days=retentionDaysForLetter(state,c).length,conf=(skillConfidence(state,c,'visualToSound')+skillConfidence(state,c,'soundToLetter')+skillConfidence(state,c,'audioToLetter'))/3,severe=a.openSevereRepairCount>0;
   if(c==='Ь')return visual>=72&&reverse>=62&&a.coreIndependentAttempts>=7&&families>=2&&hasWriting&&!severe&&(days>=2||conf>=72);
   const base=visual>=70&&reverse>=65&&audio>=60&&a.coreIndependentAttempts>=5&&families>=2&&hasWriting&&!severe;if(!base)return false;return HARD.has(c)?(days>=2||conf>=72):true
-};
-function readyProductionLettersUncachedV6(state,now=Date.now()){ensureV6Metrics(state);return ALPHABET.filter(c=>writtenProductionReady(state,c,now))}
+}
+writtenProductionReady=function(state,c,now=Date.now()){ensureV6Metrics(state);return writtenProductionReadySyncedV6(state,c,now)};
+function readyProductionLettersUncachedV6(state,now=Date.now()){ensureV6Metrics(state);return ALPHABET.filter(c=>writtenProductionReadySyncedV6(state,c,now))}
 function readyProductionLettersV6(state,now=Date.now()){
   ensureV6Metrics(state);if(state.metrics.readinessRevision===state.metrics.revision&&Array.isArray(state.metrics.readyProductionLetters))return state.metrics.readyProductionLetters;
-  const ready=readyProductionLettersUncachedV6(state,now);state.metrics.readyProductionLetters=ready;state.metrics.readinessRevision=state.metrics.revision;return ready
+  const ready=ALPHABET.filter(c=>writtenProductionReadySyncedV6(state,c,now));state.metrics.readyProductionLetters=ready;state.metrics.readinessRevision=state.metrics.revision;return ready
 }
 productionQuotaForSession=function(state,session,now=Date.now()){
   if(session?.feedback==='real'||session?.preset==='diagnostic'||session?.certification)return 0;if(session?.productionOnly)return Math.max(0,Number(session.productionTargetCount)||0);
