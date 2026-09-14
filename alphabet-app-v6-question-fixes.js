@@ -1,37 +1,66 @@
 'use strict';
 
-// Add an optional isolated human-audio cue to sound-to-letter questions without
-// changing scoring. The textual sound description remains the fallback, so a
-// network/audio failure can never turn this into an unanswerable question.
+// Sound-to-letter is now strictly human-audio-first. A learner must hear a
+// source-verified human Ukrainian recording before choosing an answer. Synthetic
+// TTS and text-only pronunciation are never accepted as a replacement.
 const renderExamQuestionCueBase=renderExam;
 renderExam=function(){
   const out=renderExamQuestionCueBase();
   if(screen!=='exam'||!session)return out;
   const t=currentTask();
-  if(!t||t.type!=='reverse'||!t.letterAudioAvailable||t.letter==='Ь')return out;
+  if(!t||t.type!=='reverse'||t.family!=='sound-to-letter')return out;
+  if(t.letter==='Ь'){
+    replaceUnvoicedSoftSignTask(t);
+    return out
+  }
   const stage=app.querySelector('.stage'),promptEl=stage?.querySelector('.prompt');
   if(!stage||!promptEl||stage.querySelector('#playLetterCue'))return out;
+  app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=true);
+  timing.startedAt=0;timing.invalid=true;
   const row=document.createElement('div');
   row.className='audio-row reverse-audio-row';
-  row.innerHTML='<button class="btn" id="playLetterCue" type="button">🔊 Laut anhören</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite"></span>';
+  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button">🔊 Originalaufnahme anhören</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
   promptEl.insertAdjacentElement('afterend',row);
   const button=row.querySelector('#playLetterCue'),status=row.querySelector('#letterCueStatus');
-  button.onclick=()=>playOptionalLetterCue(t,button,status);
+  const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
+  if(meta)markHumanAudioButton(button,meta);
+  button.onclick=()=>playRequiredLetterCue(t,button,status);
   return out
 };
 
-function playOptionalLetterCue(t,button,status){
-  const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter];
-  if(!src){status.textContent='Keine isolierte menschliche Aufnahme verfügbar.';return}
-  timing.invalid=true;
+function playRequiredLetterCue(t,button,status){
+  const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter],meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
+  if(!src||!window.AlphabetAudioLifecycle?.verifiedHumanSource?.(t.letter,'letter')){
+    replaceRequiredLetterCue(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return
+  }
   const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;
   let settled=false;
   const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid&&document.contains(button);
-  const finish=message=>{if(current()){button.disabled=false;status.textContent=message}tracked.release()};
-  const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();finish('Audio nicht erreichbar. Nutze die Lautbeschreibung.')},9000);
-  button.disabled=true;status.textContent='Lädt …';
-  a.onplay=()=>{if(current())status.textContent='Audio läuft …'};
-  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);finish('Nochmal anhören')};
-  a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);finish('Audio nicht erreichbar. Nutze die Lautbeschreibung.')};
-  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);finish('Tippe erneut, um den Laut abzuspielen.')})
+  const fail=message=>{if(!current())return;tracked.release();t.requiredHumanAudioFailures=(Number(t.requiredHumanAudioFailures)||0)+1;button.disabled=false;if(t.requiredHumanAudioFailures<2){status.textContent='Originalaufnahme technisch nicht erreichbar · bitte erneut versuchen.';toast(message)}else replaceRequiredLetterCue(t,`${message} Nach zwei Versuchen wird die Audiofrage ersetzt.`)};
+  const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();fail('Audio-Timeout.')},9000);
+  button.disabled=true;status.textContent='Originalaufnahme lädt …';
+  a.onplay=()=>{if(current())status.textContent='Menschliche Originalaufnahme läuft …'};
+  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();t.audioValidated=true;t.audioSource='human-original';t.audioProvenance=meta?.source||'';timing.invalid=false;beginTiming();app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.'};
+  a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);fail('Menschliche Originalaufnahme nicht erreichbar.')};
+  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Originalaufnahme anhören“.'})
+}
+
+function replaceRequiredLetterCue(t,msg){
+  if(!session||currentTask()?.questionId!==t.questionId)return;
+  toast(`${msg} Kein Benutzerfehler; kein TTS-Ersatz.`);
+  const replacement=C.buildV4Task(S,t.letter,t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'visual-find',session,Math.random,{sessionId:session.sessionId,scheduledReason:'human-audio-unavailable',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
+  replacement.audioFallbackFrom=t.questionId;
+  replacement.countsForMastery=false;
+  replacement.evidenceWeight=0;
+  if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
+  setTimeout(renderExam,250)
+}
+
+function replaceUnvoicedSoftSignTask(t){
+  if(!session||currentTask()?.questionId!==t.questionId||t._softSignReplacing)return;
+  t._softSignReplacing=true;
+  const replacement=C.buildV4Task(S,'Ь',t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'missing-letter',session,Math.random,{sessionId:session.sessionId,scheduledReason:'soft-sign-context-no-isolated-sound',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
+  replacement.softSignContextual=true;
+  if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
+  setTimeout(renderExam,0)
 }
