@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Alphabet Lab generated artifacts prüfen
+        run: node scripts/build-alphabet-lab.mjs --check
       - name: App-Hülle deterministisch lokal generieren
         run: node scripts/build-app-shell.mjs
       - name: Kurs, Lektionen, Sprachpolitur und alle bisherigen Regressionen vollständig validieren
@@ -28,19 +30,17 @@ jobs:
         run: node tests/validate-a1-gate-stage-logic.mjs
       - name: Alphabet Lab Legacy-Regeln validieren
         run: node tests/validate-alphabet-lab.mjs
-      - name: Alphabet Lab v2 Kompatibilität validieren
+      - name: Alphabet Lab V2 Kompatibilität validieren
         run: node tests/validate-alphabet-lab-v2.mjs
-      - name: Alphabet Lab v3 Behavioral Tests
+      - name: Alphabet Lab V3 Behavioral Tests
         run: node tests/validate-alphabet-lab-v3.mjs
-      - name: Alphabet Lab Service Worker Regression
-        run: node tests/validate-alphabet-lab-sw-v3.mjs
-      - name: Alphabet Lab v3 leichte DOM-Smoke-Tests
+      - name: Alphabet Lab V3 DOM-Smoke-Tests
         run: node tests/validate-alphabet-lab-dom-smoke.mjs
-      - name: Alphabet Lab v3 Persona-Simulationen
+      - name: Alphabet Lab V3 Persona-Simulationen
         run: node tests/validate-alphabet-lab-personas-v3.mjs
       - name: Alphabet Lab V4 adaptive Engine und Diversity
         run: node tests/validate-alphabet-lab-v4.mjs
-      - name: Alphabet Lab V4 Joel Persona-Simulationen
+      - name: Alphabet Lab V4 Persona-Simulationen
         run: node tests/validate-alphabet-lab-v4-personas.mjs
       - name: Alphabet Lab V4 Abschlussfunktionen
         run: node tests/validate-alphabet-lab-v4-completion.mjs
@@ -50,6 +50,22 @@ jobs:
         run: node tests/validate-alphabet-lab-v5-mastery.mjs
       - name: Alphabet Lab V5 Persona-Simulationen A-F
         run: node tests/validate-alphabet-lab-v5-personas.mjs
+      - name: Alphabet Lab V6.1 Hardening
+        run: node tests/validate-alphabet-lab-v6-hardening.mjs
+      - name: Alphabet Lab V6.1 Migration und lokale Tagesgrenzen
+        run: node tests/validate-alphabet-lab-v6-migration.mjs
+      - name: Alphabet Lab V6.1 Mastery, Unlock und 100 Seeds
+        run: node tests/validate-alphabet-lab-v6-learning-regressions.mjs
+      - name: Alphabet Lab V6.1 deterministischer Build
+        run: node tests/validate-alphabet-lab-v6-build.mjs
+      - name: Alphabet Lab V6.1 Long-run Fuzz/Invarianten
+        run: node tests/validate-alphabet-lab-v6-fuzz.mjs
+      - name: Alphabet Lab V6.1 Wordbank und Human-Audio-Metadaten
+        run: node tests/validate-alphabet-lab-v6-wordbank.mjs
+      - name: Alphabet Lab V6.1 Service Worker Generation und Offline
+        run: node tests/validate-alphabet-lab-v6-service-worker.mjs
+      - name: Alphabet Lab V6.1 Node-Performance-Budgets
+        run: node tests/measure-alphabet-lab-performance.mjs
 
   browser:
     needs: validate
@@ -61,9 +77,26 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Playwright installieren
-        run: npm install --no-save @playwright/test@latest
+      - name: Browser-Testabhängigkeiten installieren
+        run: npm ci
       - name: Chromium und WebKit installieren
         run: npx playwright install --with-deps chromium webkit
-      - name: Alphabet Lab V5 echte Browser-E2E
+      - name: Alphabet Lab V6.1 funktionale Browser-E2E
         run: npx playwright test --config=playwright.config.mjs
+
+  performance:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Browser-Testabhängigkeiten installieren
+        run: npm ci
+      - name: Chromium installieren
+        run: npx playwright install --with-deps chromium
+      - name: Alphabet Lab V6.1 Browser-Performance
+        run: npx playwright test --config=playwright.performance.config.mjs

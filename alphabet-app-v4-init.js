@@ -1,8 +1,13 @@
 'use strict';
-const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,LEGACY2,LEGACY1].forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();screen='home';render()}},startExam,startMyTraining};
+const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,typeof LEGACY3!=='undefined'?LEGACY3:null,LEGACY2,LEGACY1].filter(Boolean).forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();screen='home';render()}},startExam,startMyTraining};
 if(typeof DEBUG_LEARNING!=='undefined'&&DEBUG_LEARNING){
   alphabetLabApi.debugCurrentTask=()=>session?structuredClone(currentTask()):null;
   alphabetLabApi.debugSession=()=>session?structuredClone(session):null;
+  alphabetLabApi.debugInfo=async()=>{
+    const current=session?currentTask():null;let swBuildId='';
+    try{const controller=navigator.serviceWorker?.controller;if(controller){swBuildId=await new Promise(resolve=>{const timer=setTimeout(()=>resolve(''),500);const onMessage=e=>{if(e.data?.type==='ALPHABET_BUILD_ID'){clearTimeout(timer);navigator.serviceWorker.removeEventListener('message',onMessage);resolve(e.data.buildId||'')}};navigator.serviceWorker.addEventListener('message',onMessage);controller.postMessage({type:'ALPHABET_BUILD_ID'})})}}catch(_){swBuildId=''}
+    return {appVersion:C.APP_VERSION||window.AlphabetLabV6Runtime?.APP_VERSION||'',schemaVersion:C.SCHEMA_VERSION||C.VERSION,buildId:window.__ALPHABET_BUILD_ID__||'',storageKey:window.AlphabetLabV6Runtime?.storageKey||STORAGE,stateBytes:window.AlphabetLabV6Runtime?.stateBytes?.()||0,persistError:window.AlphabetLabV6Runtime?.persistError?.()||'',aggregateRevision:S.metrics?.revision??null,productionReadinessRevision:S.metrics?.readinessRevision??null,activeLearningSet:[...(S.learningPlan?.activeLetters||[])],selectionReason:current?.selectionReason||current?.scheduledReason||'',serviceWorkerBuildId:swBuildId}
+  };
   alphabetLabApi.debugStartFamily=(letter,family,{size=1}={})=>{
     if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
     const meta=C.QUESTION_FAMILIES[family];if(!meta)throw new Error('Unknown family '+family);

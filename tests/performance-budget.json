@@ -1,0 +1,16 @@
+{
+  "appReadyMs": 1500,
+  "interactiveMs": 1800,
+  "criticalJsRequests": 4,
+  "renderP95Ms": 80,
+  "localStorageP95Ms": 12,
+  "longTaskMaxMs": 100,
+  "questionGenerationP95Ms": 25,
+  "writtenProductionReadyP95Ms": 5,
+  "productionQuotaP95Ms": 8,
+  "serializeStateP95Ms": 8,
+  "coreBundleRawBytes": 230000,
+  "appBundleRawBytes": 150000,
+  "coreBundleGzipBytes": 85000,
+  "appBundleGzipBytes": 55000
+}

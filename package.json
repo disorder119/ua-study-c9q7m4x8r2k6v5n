@@ -1,0 +1,15 @@
+{
+  "name": "ukrainian-alphabet-lab",
+  "private": true,
+  "version": "6.1.0",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  },
+  "scripts": {
+    "build:alphabet": "node scripts/build-alphabet-lab.mjs",
+    "check:alphabet": "node scripts/build-alphabet-lab.mjs --check",
+    "test:e2e": "playwright test --config=playwright.config.mjs",
+    "test:perf": "playwright test --config=playwright.performance.config.mjs"
+  }
+}

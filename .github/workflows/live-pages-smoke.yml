@@ -1,0 +1,22 @@
+name: Alphabet Lab Live Pages Smoke
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned test dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify deployed GitHub Pages build
+        run: node tests/live-pages-smoke.mjs
