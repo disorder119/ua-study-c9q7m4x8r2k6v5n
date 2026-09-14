@@ -960,6 +960,39 @@ recomputeLearningPlan=function(state,now=Date.now(),opts={}){
 function productionCoverageSummaryV6(state){ensureV6Metrics(state);const byFamily={},confirmedByFamily={};for(const [key,map] of Object.entries(state.metrics.productionCoverage))byFamily[key]=Object.keys(map||{}).length;for(const [key,map] of Object.entries(state.metrics.productionPassCoverage))confirmedByFamily[key]=Object.keys(map||{}).length;return {byFamily,confirmedByFamily,totalLetters:uniq(Object.values(state.metrics.productionCoverage).flatMap(map=>Object.keys(map||{}))).length,confirmedLetters:uniq(Object.values(state.metrics.productionPassCoverage).flatMap(map=>Object.keys(map||{}))).length}}
 function validateStateInvariants(state){const errors=[];if(!state||typeof state!=='object')return {ok:false,errors:['state missing']};for(const c of ALPHABET){const m=state.letters?.[c];if(!m){errors.push(`missing letter ${c}`);continue}const a=normalizeLetterAggregate(m.learningAggregate);for(const [k,v] of Object.entries(a))if(typeof v==='number'&&(!Number.isFinite(v)||v<0))errors.push(`${c}.${k} invalid`)}if((state.answerLog||[]).length>1200)errors.push('answerLog too large');if((state.productionHistory||[]).length>180)errors.push('productionHistory too large');if((state.examHistory||[]).length>80)errors.push('examHistory too large');if((state.sessionSnapshots||[]).length>30)errors.push('sessionSnapshots too large');for(const c of state.learningPlan?.activeLetters||[])if(!ALPHABET.includes(c))errors.push(`unknown active letter ${c}`);const actual=readyProductionLettersUncachedV6(state);const cached=readyProductionLettersV6(state);if(actual.join('')!==cached.join(''))errors.push('readyProductionLetters cache mismatch');try{JSON.stringify(state)}catch(_){errors.push('state not serializable')}return {ok:errors.length===0,errors}}
 
+/* source: alphabet-core-v6-question-fixes.js */
+'use strict';
+
+// V6.1 question integrity fixes. Keep legacy/V4 generators compatible while
+// guaranteeing that sound-to-letter questions are answerable and choice lists
+// never contain duplicate visual-contrast answers.
+const makeTaskQuestionCueBase=makeTask;
+makeTask=function(letter,type,state,rng=Math.random,meta={}){
+  const task=makeTaskQuestionCueBase(letter,type,state,rng,meta);
+  if(type==='reverse'||task.type==='reverse'){
+    task.display=task.display||DATA[task.letter||letter]?.sound||'';
+    task.letterAudioAvailable=(task.letter||letter)!=='Ь';
+    task.audioStimulusId=task.audioStimulusId||`letter-${task.letter||letter}`;
+  }
+  return task
+};
+
+const buildV4TaskQuestionCueBase=buildV4Task;
+buildV4Task=function(state,letter,skill,difficulty,family,session,rng=Math.random,meta={}){
+  const task=buildV4TaskQuestionCueBase(state,letter,skill,difficulty,family,session,rng,meta);
+  if(family==='sound-to-letter'||task.type==='reverse'){
+    task.display=task.display||DATA[task.letter||letter]?.sound||'';
+    task.letterAudioAvailable=(task.letter||letter)!=='Ь';
+    task.audioStimulusId=task.audioStimulusId||`letter-${task.letter||letter}`;
+  }
+  if(family==='visual-contrast'){
+    const unique=uniq(task.options||[]),extras=shuffle(ALPHABET.filter(c=>c!==task.correct&&!unique.includes(c)),rng);
+    while(unique.length<4&&extras.length)unique.push(extras.shift());
+    task.options=shuffle(unique.slice(0,4),rng)
+  }
+  return task
+};
+
 /* source: alphabet-core-v4-export.js */
 'use strict';
 const familyCandidatesRunBase=familyCandidates;

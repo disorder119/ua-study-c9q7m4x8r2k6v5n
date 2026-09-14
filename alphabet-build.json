@@ -2,21 +2,21 @@
   "appVersion": "6.1.0",
   "schemaVersion": 6,
   "aggregateSchemaVersion": 2,
-  "buildId": "56d42771c258",
+  "buildId": "ef84660418eb",
   "bundles": {
     "core": {
       "file": "alphabet-core.bundle.js",
-      "sha256": "88ad38fe8617895aa6987f52b184d94a366ed1e0e2541ecf14f9035611e49b12",
-      "bytes": 177517
+      "sha256": "4389df604b872f860343f6b014e84569548d9da8d085447e0b4653262567dc41",
+      "bytes": 179032
     },
     "app": {
       "file": "alphabet-app.bundle.js",
-      "sha256": "fe41f2277db34e38ae3d30fed54d522fdef24d8d2d76a77db6394c2eb5b71b6d",
-      "bytes": 105092
+      "sha256": "16c42517a186a3a247c8dbc26331f078edbb4bf6439538a93bfd1bb5bf18c90b",
+      "bytes": 107511
     }
   },
   "artifacts": {
-    "htmlSha256": "a43131ec623dda4162ff2682321670f5d2c54611e7617123d39d74fb01d9c7fe",
-    "serviceWorkerSha256": "561e1a40c772b7cb9f94f86cea16b733ffddf2cfdf3f79e25ba6a338cffbd797"
+    "htmlSha256": "ae23e542d47279aaa6fcd65da96f057991ecaacf39f68051cffbc720d921819b",
+    "serviceWorkerSha256": "3e2ccf425b48e87b50c1e9a4d4d4bfaf34fe7443297c9232879f12cf863e34d3"
   }
 }
