@@ -1,0 +1,35 @@
+# Final V6 release validation workflow
+name: V6 Build
+on:
+  pull_request:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preserve V5 CPU baseline
+        if: ${{ hashFiles('alphabet-core.bundle.js') == '' }}
+        run: node tests/measure-alphabet-lab-performance.mjs | tee v5-node-baseline.txt
+      - name: Generate V6 production output
+        run: node scripts/build-alphabet-lab.mjs
+      - name: Commit generated bundles and production HTML
+        run: |
+          if git diff --quiet -- alphabet-core.bundle.js alphabet-app.bundle.js alphabet-lab.html; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add alphabet-core.bundle.js alphabet-app.bundle.js alphabet-lab.html
+          git commit -m "Build Alphabet Lab V6 production bundles"
+          git push origin HEAD:${{ github.head_ref }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v6-build-baseline
+          path: v5-node-baseline.txt
+          if-no-files-found: ignore
