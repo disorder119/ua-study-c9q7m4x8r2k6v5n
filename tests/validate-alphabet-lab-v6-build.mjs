@@ -11,7 +11,8 @@ for(const file of Object.keys(a.files))assert.equal(digest(a.files[file]),digest
 assert.equal(verifyOutputs(root,{log:false}).ok,true,'checked-in generated artifacts must be current');
 
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'alphabet-v61-build-'));
-for(const file of [...CORE_SOURCES,...APP_SOURCES,'alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js'])fs.copyFileSync(path.join(root,file),path.join(tmp,file));
+const buildInputs=[...CORE_SOURCES,...APP_SOURCES,'alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js','scripts/build-alphabet-lab.mjs'];
+for(const file of buildInputs){const target=path.join(tmp,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target)}
 writeOutputs(tmp,{log:false});
 assert.equal(verifyOutputs(tmp,{log:false}).ok,true,'fresh build must verify');
 fs.appendFileSync(path.join(tmp,'alphabet-core.bundle.js'),'\n// stale\n');
