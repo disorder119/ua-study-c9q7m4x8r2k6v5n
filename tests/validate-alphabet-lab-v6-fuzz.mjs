@@ -15,7 +15,6 @@ for(let i=0;i<2500;i++){
   if(!good&&row.repairId){const repair=state.repairs[row.repairId];if(repair&&rng()>.35)C.recordAnswer(state,{letter:repair.originLetter,skill:repair.originSkill,type:'contrast',family:'visual-contrast',good:true,selected:'ok',expected:'ok',firstAttempt:false,isRepair:true,repairId:repair.repairId,originLetter:repair.originLetter,originSkill:repair.originSkill,now:now+1,latencyValid:false})}
   if(i%11===0&&C.writtenProductionReady(state,letter,now)){const families=C.productionFamiliesFor(state,letter,now);if(families.length)C.recordProductionSelfCheck(state,{letter,family:families[Math.floor(rng()*families.length)],rating:rng()>.22?'pass':rng()>.5?'unsure':'again',now:now+2,audioSource:'human'})}
   if(i%17===0)C.recordWriting(state,letter,now+3);
-  C.recomputeLearningPlan(state,now,{force:true});
   if(i%50===0){state=C.migrate(JSON.parse(JSON.stringify(state)));session=null;check(`reload-${i}`)}
 }
 check('final');
