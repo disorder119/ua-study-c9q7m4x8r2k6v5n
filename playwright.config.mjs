@@ -2,7 +2,7 @@ import {defineConfig,devices} from '@playwright/test';
 
 export default defineConfig({
   testDir:'./tests',
-  testMatch:'alphabet-lab-v4-e2e.spec.mjs',
+  testMatch:'alphabet-lab-v6-1-e2e.spec.mjs',
   timeout:30000,
   expect:{timeout:5000},
   fullyParallel:false,
