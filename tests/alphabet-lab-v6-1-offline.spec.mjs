@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {test,expect} from '@playwright/test';
 
+test.beforeEach(async({},testInfo)=>{test.skip(!testInfo.project.name.includes('chromium'),'service-worker/offline release smoke is Chromium-primary')});
 const fixtureDir=path.resolve('tests/.sw-update-fixture');
 function writeFixture(v){fs.mkdirSync(fixtureDir,{recursive:true});fs.writeFileSync(path.join(fixtureDir,'index.html'),`<!doctype html><script>navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{if(!navigator.serviceWorker.controller)location.reload()})</script><script src="./app.js?v=${v}"></script>`);fs.writeFileSync(path.join(fixtureDir,'app.js'),`window.__fixtureVersion='${v}'`);fs.writeFileSync(path.join(fixtureDir,'sw.js'),`const V='${v}',C='sw-fixture-'+V,U=['./index.html','./app.js?v='+V];self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(U)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('sw-fixture-')&&x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.pathname.endsWith('app.js'))e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request)));});`)}
 
