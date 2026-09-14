@@ -54,6 +54,8 @@ jobs:
         run: node tests/validate-alphabet-lab-v6-hardening.mjs
       - name: Alphabet Lab V6.1 Migration und lokale Tagesgrenzen
         run: node tests/validate-alphabet-lab-v6-migration.mjs
+      - name: Alphabet Lab V6.1 Mastery, Unlock und 100 Seeds
+        run: node tests/validate-alphabet-lab-v6-learning-regressions.mjs
       - name: Alphabet Lab V6.1 deterministischer Build
         run: node tests/validate-alphabet-lab-v6-build.mjs
       - name: Alphabet Lab V6.1 Long-run Fuzz/Invarianten
