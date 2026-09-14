@@ -30,6 +30,8 @@ jobs:
             alphabet-core.bundle.js
             alphabet-app.bundle.js
             alphabet-lab.html
+            alphabet-lab-sw.js
+            alphabet-build.json
       - name: Fail when generated artifacts were stale
         if: steps.generated_check.outcome != 'success'
         run: exit 1
