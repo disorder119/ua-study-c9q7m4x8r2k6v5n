@@ -1,11 +1,12 @@
 'use strict';
 const C=window.AlphabetCoreV2;if(!C)throw new Error('AlphabetCoreV2 fehlt');
-const STORAGE='uk-alpha-lab-v3',LEGACY2='uk-alpha-lab-v2',LEGACY1='uk-alpha-lab-v1';
+const STORAGE=C.VERSION>=6?'uk-alpha-lab-v6':'uk-alpha-lab-v3',LEGACY3='uk-alpha-lab-v3',LEGACY2='uk-alpha-lab-v2',LEGACY1='uk-alpha-lab-v1';
 const app=document.getElementById('app');
 let S=load(),screen='home',session=null,selectedLetter='',selectedPair=null,toastTimer=null,memoryTimer=null,guidedLetter='',lastFocus=null;
 let timing={startedAt:0,invalid:false,audioDurationMs:0};
 
-function load(){let raw=null;for(const key of [STORAGE,LEGACY2,LEGACY1]){try{raw=JSON.parse(localStorage.getItem(key)||'null')}catch(_){raw=null}if(raw)break}const s=C.migrate(raw);persist(s);return s}
+function parseStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
+function load(){let raw=parseStored(STORAGE),source=raw?STORAGE:'';if(!raw){for(const key of [LEGACY3,LEGACY2,LEGACY1]){if(key===STORAGE)continue;raw=parseStored(key);if(raw){source=key;break}}}const s=C.migrate(raw);try{localStorage.setItem(STORAGE,JSON.stringify(s));window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh'}catch(_){}return s}
 function persist(state=S){localStorage.setItem(STORAGE,JSON.stringify(state))}
 function esc(v){return String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
 function fmtMs(ms){return ms?`${(ms/1000).toFixed(ms<1000?2:1)} s`:'—'}
