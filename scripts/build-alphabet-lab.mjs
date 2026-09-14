@@ -4,12 +4,11 @@ import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 
 export const CORE_SOURCES=['alphabet-core-v3-data.js','alphabet-core-v3-model.js','alphabet-core-v3-exam.js','alphabet-wordbank-v4.js','alphabet-core-v4-model-a.js','alphabet-core-v4-model-b.js','alphabet-core-v4-tasks-a.js','alphabet-core-v4-tasks-b.js','alphabet-core-v4-selector-a.js','alphabet-core-v4-selector-b.js','alphabet-core-v4-hardening.js','alphabet-core-v4-completion.js','alphabet-core-v5-production-model.js','alphabet-core-v5-production-tasks.js','alphabet-core-v5-production-state.js','alphabet-core-v5-production-repairs.js','alphabet-core-v5-progression.js','alphabet-core-v6-hardening.js','alphabet-core-v4-export.js'];
-export const APP_SOURCES=['alphabet-app-v3-shell.js','alphabet-app-v3-exam.js','alphabet-app-v3-ui.js','alphabet-app-v4-style.js','alphabet-app-v4-a.js','alphabet-app-v4-b.js','alphabet-app-v4-c.js','alphabet-app-v4-d.js','alphabet-app-v4-completion.js','alphabet-app-v5-production-ui.js','alphabet-app-v5-production-session.js','alphabet-app-v5-production-repairs.js','alphabet-app-v6-runtime.js','alphabet-app-v4-init.js'];
+export const APP_SOURCES=['alphabet-app-v3-shell.js','alphabet-app-v3-exam.js','alphabet-app-v3-ui.js','alphabet-app-v4-style.js','alphabet-app-v4-a.js','alphabet-app-v4-b.js','alphabet-app-v4-c.js','alphabet-app-v4-d.js','alphabet-app-v4-completion.js','alphabet-app-v5-production-ui.js','alphabet-app-v5-production-session.js','alphabet-app-v5-production-repairs.js','alphabet-app-v6-media.js','alphabet-app-v6-runtime.js','alphabet-app-v4-init.js'];
 export const APP_VERSION='6.1.0';
 export const STATE_SCHEMA_VERSION=6;
 export const AGGREGATE_SCHEMA_VERSION=2;
 const SOURCE_ONLY=['alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js'];
-const GENERATED=['alphabet-core.bundle.js','alphabet-app.bundle.js','alphabet-lab.html','alphabet-lab-sw.js','alphabet-build.json'];
 const normalize=s=>String(s).replace(/\r\n/g,'\n').replace(/\s+$/,'')+'\n';
 export const digest=text=>crypto.createHash('sha256').update(text).digest('hex');
 function rootFromArgs(argv=process.argv.slice(2)){const arg=argv.find(x=>x.startsWith('--root='));return path.resolve(arg?arg.slice(7):process.cwd())}
