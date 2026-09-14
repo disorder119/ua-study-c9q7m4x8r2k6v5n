@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Alphabet Lab generated artifacts prüfen
+        run: node scripts/build-alphabet-lab.mjs --check
       - name: App-Hülle deterministisch lokal generieren
         run: node scripts/build-app-shell.mjs
       - name: Kurs, Lektionen, Sprachpolitur und alle bisherigen Regressionen vollständig validieren
@@ -50,6 +52,8 @@ jobs:
         run: node tests/validate-alphabet-lab-v5-mastery.mjs
       - name: Alphabet Lab V5 Persona-Simulationen A-F
         run: node tests/validate-alphabet-lab-v5-personas.mjs
+      - name: Alphabet Lab V6.1 Hardening
+        run: node tests/validate-alphabet-lab-v6-hardening.mjs
 
   browser:
     needs: validate
@@ -65,5 +69,5 @@ jobs:
         run: npm install --no-save @playwright/test@latest
       - name: Chromium und WebKit installieren
         run: npx playwright install --with-deps chromium webkit
-      - name: Alphabet Lab V5 echte Browser-E2E
+      - name: Alphabet Lab V6 funktionale Browser-E2E
         run: npx playwright test --config=playwright.config.mjs
