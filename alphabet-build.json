@@ -2,7 +2,7 @@
   "appVersion": "6.1.0",
   "schemaVersion": 6,
   "aggregateSchemaVersion": 2,
-  "buildId": "c3b1fbda5ecc",
+  "buildId": "dac300b5a007",
   "bundles": {
     "core": {
       "file": "alphabet-core.bundle.js",
@@ -16,7 +16,7 @@
     }
   },
   "artifacts": {
-    "htmlSha256": "60fbc5aa752c90db977951d940d6c9f185a085fe0055db58b09514d979c4325e",
-    "serviceWorkerSha256": "8865ce58c4cfbb64523128b186c14b1582f01d91fbc304fc1313d4386293cfff"
+    "htmlSha256": "a75e2c6e29e1d523ac1c7afc85d811779689232246873753921c03297b82015f",
+    "serviceWorkerSha256": "e15784ab51a43c805482f6b5bfe9eb9a3f393613ba9f8b0a61beba64d41274c3"
   }
 }
