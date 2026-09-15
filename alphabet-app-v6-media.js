@@ -13,7 +13,22 @@ const renderExamMediaBase=renderExam;
 renderExam=function(){stopAlphabetAudio();clearTimeout(memoryTimer);return renderExamMediaBase()};
 
 setupAudioQuestion=function(t){const button=document.getElementById('playAudio'),status=document.getElementById('audioStatus');if(!button||!status)return;const qid=t.questionId;button.onclick=()=>{if(!session||currentTask()?.questionId!==qid)return;playHumanExamAudio(t,button,status)}};
-playHumanExamAudio=function(t,button,status){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter],meta=humanAudioMeta(t.letter,'word');if(!src||!verifiedHumanSource(t.letter,'word')){handleAudioFailure(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return}markHumanAudioButton(button,meta);const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;button.disabled=true;status.textContent='Originalaufnahme lädt …';let startedAt=0,settled=false;const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid;const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();tracked.release();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')},9000);a.onplay=()=>{if(!current())return;startedAt=performance.now();status.textContent='Menschliche Originalaufnahme läuft …'};a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human-original';t.audioProvenance=meta?.source||''};a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();handleAudioFailure(t,'Menschliche Originalaufnahme nicht erreichbar. Frage wird ersetzt.')};a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Audio starten“.'})};
+playHumanExamAudio=function(t,button,status){
+  const useLetter=t.audioKind==='letter'||t.requiresHumanLetterAudio===true;
+  const kind=useLetter?'letter':'word';
+  const src=useLetter?window.UKRAINIAN_LETTER_AUDIO?.[t.letter]:window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter];
+  const meta=humanAudioMeta(t.letter,kind);
+  if(t.letter==='Ь'&&useLetter){handleAudioFailure(t,'Ь hat keinen eigenen isolierten Laut. Die Aufgabe wird durch Wortkontext ersetzt.');return}
+  if(!src||!verifiedHumanSource(t.letter,kind)){handleAudioFailure(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return}
+  markHumanAudioButton(button,meta);
+  const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;button.disabled=true;status.textContent='Originalaufnahme lädt …';let startedAt=0,settled=false;
+  const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid;
+  const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();tracked.release();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')},9000);
+  a.onplay=()=>{if(!current())return;startedAt=performance.now();status.textContent='Menschliche Originalaufnahme läuft …'};
+  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human';t.audioSourceKind=useLetter?'human-letter-original':'human-word-original';t.audioProvenance=meta?.source||''};
+  a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();handleAudioFailure(t,'Menschliche Originalaufnahme nicht erreichbar. Frage wird ersetzt.')};
+  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Audio starten“.'})
+};
 
 const handleAudioFailureMediaBase=handleAudioFailure;
 handleAudioFailure=function(t,msg){if(!session||currentTask()?.questionId!==t.questionId)return;return handleAudioFailureMediaBase(t,msg)};

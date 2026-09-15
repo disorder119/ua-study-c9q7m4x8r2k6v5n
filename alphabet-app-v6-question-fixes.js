@@ -1,14 +1,15 @@
 'use strict';
 
-// Sound-to-letter is now strictly human-audio-first. A learner must hear a
-// source-verified human Ukrainian recording before choosing an answer. Synthetic
-// TTS and text-only pronunciation are never accepted as a replacement.
+// Any non-<audio> task that depends on pronunciation is human-audio-first.
+// The answer stays locked until a source-verified Ukrainian human recording has
+// finished. Technical audio failures never become learner errors and never fall
+// back to browser TTS or an AI voice.
 const renderExamQuestionCueBase=renderExam;
 renderExam=function(){
   const out=renderExamQuestionCueBase();
   if(screen!=='exam'||!session)return out;
   const t=currentTask();
-  if(!t||t.type!=='reverse'||t.family!=='sound-to-letter')return out;
+  if(!t||t.type==='audio'||t.requiresHumanLetterAudio!==true)return out;
   if(t.letter==='Ь'){
     replaceUnvoicedSoftSignTask(t);
     return out
@@ -19,7 +20,7 @@ renderExam=function(){
   timing.startedAt=0;timing.invalid=true;
   const row=document.createElement('div');
   row.className='audio-row reverse-audio-row';
-  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button">🔊 Originalaufnahme anhören</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
+  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button">🔊 Menschliche Originalaufnahme</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
   promptEl.insertAdjacentElement('afterend',row);
   const button=row.querySelector('#playLetterCue'),status=row.querySelector('#letterCueStatus');
   const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
@@ -40,9 +41,9 @@ function playRequiredLetterCue(t,button,status){
   const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();fail('Audio-Timeout.')},9000);
   button.disabled=true;status.textContent='Originalaufnahme lädt …';
   a.onplay=()=>{if(current())status.textContent='Menschliche Originalaufnahme läuft …'};
-  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();t.audioValidated=true;t.audioSource='human-original';t.audioProvenance=meta?.source||'';timing.invalid=false;beginTiming();app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.'};
+  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();t.audioValidated=true;t.audioSource='human';t.audioSourceKind='human-original';t.audioProvenance=meta?.source||'';timing.invalid=false;beginTiming();app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.'};
   a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);fail('Menschliche Originalaufnahme nicht erreichbar.')};
-  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Originalaufnahme anhören“.'})
+  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Menschliche Originalaufnahme“.'})
 }
 
 function replaceRequiredLetterCue(t,msg){
