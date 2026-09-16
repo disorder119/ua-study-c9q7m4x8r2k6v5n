@@ -381,3 +381,85 @@ buildV4Task=function(state,letter,skill,difficulty,family,session,rng=Math.rando
   }
   return task;
 };
+
+// ---------------------------------------------------------------------------
+// V6.2 · Progressionsboden
+//
+// Eine Simulation mit konstant 55 % Trefferquote blieb dauerhaft bei neun
+// eingeführten Buchstaben stehen: 233 Hauptfragen ohne einen einzigen neuen
+// Buchstaben. Zwei Ursachen, beide hier behoben:
+//
+//  A) Der zuletzt eingeführte Buchstabe verhungerte. Das aktive Lernfeld ist auf
+//     fünf Buchstaben begrenzt und wird nach Bedarf sortiert; bei Gleichstand
+//     gewinnt die Lernreihenfolge, also nie der neueste. Der Buchstabe blieb mit
+//     null Versuchen liegen – und das V5-Throttle verlangt genau für diesen
+//     Buchstaben mindestens zwei Versuche, bevor der nächste freigeschaltet wird.
+//     Ein eingeführter Buchstabe ohne jede Evidenz hat objektiv den höchsten
+//     Lernbedarf und kommt deshalb zuerst ins aktive Lernfeld.
+//
+//  B) Das Qualitätsgate verlangt, dass rund zwei Drittel des aktiven Lernfelds
+//     ausreichend sitzen. Wer diese Schwelle nie erreicht, erreicht auch die
+//     restlichen 24 Buchstaben nie. Nach 120 unabhängigen Hauptfragen ohne
+//     Freischaltung – vier volle Sitzungen ohne jeden Fortschritt – wird ein
+//     einzelner Buchstabe nachgezogen, sofern das Lernfeld nicht zusammengebrochen
+//     ist. Das Throttle aus V5 bleibt davon unberührt, die Drosselung bleibt also
+//     erhalten; nur der dauerhafte Stillstand entfällt.
+
+const V62_UNLOCK_STALL_ANSWERS=120;
+const v62LetterHasEvidence=(state,letter)=>CORE_SKILLS.some(k=>(state?.letters?.[letter]?.skills?.[k]?.independentAttempts||0)>0);
+
+const shouldUnlockNextLetterV62Base=shouldUnlockNextLetter;
+shouldUnlockNextLetter=function(state,now=Date.now()){
+  if(shouldUnlockNextLetterV62Base(state,now))return true;
+  const plan=state?.learningPlan;
+  if(!plan)return false;
+  const introduced=plan.introducedLetters||[];
+  if(introduced.length>=ALPHABET.length)return false;
+  const aggregate=Number(state?.metrics?.independentMainCount)||0;
+  const since=aggregate-(Number(plan.v62LastUnlockAggregate)||0);
+  if(since<V62_UNLOCK_STALL_ANSWERS)return false;
+  const active=(plan.activeLetters||[]).filter(c=>ALPHABET.includes(c));
+  if(!active.length)return true;
+  const rows=active.map(c=>basicReadiness(state,c,now));
+  // Bei echtem Zusammenbruch wäre ein weiterer Buchstabe schädlich.
+  if(rows.filter(r=>r.min<25&&r.attempted>=1).length>1)return false;
+  return rows.some(r=>r.attempted>=2&&r.avg>=50);
+};
+
+const recomputeLearningPlanV62Base=recomputeLearningPlan;
+recomputeLearningPlan=function(state,now=Date.now(),opts={}){
+  const before=[...(state?.learningPlan?.introducedLetters||[])];
+  const plan=recomputeLearningPlanV62Base(state,now,opts);
+  if(!plan)return plan;
+  const aggregate=Number(state?.metrics?.independentMainCount)||0;
+  if(plan.v62LastUnlockAggregate===undefined)plan.v62LastUnlockAggregate=aggregate;
+  if((plan.introducedLetters||[]).some(c=>!before.includes(c)))plan.v62LastUnlockAggregate=aggregate;
+  const introduced=plan.introducedLetters||[];
+  const starved=introduced.filter(c=>!v62LetterHasEvidence(state,c));
+  if(starved.length&&Array.isArray(plan.activeLetters)&&plan.activeLetters.length){
+    const size=plan.activeLetters.length;
+    plan.activeLetters=uniq([...starved,...plan.activeLetters]).slice(0,Math.max(size,starved.length));
+  }
+  return plan;
+};
+
+// Ein eingeführter Buchstabe ohne jede Evidenz kann im aktiven Lernfeld liegen und
+// trotzdem nie gefragt werden: selectLetterV4 bewertet nach Lernbedarf, und ein
+// Buchstabe, der laufend Fehler produziert, sammelt Overdue-, Fehler- und
+// Repair-Aufschläge, die ein unberührter Buchstabe (Bedarf ≈ 137) nie erreicht
+// (beobachtet: 14 Sitzungen in Folge nicht gefragt). Erste Begegnung hat deshalb
+// Vorrang – man kann nicht wissen, ob ein Buchstabe schwer ist, bevor man ihn
+// einmal gestellt hat. Nach genau einer Antwort greift wieder die normale Auswahl.
+const selectLetterV62Base=selectLetterV4;
+selectLetterV4=function(state,session,rng=Math.random,now=Date.now()){
+  const pick=selectLetterV62Base(state,session,rng,now);
+  if(session?.fixedLetters?.length)return pick;
+  const active=state?.learningPlan?.activeLetters||[];
+  const served=session?.coverageState?.letterCounts||{};
+  // Höchstens zweimal pro Sitzung erzwingen: Wird eine Frage erzeugt, aber nie
+  // beantwortet (technischer Audio-Abbruch, abgebrochene Sitzung), entsteht sonst
+  // eine Endlosreihe desselben Buchstabens.
+  const fresh=active.filter(c=>ALPHABET.includes(c)&&!v62LetterHasEvidence(state,c)&&(Number(served[c])||0)<2);
+  if(!fresh.length||fresh.includes(pick?.letter))return pick;
+  return {...pick,letter:fresh[0],reason:'first-contact'};
+};
