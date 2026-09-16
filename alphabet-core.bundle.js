@@ -1200,6 +1200,15 @@ function v62Sample(list,count,rng=Math.random){
     if(used.has(index))continue;
     used.add(index);out.push(list[index]);
   }
+  // Zufälliges Ziehen kann die Quote verfehlen – bei einer konstanten RNG (Tests,
+  // Debug-Einstiege) sogar immer. Dann linear ab einem Startpunkt auffüllen, damit
+  // immer min(count, list.length) verschiedene Einträge zurückkommen. Sonst fiele
+  // etwa audio-word-match still auf eine andere Familie zurück.
+  for(let offset=0;out.length<count&&offset<list.length;offset++){
+    const index=(Math.floor(rng()*list.length)+offset)%list.length;
+    if(used.has(index))continue;
+    used.add(index);out.push(list[index]);
+  }
   return out;
 }
 

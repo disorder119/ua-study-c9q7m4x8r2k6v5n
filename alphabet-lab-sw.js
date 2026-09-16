@@ -1,5 +1,5 @@
 'use strict';
-const BUILD_ID='a611e9bd71f3';
+const BUILD_ID='80491dad4ce1';
 const APP_VERSION='6.1.0';
 const CACHE=`alphabet-lab-${BUILD_ID}`;
 const PREFIX='alphabet-lab-';
