@@ -15,6 +15,44 @@ Der Hauptweg bleibt prüfungsbasiert:
 
 30 Hauptfragen bleiben 30 unabhängige Hauptfragen. Repairs laufen getrennt, verändern den Hauptscore nicht und zählen nicht wie ein späterer unabhängiger Recall. Recognition-Skills und `writtenProduction` bleiben getrennte Evidenzspuren. `Ь` besitzt keinen erfundenen isolierten Eigenlaut. Human-Audio-Zertifizierung und Audio→Writing verwenden nur menschliche Referenzaufnahmen.
 
+## V6.3 · Abruf statt Wiedererkennung
+
+Vier Antwortoptionen heißen 25 % Trefferquote ohne jedes Wissen, und
+Wiedererkennung ist deutlich leichter als Abruf. Für das Behalten über Wochen
+zählt aber der Abruf. V6.3 koppelt deshalb die Zahl der Optionen an die bereits
+vorhandene Skill-Mastery:
+
+| Mastery | Optionen | Ratewahrscheinlichkeit |
+|---|---|---|
+| unter 35 % | 4 | 25 % |
+| 35–75 % | 6 | 17 % |
+| 75–90 % | 8 | 12,5 % |
+| ab 90 % | 33 (`alphabet-recall`) | 3 % |
+
+Anfänger starten unverändert mit vier Optionen. Erst wenn ein Skill wirklich
+sitzt, verschwindet die Auswahlhilfe schrittweise – auf der höchsten Stufe gibt es
+kein engeres Auswahlfeld mehr, sondern das vollständige Alphabet als Raster.
+`Ь` bleibt ausgenommen, weil es keinen eigenen isolierten Laut hat.
+Kontrastfamilien behalten ihr enges Paar: Dort *ist* die Verwechslung die Aufgabe.
+
+**Dünne Evidenz ist kein Können.** In einer Simulation über 900 Fragen hatte der
+Skill `soundToLetter` bei „М" nach 30 Sitzungen drei Versuche, die übrigen
+Kernskills 13 bis 23. Ursache war eine Rückkopplung: Drei Versuche, alle richtig,
+melden 68 % Mastery und damit wenig Bedarf – ein ehrlich geübter Skill mit echten
+Fehlern meldet 53 % und gewinnt jedes Mal. Der ungeübte Skill wurde also gerade
+deshalb übersprungen, weil zu wenig über ihn bekannt war. Da die Freischaltung
+neuer Buchstaben ein Minimum über *alle* Basisskills verlangt, hielt ein einziger
+ausgehungerter Skill den ganzen Buchstaben fest. Skills unterhalb der
+Evidenzschwelle, ab der `skillMasteryV4` seinem eigenen Wert traut, bekommen jetzt
+einen Bedarfsaufschlag. Wirkung: ausgehungerte Skills pro Lauf von 1,7 auf 0,3,
+Skillbalance von 43 % auf 51 %. Der Preis sind rund vier Sitzungen mehr bis zum
+vollständigen Alphabet – dafür hat jeder eingeführte Buchstabe in jedem Skill
+echte Evidenz.
+
+Verworfen nach Messung: Ein Breitenpfad, der Buchstaben schneller einführt, brachte
+nur +1,7 Buchstaben bei 5 Punkten weniger Wissen je Skill und wurde deshalb nicht
+übernommen.
+
 ## V6.2 · Fragen-Integrität, Wortschatz und Home-Screen-App
 
 V6.2 beantwortet für jede erzeugte Aufgabe eine einzige Frage: **Kann ein deutscher
@@ -144,6 +182,11 @@ Die Haupt-CI prüft in Reihenfolge A1/Kurs, Alphabet-Legacy, V2, V3, V4, V5 und 
 Playwright ist über `package-lock.json` reproduzierbar gepinnt. CI verwendet `npm ci`; kein `@latest`.
 
 Die Budgets stehen in `tests/performance-budget.json`. Gemessen werden u. a. Bundle-Größe, initiale JS-Requests, App-ready/Interactive, Renderpfade, Question Generation, Production Readiness/Quota, State-Serialisierung, LocalStorage-Schreibzeit und Long Tasks.
+
+V6.3 ergänzt `tests/validate-alphabet-lab-v63-retrieval.mjs` (Optionsleiter
+monoton, Anfängerschutz auf Stufe 0–1, Kontrastpaare unverändert,
+Vollalphabet-Abruf für genau 32 Buchstaben, dünn belegte Skills haben mehr
+Bedarf als gut belegte).
 
 V6.2 ergänzt `tests/validate-alphabet-lab-v62-solvability.mjs` (Lösbarkeit jeder
 Frage, erzwungen über alle Familien und live über den produktiven Selektor) und

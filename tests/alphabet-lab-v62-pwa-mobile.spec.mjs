@@ -117,6 +117,16 @@ for(const size of [{w:320,h:568,name:'iPhone SE (kleinster Fall)'},{w:375,h:812,
     const homeOverflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     expect(homeOverflow,'Startbildschirm darf nicht horizontal scrollen').toBeLessThanOrEqual(1);
     // Fragetypen mit den breitesten Inhalten prüfen.
+    // Der Vollalphabet-Abruf zeigt 33 Tasten gleichzeitig – der kritischste Fall.
+    await page.evaluate(()=>window.AlphabetLab.debugPrimeProductionLetter('Щ',{ratio:1}));
+    await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Щ','alphabet-recall',{size:1}));
+    await page.waitForTimeout(150);
+    const keys=await page.evaluate(()=>[...document.querySelectorAll('.alphabet-key')].map(k=>{const r=k.getBoundingClientRect();return {w:Math.round(r.width),h:Math.round(r.height),locked:k.disabled}}));
+    expect(keys.length,'der Abruf muss das ganze Alphabet zeigen').toBe(33);
+    expect(keys.filter(k=>k.w<44||k.h<44),`zu kleine Alphabet-Tasten: ${JSON.stringify(keys.filter(k=>k.w<44||k.h<44))}`).toEqual([]);
+    expect(keys.every(k=>k.locked),'vor der Originalaufnahme bleiben alle Tasten gesperrt').toBeTruthy();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),'Alphabet-Raster darf nicht horizontal scrollen').toBeLessThanOrEqual(1);
+
     for(const [letter,family] of [['Щ','visual-to-sound'],['Ї','word-position'],['Б','confusion-word-choice'],['А','audio-word-match'],['Х','visual-find']]){
       await page.evaluate(([l,f])=>window.AlphabetLab.debugStartFamily(l,f,{size:1}),[letter,family]);
       await page.waitForTimeout(120);

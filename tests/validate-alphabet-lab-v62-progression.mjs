@@ -70,6 +70,20 @@ function planWith(letters,{ratio=.7}={}){
 }
 
 // ------------------------------------------------------------------ Simulation
+// Skillbalance je Buchstabe: das Verhältnis des am wenigsten zum am meisten
+// geübten Kernskill. Vor V6.3 konnte ein Skill bei drei Versuchen hängen bleiben,
+// während ein anderer 25 hatte – dünne Evidenz sah wie Können aus und senkte den
+// Bedarf, also wurde der Skill nie wieder gefragt.
+function skillBalance(C,state){
+  const rows=[];
+  for(const letter of state.learningPlan.introducedLetters){
+    const attempts=C.CORE_SKILLS.map(k=>state.letters[letter].skills[k].independentAttempts);
+    const max=Math.max(...attempts);
+    if(max>=6)rows.push(Math.min(...attempts)/max);
+  }
+  return rows.length?rows.reduce((a,b)=>a+b,0)/rows.length:1;
+}
+
 function run({rate,seed,sessions}){
   const rng=rngFor(seed);
   let state=C.freshState(),now=NOW;
@@ -101,10 +115,14 @@ function run({rate,seed,sessions}){
   return {state,introducedAt,letters:state.learningPlan.introducedLetters.length,maxStarvedStreak};
 }
 
-const strong=run({rate:.88,seed:11,sessions:26});
+// 30 statt 26 Sitzungen: V6.3 verteilt die Übung gleichmäßiger über alle fünf
+// Kernskills, dadurch kommen neue Buchstaben rund vier Sitzungen später – aber
+// jeder eingeführte Buchstabe hat dann auch in jedem Skill echte Evidenz.
+const strong=run({rate:.88,seed:11,sessions:30});
 assert.equal(strong.letters,33,`fleißiger Lerner muss alle 33 Buchstaben erreichen, hat ${strong.letters}`);
+assert(skillBalance(C,strong.state)>=.4,`Kernskills müssen ausgewogen geübt werden, Balance ${(100*skillBalance(C,strong.state)).toFixed(0)} %`);
 
-const weak=run({rate:.55,seed:11,sessions:26});
+const weak=run({rate:.55,seed:11,sessions:30});
 assert(weak.introducedAt.at(-1)>weak.introducedAt[9],`schwacher Lerner darf nicht dauerhaft stehen bleiben: Sitzung 10 ${weak.introducedAt[9]}, Sitzung ${weak.introducedAt.length} ${weak.introducedAt.at(-1)}`);
 // Drosselung bleibt: Wer viel falsch macht, bekommt deutlich weniger Neues.
 assert(weak.letters<strong.letters-6,`Throttling muss erhalten bleiben: schwach ${weak.letters} vs. stark ${strong.letters}`);
