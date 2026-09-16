@@ -20,7 +20,7 @@ renderExam=function(){
   timing.startedAt=0;timing.invalid=true;
   const row=document.createElement('div');
   row.className='audio-row reverse-audio-row';
-  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button">🔊 Menschliche Originalaufnahme</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
+  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button" aria-label="Menschliche Originalaufnahme anhören">🔊 Menschliche Originalaufnahme</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
   promptEl.insertAdjacentElement('afterend',row);
   const button=row.querySelector('#playLetterCue'),status=row.querySelector('#letterCueStatus');
   const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];

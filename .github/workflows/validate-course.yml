@@ -64,6 +64,8 @@ jobs:
         run: node tests/validate-alphabet-lab-v6-wordbank.mjs
       - name: Alphabet Lab V6.1 Service Worker Generation und Offline
         run: node tests/validate-alphabet-lab-v6-service-worker.mjs
+      - name: Alphabet Lab V6.2 Lösbarkeit und Fragen-Integrität
+        run: node tests/validate-alphabet-lab-v62-solvability.mjs
       - name: Alphabet Lab V6.1 Node-Performance-Budgets
         run: node tests/measure-alphabet-lab-performance.mjs
 

@@ -8,7 +8,19 @@ recomputeLearningPlan=function(state,now=Date.now(),opts={}){
   else if(added.length){plan.lastUnlockMainCount=mainCount;plan.lastIntroducedLetter=added[0]}
   plan.lastProductionRecomputedAt=now;return plan;
 };
-function wordUnknownCountV5(state,w,target){const introduced=new Set(state.learningPlan?.introducedLetters||[]),chars=uniq([...(w.knownLettersRequired||[...w.word.toLocaleUpperCase('uk')])].filter(ch=>ALPHABET.includes(ch)&&ch!==target));return chars.filter(ch=>!introduced.has(ch)).length}
+// Wird pro Kandidat über die gesamte Wordbank aufgerufen. knownLettersRequired ist
+// bereits dublettenfrei und alphabetgefiltert (siehe alphabet-core-v4-hardening.js),
+// deshalb ohne uniq/filter-Zwischenarrays und mit zwischengespeichertem Set der
+// eingeführten Buchstaben.
+const INTRODUCED_SET_CACHE=new WeakMap();
+function introducedSetV5(state){
+  const plan=state?.learningPlan;if(!plan)return new Set();
+  const letters=plan.introducedLetters||[];
+  let entry=INTRODUCED_SET_CACHE.get(plan);
+  if(!entry||entry.source!==letters||entry.size!==letters.length){entry={source:letters,size:letters.length,set:new Set(letters)};INTRODUCED_SET_CACHE.set(plan,entry)}
+  return entry.set;
+}
+function wordUnknownCountV5(state,w,target){const introduced=introducedSetV5(state),chars=w.knownLettersRequired||[...w.word.toLocaleUpperCase('uk')];let n=0;for(const ch of chars){if(ch===target||!ALPHABET.includes(ch))continue;if(!introduced.has(ch))n++}return n}
 function maxUnknownForDifficultyV5(d){return d<=0?0:d===1?1:d===2?3:99}
 const pickWordV5Base=pickWord;
 pickWord=function(state,letter,session,rng=Math.random,opts={}){

@@ -15,7 +15,18 @@ function run(st,sess,n,rng,goodFn){for(let i=0;i<n;i++){sess.mainIndex=i;const t
 
 // Session 2: A/M strong, I medium, K weak -> K/I get more attention than A/M.
 {
-  const st=C.freshState();st.learningPlan.introducedLetters=['А','І','К','М','О'];st.learningPlan.activeLetters=['А','І','К','М','О'];seedLetter(st,'А',10);seedLetter(st,'М',10);seedLetter(st,'І',7);seedLetter(st,'К',3);seedLetter(st,'О',5);const sess=C.createAdaptiveSession(st,{targetMainCount:24}),rng=rngFor(22);run(st,sess,24,rng,()=>true);const counts=Object.fromEntries(C.ALPHABET.map(c=>[c,sess.mainTasks.filter(t=>t.letter===c).length]));assert((counts.К+counts.І)>(counts.А+counts.М),`expected K/I focus, got K/I ${counts.К+counts.І} vs A/M ${counts.А+counts.М}`);
+  // Adaptive Fokussierung ist ein statistischer Effekt. Ein einzelner Seed ist
+  // eine Münze (auch vor V6.2 verlor ein Sechstel der Seeds); geprüft wird
+  // deshalb der Mittelwert und die Mehrheit über viele Seeds.
+  let weakTotal=0,strongTotal=0,weakWins=0;const SEEDS=24;
+  for(let seed=0;seed<SEEDS;seed++){
+    const st=C.freshState();st.learningPlan.introducedLetters=['А','І','К','М','О'];st.learningPlan.activeLetters=['А','І','К','М','О'];seedLetter(st,'А',10);seedLetter(st,'М',10);seedLetter(st,'І',7);seedLetter(st,'К',3);seedLetter(st,'О',5);
+    const sess=C.createAdaptiveSession(st,{targetMainCount:24}),rng=rngFor(22+seed*101);run(st,sess,24,rng,()=>true);
+    const counts=Object.fromEntries(C.ALPHABET.map(c=>[c,sess.mainTasks.filter(t=>t.letter===c).length]));
+    const weak=counts.К+counts.І,strong=counts.А+counts.М;weakTotal+=weak;strongTotal+=strong;if(weak>strong)weakWins++;
+  }
+  assert(weakTotal/SEEDS>strongTotal/SEEDS+1,`expected K/I focus on average, got K/I ${(weakTotal/SEEDS).toFixed(2)} vs A/M ${(strongTotal/SEEDS).toFixed(2)}`);
+  assert(weakWins>=SEEDS*0.6,`K/I must dominate in most seeds, got ${weakWins}/${SEEDS}`);
 }
 
 // Session 3: R/P fake-friend pattern is detected and followed by variable R training.

@@ -1,6 +1,27 @@
 'use strict';
 
-function alphabetWordExamples(letter){return (C.WORD_BANK||[]).filter(x=>x.letter===letter).slice(0,8)}
+// Beispielwörter werden nach zwei didaktischen Kriterien ausgewählt:
+//  1. Positionsvielfalt – der Zielbuchstabe soll am Anfang, in der Mitte, am Ende
+//     und mehrfach vorkommen, damit er nicht nur an einer Stelle erkannt wird.
+//  2. Anfängertauglichkeit – Wörter, die überwiegend aus bereits eingeführten
+//     Buchstaben bestehen, kommen zuerst. Ein Anfänger soll nicht an Wörtern
+//     scheitern, die fast nur aus unbekannten Zeichen bestehen.
+const ALPHABET_WORD_EXAMPLE_LIMIT=8;
+function alphabetKnownShare(word,letter){
+  const introduced=new Set(S?.learningPlan?.introducedLetters||[]);
+  const letters=C.uniq([...String(word||'').toLocaleUpperCase('uk')].filter(ch=>C.ALPHABET.includes(ch)));
+  if(!letters.length)return 1;
+  return letters.filter(ch=>ch===letter||introduced.has(ch)).length/letters.length;
+}
+function alphabetWordExamples(letter){
+  const rows=(C.WORD_BANK||[]).filter(x=>x.letter===letter);
+  if(rows.length<=ALPHABET_WORD_EXAMPLE_LIMIT)return rows;
+  const ranked=rows.slice().sort((a,b)=>alphabetKnownShare(b.word,letter)-alphabetKnownShare(a.word,letter)||a.level-b.level);
+  const picked=[],seenPositions=new Set();
+  for(const row of ranked){if(seenPositions.has(row.position))continue;seenPositions.add(row.position);picked.push(row)}
+  for(const row of ranked){if(picked.length>=ALPHABET_WORD_EXAMPLE_LIMIT)break;if(!picked.includes(row))picked.push(row)}
+  return rows.filter(row=>picked.includes(row)).slice(0,ALPHABET_WORD_EXAMPLE_LIMIT);
+}
 function alphabetWordNorm(v){return String(v||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim()}
 function alphabetPositionLabel(position){return position==='initial'?'am Anfang':position==='final'?'am Ende':position==='multiple'?'mehrfach':'in der Mitte'}
 function highlightedUkrainianWord(word,letter){const low=letter.toLocaleLowerCase('uk');return [...String(word||'')].map(ch=>ch.toLocaleLowerCase('uk')===low?`<mark>${esc(ch)}</mark>`:esc(ch)).join('')}

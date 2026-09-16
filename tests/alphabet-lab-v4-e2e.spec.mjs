@@ -108,7 +108,7 @@ test('letter-to-audio-choice uses four unlabeled human candidates and never soft
   await expect(page.locator('[data-play-letter-audio]')).toHaveCount(4);
   await expect(page.locator('.audio-pick-candidate')).toHaveCount(4);
   for(let i=0;i<4;i++)expect(await page.locator('.audio-pick-candidate').nth(i).isDisabled()).toBeTruthy();
-  await expect(page.getByText('0/4 Aufnahmen gehört.')).toBeVisible();
+  await expect(page.getByText('0/4 Originalaufnahmen gehört.')).toBeVisible();
 });
 
 test('microphone practice records locally without creating mastery evidence',async({page})=>{

@@ -18,7 +18,7 @@ test('two technical human-audio failures replace learning task without user erro
 });
 
 test('audio-choice double play stops prior candidate and stale candidate end does not count',async({page})=>{
-  await openLab(page);await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Р','letter-to-audio-choice',{size:1}));const buttons=page.locator('[data-play-letter-audio]');await buttons.nth(0).click();await buttons.nth(1).click();expect(await page.evaluate(()=>window.__audioInstances[0].paused)).toBeTruthy();await page.evaluate(()=>window.__audioInstances[0].fireEnd());await expect(page.getByText('0/4 Aufnahmen gehört.')).toBeVisible();await page.evaluate(()=>window.__audioInstances[1].fireEnd());await expect(page.getByText('1/4 Aufnahmen gehört.')).toBeVisible()
+  await openLab(page);await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Р','letter-to-audio-choice',{size:1}));const buttons=page.locator('[data-play-letter-audio]');await buttons.nth(0).click();await buttons.nth(1).click();expect(await page.evaluate(()=>window.__audioInstances[0].paused)).toBeTruthy();await page.evaluate(()=>window.__audioInstances[0].fireEnd());await expect(page.getByText('0/4 Originalaufnahmen gehört.')).toBeVisible();await page.evaluate(()=>window.__audioInstances[1].fireEnd());await expect(page.getByText('1/4 Originalaufnahmen gehört.')).toBeVisible()
 });
 
 test('sound-to-letter question requires isolated human original audio before answering',async({page})=>{
@@ -29,10 +29,32 @@ test('human-only audio policy exposes provenance and no synthetic fallback',asyn
   await openLab(page);const info=await page.evaluate(()=>({policy:window.UKRAINIAN_AUDIO_POLICY,letter:window.UKRAINIAN_LETTER_AUDIO_META?.Б,word:window.UKRAINIAN_WORD_AUDIO_META?.['аптека']}));expect(info.policy.mode).toBe('human-only');expect(info.policy.ttsAllowed).toBeFalsy();expect(info.policy.aiVoiceAllowed).toBeFalsy();expect(info.letter.human).toBeTruthy();expect(info.letter.sourceVerified).toBeTruthy();expect(info.word.human).toBeTruthy();expect(info.word.sourceVerified).toBeTruthy();expect(info.word.source).toContain('commons.wikimedia.org')
 });
 
-test('visual letter learning shows six real Ukrainian word examples and reinforces with human audio after answer',async({page})=>{
-  await openLab(page);const task=await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Б','visual-to-sound',{size:1}));expect(task.type).toBe('visual');await expect(page.getByText('6 echte ukrainische Wörter mit Б')).toBeVisible();for(const word of ['бабуся','банк','хліб','робота','автобус','обід'])await expect(page.getByText(word,{exact:true})).toBeVisible();await expect(page.locator('.question-word-examples [data-human-word-audio]')).toHaveCount(0);const correct=page.locator(`[data-ans="${task.correct}"]`);await correct.click();await expect(page.locator('.human-answer-reinforcement')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.__audioInstances.length)).toBeGreaterThan(0);expect(await page.evaluate(()=>window.__audioInstances.at(-1).src)).toContain('Uk-%D0%B1%D0%B0%D0%B1%D1%83%D1%81%D1%8F.ogg');await page.evaluate(()=>window.__audioInstances.at(-1).fireEnd())
+test('visual letter learning shows real Ukrainian word examples and reinforces with human audio after answer',async({page})=>{
+  await openLab(page);const task=await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Б','visual-to-sound',{size:1}));expect(task.type).toBe('visual');
+  const shown=await page.evaluate(()=>[...document.querySelectorAll('.question-word-examples .word-example-card strong')].map(x=>x.textContent));
+  const bank=await page.evaluate(()=>window.AlphabetCoreV2.WORD_BANK.filter(w=>w.letter==='Б').map(w=>w.word));
+  expect(shown.length).toBeGreaterThanOrEqual(6);
+  for(const word of shown)expect(bank).toContain(word);
+  // Positionsvielfalt: der Zielbuchstabe darf nicht nur an einer Stelle auftauchen.
+  const positions=await page.evaluate(()=>[...new Set([...document.querySelectorAll('.question-word-examples .word-example-card small')].map(x=>x.textContent.split(' · ').pop()))]);
+  expect(positions.length).toBeGreaterThanOrEqual(3);
+  await expect(page.getByText(`${shown.length} echte ukrainische Wörter mit Б`)).toBeVisible();await expect(page.locator('.question-word-examples [data-human-word-audio]')).toHaveCount(0);const correct=page.locator(`[data-ans="${task.correct}"]`);await correct.click();await expect(page.locator('.human-answer-reinforcement')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.__audioInstances.length)).toBeGreaterThan(0);expect(await page.evaluate(()=>window.__audioInstances.at(-1).src)).toContain('Uk-%D0%B1%D0%B0%D0%B1%D1%83%D1%81%D1%8F.ogg');await page.evaluate(()=>window.__audioInstances.at(-1).fireEnd())
 });
 
 test('soft sign is never given a fake isolated sound',async({page})=>{
-  await openLab(page);await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Ь','sound-to-letter',{size:1}));await page.waitForTimeout(150);const task=await page.evaluate(()=>window.AlphabetLab.debugCurrentTask());expect(task.letter).toBe('Ь');expect(task.family).not.toBe('sound-to-letter');await expect(page.getByRole('button',{name:'Originalaufnahme anhören'})).toHaveCount(0)
+  await openLab(page);
+  // Der adaptive Selektor bietet Ь gar keine Laut-zu-Zeichen-Frage an.
+  expect(await page.evaluate(()=>window.AlphabetCoreV2.familyAllowedFor('Ь','sound-to-letter'))).toBeFalsy();
+  expect(await page.evaluate(()=>window.AlphabetCoreV2.familyAllowedFor('Ь','letter-to-audio-choice'))).toBeFalsy();
+  // Auch erzwungen darf daraus nie eine isolierte Buchstabenaufnahme werden.
+  await page.evaluate(()=>window.AlphabetLab.debugStartFamily('Ь','sound-to-letter',{size:1}));await page.waitForTimeout(150);
+  const task=await page.evaluate(()=>window.AlphabetLab.debugCurrentTask());
+  expect(task.letter).toBe('Ь');
+  expect(task.requiresHumanLetterAudio).not.toBe(true);
+  expect(task.letterAudioAvailable).not.toBe(true);
+  expect(task.audioKind).not.toBe('letter');
+  expect(task.softSignContextual).toBe(true);
+  expect(task.prompt).toContain('keinen eigenen isolierten Laut');
+  await expect(page.getByRole('button',{name:'Menschliche Originalaufnahme anhören'})).toHaveCount(0);
+  expect(await page.evaluate(()=>window.__audioInstances.length)).toBe(0)
 });

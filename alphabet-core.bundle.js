@@ -189,7 +189,7 @@ function taskFromBookmark(state,b,rng=Math.random,sessionId=id('mark')){return m
 /* source: alphabet-wordbank-v4.js */
 'use strict';
 const V4_VERSION=4;
-const WORD_BANK_RAW={"А":[["автобус","Bus","🚌"],["мама","Mama","👩"],["кава","Kaffee","☕"],["ананас","Ananas","🍍"],["адреса","Adresse","📍"],["лампа","Lampe","💡"]],"Б":[["бабуся","Oma","👵"],["банк","Bank","🏦"],["хліб","Brot","🍞"],["робота","Arbeit","🧰"],["автобус","Bus","🚌"],["обід","Mittagessen","🍽️"]],"В":[["вода","Wasser","💧"],["вікно","Fenster","🪟"],["кава","Kaffee","☕"],["слово","Wort","🔤"],["вовк","Wolf","🐺"],["вечір","Abend","🌆"]],"Г":[["гора","Berg","⛰️"],["книга","Buch","📘"],["магазин","Geschäft","🏪"],["нога","Bein","🦵"],["друг","Freund","👤"],["гарний","schön","✨"]],"Ґ":[["ґудзик","Knopf","🔘"],["ґанок","Veranda","🏠"],["ґрунт","Boden","🌱"],["аґрус","Stachelbeere","🫐"],["ґрати","Gitter","▦"],["ґава","Krähe","🐦"]],"Д":[["дім","Haus","🏠"],["вода","Wasser","💧"],["день","Tag","☀️"],["люди","Menschen","👥"],["сад","Garten","🌳"],["дорога","Straße","🛣️"]],"Е":[["екран","Bildschirm","🖥️"],["телефон","Telefon","📱"],["метро","Metro","🚇"],["море","Meer","🌊"],["аптека","Apotheke","💊"],["кафе","Café","☕"]],"Є":[["єнот","Waschbär","🦝"],["моє","mein","👤"],["твоє","dein","👉"],["єдність","Einheit","🤝"],["Європа","Europa","🌍"],["приємно","angenehm","🙂"]],"Ж":[["жук","Käfer","🪲"],["життя","Leben","🌱"],["ніж","Messer","🔪"],["дружба","Freundschaft","🤝"],["жовтий","gelb","🟨"],["пожежа","Brand","🔥"]],"З":[["зуб","Zahn","🦷"],["зима","Winter","❄️"],["магазин","Geschäft","🏪"],["зараз","jetzt","⏱️"],["ваза","Vase","🏺"],["поїзд","Zug","🚆"]],"И":[["син","Sohn","👦"],["книга","Buch","📘"],["машина","Auto","🚗"],["великий","groß","⬆️"],["риба","Fisch","🐟"],["хвилина","Minute","⏱️"]],"І":[["ім’я","Name","🏷️"],["кіт","Katze","🐱"],["місто","Stadt","🏙️"],["хліб","Brot","🍞"],["стіл","Tisch","🪑"],["лікар","Arzt","🩺"]],"Ї":[["їжа","Essen","🍽️"],["Україна","Ukraine","🇺🇦"],["поїзд","Zug","🚆"],["мої","meine","👤"],["її","ihre","👤"],["приїхати","ankommen","🚉"]],"Й":[["йогурт","Joghurt","🥣"],["чай","Tee","🍵"],["край","Rand/Region","🗺️"],["мій","mein","👤"],["твій","dein","👉"],["музей","Museum","🏛️"]],"К":[["кіт","Katze","🐱"],["кава","Kaffee","☕"],["книга","Buch","📘"],["парк","Park","🌳"],["рука","Hand","✋"],["кімната","Zimmer","🚪"]],"Л":[["лампа","Lampe","💡"],["люди","Menschen","👥"],["стіл","Tisch","🪑"],["молоко","Milch","🥛"],["школа","Schule","🏫"],["телефон","Telefon","📱"]],"М":[["мама","Mama","👩"],["метро","Metro","🚇"],["місто","Stadt","🏙️"],["машина","Auto","🚗"],["дім","Haus","🏠"],["молоко","Milch","🥛"]],"Н":[["ніс","Nase","👃"],["ніч","Nacht","🌙"],["вікно","Fenster","🪟"],["книга","Buch","📘"],["ранок","Morgen","🌅"],["Україна","Ukraine","🇺🇦"]],"О":[["око","Auge","👁️"],["вода","Wasser","💧"],["молоко","Milch","🥛"],["робота","Arbeit","🧰"],["море","Meer","🌊"],["автобус","Bus","🚌"]],"П":[["парк","Park","🌳"],["поїзд","Zug","🚆"],["аптека","Apotheke","💊"],["суп","Suppe","🍲"],["папір","Papier","📄"],["купити","kaufen","🛍️"]],"Р":[["рука","Hand","✋"],["риба","Fisch","🐟"],["робота","Arbeit","🧰"],["парк","Park","🌳"],["море","Meer","🌊"],["ранок","Morgen","🌅"]],"С":[["сир","Käse","🧀"],["сад","Garten","🌳"],["слово","Wort","🔤"],["місто","Stadt","🏙️"],["автобус","Bus","🚌"],["сестра","Schwester","👩"]],"Т":[["так","ja","✅"],["телефон","Telefon","📱"],["метро","Metro","🚇"],["аптека","Apotheke","💊"],["стіл","Tisch","🪑"],["автобус","Bus","🚌"]],"У":[["урок","Lektion","📚"],["рука","Hand","✋"],["суп","Suppe","🍲"],["автобус","Bus","🚌"],["Україна","Ukraine","🇺🇦"],["друг","Freund","👤"]],"Ф":[["Франція","Frankreich","🇫🇷"],["фото","Foto","📷"],["кафе","Café","☕"],["телефон","Telefon","📱"],["футбол","Fußball","⚽"],["офіс","Büro","🏢"]],"Х":[["хата","Haus","🏠"],["хліб","Brot","🍞"],["хвилина","Minute","⏱️"],["тихо","leise","🤫"],["кухня","Küche","🍳"],["їхати","fahren","🚗"]],"Ц":[["це","dies","👉"],["вулиця","Straße","🛣️"],["піца","Pizza","🍕"],["ціна","Preis","💶"],["сонце","Sonne","☀️"],["олівець","Bleistift","✏️"]],"Ч":[["чай","Tee","🍵"],["час","Zeit","⏰"],["вечір","Abend","🌆"],["ключ","Schlüssel","🔑"],["очі","Augen","👀"],["ручка","Stift","🖊️"]],"Ш":[["школа","Schule","🏫"],["машина","Auto","🚗"],["шафа","Schrank","🚪"],["наш","unser","👥"],["гроші","Geld","💶"],["душ","Dusche","🚿"]],"Щ":[["щука","Hecht","🐟"],["що","was","❓"],["ще","noch","➕"],["площа","Platz","🏙️"],["дощ","Regen","🌧️"],["щастя","Glück","🍀"]],"Ь":[["кінь","Pferd","🐴"],["день","Tag","☀️"],["сіль","Salz","🧂"],["біль","Schmerz","🤕"],["пальто","Mantel","🧥"],["учитель","Lehrer","👨‍🏫"]],"Ю":[["юнак","junger Mann","🧑"],["юшка","Fischsuppe","🍲"],["меню","Menü","📋"],["малювати","zeichnen","🎨"],["комп’ютер","Computer","💻"],["лютий","Februar","📅"]],"Я":[["яблуко","Apfel","🍎"],["я","ich","👤"],["сім’я","Familie","👨‍👩‍👧"],["м’ясо","Fleisch","🥩"],["ім’я","Name","🏷️"],["п’ятниця","Freitag","📅"]]};
+const WORD_BANK_RAW={"А":[["автобус","Bus","🚌"],["мама","Mama","👩"],["кава","Kaffee","☕"],["ананас","Ananas","🍍"],["адреса","Adresse","📍"],["лампа","Lampe","💡"],["брат","Bruder","👦"],["вода","Wasser","💧"],["рука","Hand","✋"],["сад","Garten","🌳"]],"Б":[["бабуся","Oma","👵"],["банк","Bank","🏦"],["хліб","Brot","🍞"],["робота","Arbeit","🧰"],["автобус","Bus","🚌"],["обід","Mittagessen","🍽️"],["брат","Bruder","👦"],["риба","Fisch","🐟"],["дуб","Eiche","🌳"],["небо","Himmel","☁️"]],"В":[["вода","Wasser","💧"],["вікно","Fenster","🪟"],["кава","Kaffee","☕"],["слово","Wort","🔤"],["вовк","Wolf","🐺"],["вечір","Abend","🌆"],["лев","Löwe","🦁"],["острів","Insel","🏝️"],["вулиця","Straße","🛣️"],["новий","neu","🆕"]],"Г":[["гора","Berg","⛰️"],["книга","Buch","📘"],["магазин","Geschäft","🏪"],["нога","Bein","🦵"],["друг","Freund","👤"],["гарний","schön","✨"],["гроші","Geld","💶"],["багато","viel","➕"],["газета","Zeitung","📰"],["вагон","Waggon","🚃"]],"Ґ":[["ґудзик","Knopf","🔘"],["ґанок","Veranda","🏠"],["ґрунт","Boden","🌱"],["аґрус","Stachelbeere","🫐"],["ґрати","Gitter","▦"],["ґава","Krähe","🐦"],["ґедзь","Bremse (Insekt)","🪰"],["дзиґа","Kreisel","🌀"]],"Д":[["дім","Haus","🏠"],["вода","Wasser","💧"],["день","Tag","☀️"],["люди","Menschen","👥"],["сад","Garten","🌳"],["дорога","Straße","🛣️"],["дерево","Baum","🌳"],["одяг","Kleidung","👕"],["дощ","Regen","🌧️"],["мед","Honig","🍯"]],"Е":[["екран","Bildschirm","🖥️"],["телефон","Telefon","📱"],["метро","Metro","🚇"],["море","Meer","🌊"],["аптека","Apotheke","💊"],["кафе","Café","☕"],["день","Tag","☀️"],["небо","Himmel","☁️"],["дерево","Baum","🌳"],["сестра","Schwester","👩"]],"Є":[["єнот","Waschbär","🦝"],["моє","mein","👤"],["твоє","dein","👉"],["єдність","Einheit","🤝"],["Європа","Europa","🌍"],["приємно","angenehm","🙂"],["своє","sein/ihr","👤"],["має","hat","✅"],["читає","liest","📖"],["Єгипет","Ägypten","🇪🇬"]],"Ж":[["жук","Käfer","🪲"],["життя","Leben","🌱"],["ніж","Messer","🔪"],["дружба","Freundschaft","🤝"],["жовтий","gelb","🟨"],["пожежа","Brand","🔥"],["журнал","Zeitschrift","📰"],["кожен","jeder","👥"],["може","kann","✅"],["ножі","Messer (Pl.)","🔪"]],"З":[["зуб","Zahn","🦷"],["зима","Winter","❄️"],["магазин","Geschäft","🏪"],["зараз","jetzt","⏱️"],["ваза","Vase","🏺"],["поїзд","Zug","🚆"],["земля","Erde","🌍"],["казка","Märchen","📖"],["мороз","Frost","🥶"],["зелений","grün","🟩"]],"И":[["син","Sohn","👦"],["книга","Buch","📘"],["машина","Auto","🚗"],["великий","groß","⬆️"],["риба","Fisch","🐟"],["хвилина","Minute","⏱️"],["вони","sie","👥"],["руки","Hände","✋"],["мити","waschen","🧼"],["дим","Rauch","💨"]],"І":[["ім’я","Name","🏷️"],["кіт","Katze","🐱"],["місто","Stadt","🏙️"],["хліб","Brot","🍞"],["стіл","Tisch","🪑"],["лікар","Arzt","🩺"],["гості","Gäste","👥"],["інший","anderer","🔀"],["місяць","Monat","🌙"],["сіль","Salz","🧂"]],"Ї":[["їжа","Essen","🍽️"],["Україна","Ukraine","🇺🇦"],["поїзд","Zug","🚆"],["мої","meine","👤"],["її","ihre","👤"],["приїхати","ankommen","🚉"],["їхати","fahren","🚗"],["з’їсти","aufessen","🍽️"],["країна","Land","🏳️"],["їхній","ihr","👥"]],"Й":[["йогурт","Joghurt","🥣"],["чай","Tee","🍵"],["край","Rand/Region","🗺️"],["мій","mein","👤"],["твій","dein","👉"],["музей","Museum","🏛️"],["майка","T-Shirt","👕"],["район","Bezirk","🗺️"],["зайти","hineingehen","🚪"],["новий","neu","🆕"]],"К":[["кіт","Katze","🐱"],["кава","Kaffee","☕"],["книга","Buch","📘"],["парк","Park","🌳"],["рука","Hand","✋"],["кімната","Zimmer","🚪"],["молоко","Milch","🥛"],["сік","Saft","🧃"],["кухня","Küche","🍳"],["дякую","danke","🙏"]],"Л":[["лампа","Lampe","💡"],["люди","Menschen","👥"],["стіл","Tisch","🪑"],["молоко","Milch","🥛"],["школа","Schule","🏫"],["телефон","Telefon","📱"],["літо","Sommer","☀️"],["сіль","Salz","🧂"],["хліб","Brot","🍞"],["футбол","Fußball","⚽"]],"М":[["мама","Mama","👩"],["метро","Metro","🚇"],["місто","Stadt","🏙️"],["машина","Auto","🚗"],["дім","Haus","🏠"],["молоко","Milch","🥛"],["зима","Winter","❄️"],["сім","sieben","7️⃣"],["кімната","Zimmer","🚪"],["музика","Musik","🎵"]],"Н":[["ніс","Nase","👃"],["ніч","Nacht","🌙"],["вікно","Fenster","🪟"],["книга","Buch","📘"],["ранок","Morgen","🌅"],["Україна","Ukraine","🇺🇦"],["син","Sohn","👦"],["банан","Banane","🍌"],["сон","Schlaf","😴"],["весна","Frühling","🌸"]],"О":[["око","Auge","👁️"],["вода","Wasser","💧"],["молоко","Milch","🥛"],["робота","Arbeit","🧰"],["море","Meer","🌊"],["автобус","Bus","🚌"],["обід","Mittagessen","🍽️"],["вікно","Fenster","🪟"],["осінь","Herbst","🍂"],["метро","Metro","🚇"]],"П":[["парк","Park","🌳"],["поїзд","Zug","🚆"],["аптека","Apotheke","💊"],["суп","Suppe","🍲"],["папір","Papier","📄"],["купити","kaufen","🛍️"],["пиво","Bier","🍺"],["лампа","Lampe","💡"],["степ","Steppe","🌾"],["після","nach","➡️"]],"Р":[["рука","Hand","✋"],["риба","Fisch","🐟"],["робота","Arbeit","🧰"],["парк","Park","🌳"],["море","Meer","🌊"],["ранок","Morgen","🌅"],["сир","Käse","🧀"],["вечір","Abend","🌆"],["лікар","Arzt","🩺"],["дерево","Baum","🌳"]],"С":[["сир","Käse","🧀"],["сад","Garten","🌳"],["слово","Wort","🔤"],["місто","Stadt","🏙️"],["автобус","Bus","🚌"],["сестра","Schwester","👩"],["ліс","Wald","🌲"],["осінь","Herbst","🍂"],["масло","Butter","🧈"],["сонце","Sonne","☀️"]],"Т":[["так","ja","✅"],["телефон","Telefon","📱"],["метро","Metro","🚇"],["аптека","Apotheke","💊"],["стіл","Tisch","🪑"],["автобус","Bus","🚌"],["кіт","Katze","🐱"],["брат","Bruder","👦"],["світ","Welt","🌍"],["тато","Papa","👨"]],"У":[["урок","Lektion","📚"],["рука","Hand","✋"],["суп","Suppe","🍲"],["автобус","Bus","🚌"],["Україна","Ukraine","🇺🇦"],["друг","Freund","👤"],["іду","ich gehe","🚶"],["кенгуру","Känguru","🦘"],["купити","kaufen","🛍️"],["ручка","Stift","🖊️"]],"Ф":[["Франція","Frankreich","🇫🇷"],["фото","Foto","📷"],["кафе","Café","☕"],["телефон","Telefon","📱"],["футбол","Fußball","⚽"],["офіс","Büro","🏢"],["шеф","Chef","👔"],["жираф","Giraffe","🦒"],["ферма","Bauernhof","🚜"],["шафа","Schrank","🚪"]],"Х":[["хата","Haus","🏠"],["хліб","Brot","🍞"],["хвилина","Minute","⏱️"],["тихо","leise","🤫"],["кухня","Küche","🍳"],["їхати","fahren","🚗"],["дах","Dach","🏠"],["сміх","Lachen","😄"],["хвіст","Schwanz","🐾"],["вухо","Ohr","👂"]],"Ц":[["це","dies","👉"],["вулиця","Straße","🛣️"],["піца","Pizza","🍕"],["ціна","Preis","💶"],["сонце","Sonne","☀️"],["олівець","Bleistift","✏️"],["палець","Finger","👆"],["кінець","Ende","🔚"],["цукор","Zucker","🍬"],["місяць","Monat","🌙"]],"Ч":[["чай","Tee","🍵"],["час","Zeit","⏰"],["вечір","Abend","🌆"],["ключ","Schlüssel","🔑"],["очі","Augen","👀"],["ручка","Stift","🖊️"],["ніч","Nacht","🌙"],["чашка","Tasse","☕"],["дочка","Tochter","👧"],["чорний","schwarz","⬛"]],"Ш":[["школа","Schule","🏫"],["машина","Auto","🚗"],["шафа","Schrank","🚪"],["наш","unser","👥"],["гроші","Geld","💶"],["душ","Dusche","🚿"],["шапка","Mütze","🧢"],["груша","Birne","🍐"],["миша","Maus","🐭"],["шість","sechs","6️⃣"]],"Щ":[["щука","Hecht","🐟"],["що","was","❓"],["ще","noch","➕"],["площа","Platz","🏙️"],["дощ","Regen","🌧️"],["щастя","Glück","🍀"],["щітка","Bürste","🪥"],["борщ","Borschtsch","🍲"],["ящірка","Eidechse","🦎"],["щоденник","Tagebuch","📔"]],"Ь":[["кінь","Pferd","🐴"],["день","Tag","☀️"],["сіль","Salz","🧂"],["біль","Schmerz","🤕"],["пальто","Mantel","🧥"],["учитель","Lehrer","👨‍🏫"],["тільки","nur","☝️"],["вільний","frei","🆓"],["маленький","klein","🐁"],["радість","Freude","😊"]],"Ю":[["юнак","junger Mann","🧑"],["юшка","Fischsuppe","🍲"],["меню","Menü","📋"],["малювати","zeichnen","🎨"],["комп’ютер","Computer","💻"],["лютий","Februar","📅"],["любов","Liebe","❤️"],["дякую","danke","🙏"],["юрист","Jurist","⚖️"],["ключ","Schlüssel","🔑"]],"Я":[["яблуко","Apfel","🍎"],["я","ich","👤"],["сім’я","Familie","👨‍👩‍👧"],["м’ясо","Fleisch","🥩"],["ім’я","Name","🏷️"],["п’ятниця","Freitag","📅"],["земля","Erde","🌍"],["ягода","Beere","🫐"],["пляж","Strand","🏖️"],["зоря","Stern","⭐"]]};
 const WORD_BANK=[];
 for(const [letter,rows] of Object.entries(WORD_BANK_RAW))rows.forEach((row,i)=>{const [word,de,icon]=row,low=letter.toLocaleLowerCase('uk'),chars=[...word.toLocaleLowerCase('uk')],targetIndexes=chars.map((x,j)=>x===low?j:-1).filter(j=>j>=0),position=targetIndexes.length>1?'multiple':targetIndexes[0]===0?'initial':targetIndexes[0]===chars.length-1?'final':'medial';WORD_BANK.push({id:`${low}-${i+1}`,letter,word,de,icon,targetIndexes,position,level:i<2?1:i<4?2:3,common:i<5,audioKey:i===0?letter:null})});
 const LETTER_PEDAGOGY={"А":{"confusions":["О","Я"],"pace":"fast","note":"Leichter Start; früh auf Wortposition, Mehrfachvorkommen und Transfer wechseln."},"Б":{"confusions":["В","П"],"note":"Б = B; gezielt gegen В und П.","pace":"normal"},"В":{"confusions":["Б","У"],"latin":"B","note":"Deutsche B-Falle; visuell und auditiv gegen Б absichern.","pace":"normal"},"Г":{"confusions":["Ґ","Х"],"note":"Kein deutsches G; gegen Ґ und Х.","pace":"normal"},"Ґ":{"confusions":["Г","К"],"pace":"slow","note":"Ukrainisch-spezifisch; intensive Г/Ґ-Kontraste."},"Д":{"confusions":["Л","П"],"note":"Formerkennung und Worttransfer.","pace":"normal"},"Е":{"confusions":["Є","И"],"note":"Gegen Є und И.","pace":"normal"},"Є":{"confusions":["Е","Ї"],"pace":"slow","note":"Je-Zuordnung; gegen Е und Ї."},"Ж":{"confusions":["Ш","Щ"],"pace":"slow","note":"Stimmhaftes sch; gegen Ш/Щ."},"З":{"confusions":["С","Ц"],"note":"Stimmhaft /z/ gegen /s/ und Ц.","pace":"normal"},"И":{"confusions":["І","Ї","Е"],"pace":"slow","note":"Starker І/И-Kontrast, später Ї."},"І":{"confusions":["И","Ї","Й"],"note":"Klares I; gegen И, Ї und Й.","pace":"normal"},"Ї":{"confusions":["І","Й","Є"],"pace":"slow","note":"Zwei Punkte als Merkmal; gegen І/Й/Є."},"Й":{"confusions":["І","Ї"],"pace":"slow","note":"Kurzes J; gegen І/Ї."},"К":{"confusions":["Х","Н"],"pace":"fast","note":"Leicht; früh Speed und Worttransfer."},"Л":{"confusions":["Д","П"],"note":"Formerkennung gegen Д/П.","pace":"normal"},"М":{"confusions":["Н","И"],"pace":"fast","note":"Leicht; Basics schnell verlassen."},"Н":{"confusions":["П","И"],"latin":"H","note":"Wichtige deutsche H-Falle.","pace":"normal"},"О":{"confusions":["А","С"],"pace":"fast","note":"Leicht; früh Worttransfer und Position."},"П":{"confusions":["Н","Р","Б"],"note":"Gegen Н/Р/Б.","pace":"normal"},"Р":{"confusions":["П","В"],"latin":"P","note":"Sehr wichtige P-Falle; variable Р/П-Kontraste.","pace":"normal"},"С":{"confusions":["З","Ц"],"latin":"C","note":"Lateinische C-Falle; klingt S.","pace":"normal"},"Т":{"confusions":["П","Г"],"note":"Später typografische Varianten.","pace":"normal"},"У":{"confusions":["В","Ч"],"latin":"Y","note":"Lateinische Y-Falle.","pace":"normal"},"Ф":{"confusions":["О","Х"],"note":"Neue Form, vertrauter Laut.","pace":"normal"},"Х":{"confusions":["Г","К"],"latin":"X","note":"Lateinische X-Falle; /x/.","pace":"normal"},"Ц":{"confusions":["Ч","С"],"pace":"slow","note":"ts gegen tsch und s."},"Ч":{"confusions":["Ц","Ш"],"pace":"slow","note":"tsch gegen ts und sch."},"Ш":{"confusions":["Щ","Ж"],"pace":"slow","note":"Stark gegen Щ/Ж."},"Щ":{"confusions":["Ш","Ж","Ч"],"pace":"slow","note":"Sehr schwierig; variable Ш/Щ-Kontraste."},"Ь":{"confusions":["Й","І"],"pace":"slow","special":"soft-sign","note":"Kein eigener Laut; ausschließlich im Wort-/Funktionskontext."},"Ю":{"confusions":["Я","Є","У"],"note":"Gegen Я/Є/У.","pace":"normal"},"Я":{"confusions":["Ю","Є","Ї"],"note":"Gegen Ю/Є/Ї.","pace":"normal"}};
@@ -243,9 +243,12 @@ function freshStateV4(){const s=freshState();s.version=V4_VERSION;s.learningPlan
 function migrateV4(raw){const s=migrate(raw);s.version=V4_VERSION;s.repairs=s.repairs&&typeof s.repairs==='object'?s.repairs:{};s.learningPlan=s.learningPlan&&typeof s.learningPlan==='object'?{...freshLearningPlan(),...s.learningPlan}:freshLearningPlan();s.learningPlan.activeLetters=uniq((s.learningPlan.activeLetters||[]).filter(c=>ALPHABET.includes(c)));s.learningPlan.introducedLetters=uniq((s.learningPlan.introducedLetters||[]).filter(c=>ALPHABET.includes(c)));s.sessionSnapshots=Array.isArray(s.sessionSnapshots)?s.sessionSnapshots.slice(-30):[];ALPHABET.forEach(c=>ensureV4Letter(s.letters[c]));for(const c of ALPHABET)for(const k of CORE_SKILLS){const sk=s.letters[c].skills[k];const existing=Object.values(s.repairs).some(r=>r&&r.open&&r.originLetter===c&&r.originSkill===k);if(sk.repairPending&&!existing){const rid=`legacy-${c}-${k}`;s.repairs[rid]={repairId:rid,originAttemptId:'legacy',originLetter:c,originSkill:k,open:true,createdAt:Number(sk.lastWrongAt)||0,lastRepairAt:0,repairTarget:sk.repairTarget||''}}}recomputeLearningPlan(s,Date.now(),{force:true});return s}
 
 /* source: alphabet-core-v4-model-b.js */
-function weightedRecentAccuracy(skill,limit=10){const rows=(skill.recentResults||[]).filter(x=>x&&x.independent!==false).slice(-limit);if(!rows.length)return null;let yes=0,total=0;for(const r of rows){const w=Math.max(.2,Number(r.weight)||1);total+=w;if(r.good)yes+=w}return total?yes/total:null}
+// Rückwärts über die letzten Ergebnisse laufen statt filter()+slice(): identische
+// Semantik, aber ohne Zwischenarrays. Die Funktion ist laut CPU-Profil der
+// teuerste Einzelposten der Fragegenerierung.
+function weightedRecentAccuracy(skill,limit=10){const rows=skill.recentResults;if(!rows||!rows.length)return null;let yes=0,total=0,taken=0;for(let i=rows.length-1;i>=0&&taken<limit;i--){const r=rows[i];if(!r||r.independent===false)continue;taken++;const w=Math.max(.2,Number(r.weight)||1);total+=w;if(r.good)yes+=w}if(!taken)return null;return total?yes/total:null}
 function weightedIndependentAccuracy(skill){const den=Math.max(0,Number(skill.evidenceWeightSum)||0);return den?clamp((Number(skill.evidenceCorrectSum)||0)/den,0,1):independentAccuracy(skill)}
-function skillConfidence(state,c,skillName){const s=state.letters[c].skills[skillName],e=Math.max(0,Number(s.confidenceEvidence)||Number(s.evidenceWeightSum)||0),days=uniq(s.successDays||[]).length;return Math.round(clamp((e/8)*.75+(days/3)*.25,0,1)*100)}
+function skillConfidence(state,c,skillName){const s=state.letters[c].skills[skillName],e=Math.max(0,Number(s.confidenceEvidence)||Number(s.evidenceWeightSum)||0),days=s.successDays?new Set(s.successDays).size:0;return Math.round(clamp((e/8)*.75+(days/3)*.25,0,1)*100)}
 function skillMasteryV4(state,c,skillName,now=Date.now()){const s=state.letters[c].skills[skillName]||freshSkill(),n=s.independentAttempts;if(!n)return 0;const recent=weightedRecentAccuracy(s),life=weightedIndependentAccuracy(s),retention=retentionFactor(s,HARD.has(c));let score=((recent==null?life:recent)*.67+(life??0)*.18+retention*.15)*100;const evidence=clamp((Number(s.evidenceWeightSum)||n)/6,0,1);score*=.42+.58*evidence;if(skillName==='speedRecognition')score=(score*.7+speedFactor(s)*30);if(s.repairPending)score-=12;const freshWrong=(s.recentResults||[]).slice(-5).filter(x=>!x.good).length;score-=freshWrong*4;if(s.dueAt&&s.dueAt<now-14*DAY)score*=.9;return Math.round(clamp(score,0,100))}
 function coreSkillScoresV4(state,c,now=Date.now()){return Object.fromEntries(CORE_SKILLS.map(k=>[k,skillMasteryV4(state,c,k,now)]))}
 function letterMasteryV4(state,c,now=Date.now()){const scores=Object.values(coreSkillScoresV4(state,c,now)),avg=scores.reduce((a,b)=>a+b,0)/scores.length,min=Math.min(...scores);return Math.round(avg*.58+min*.42)}
@@ -270,7 +273,10 @@ function recomputeLearningPlan(state,now=Date.now(),opts={}){state.learningPlan=
 function activeLearningSet(state,now=Date.now()){return recomputeLearningPlan(state,now,{force:true}).activeLetters}
 function reviewSetFor(state,now=Date.now()){const active=new Set(activeLearningSet(state,now));return dueLetters(state,now).filter(c=>!active.has(c))}
 function difficultyFor(state,letter,skill,now=Date.now()){const mastery=skillMasteryV4(state,letter,skill,now),s=state.letters[letter].skills[skill],avg=avgSkillLatency(s);let d=mastery<15?0:mastery<35?1:mastery<55?2:mastery<75?3:mastery<90?4:5;if(s.independentAttempts<2)d=Math.min(d,1);if(avg&&avg>5000)d=Math.max(0,d-1);if(LETTER_PEDAGOGY[letter]?.pace==='slow'&&s.independentAttempts<5)d=Math.min(d,2);return d}
-function wordsForLetter(letter){return WORD_BANK.filter(w=>w.letter===letter)}
+const WORD_BANK_BY_LETTER=new Map();
+// WORD_BANK ist nach dem Laden statisch. Der Index wird einmal gebaut, weil
+// wordsForLetter pro erzeugter Frage mehrfach aufgerufen wird.
+function wordsForLetter(letter){if(!WORD_BANK_BY_LETTER.size)for(const w of WORD_BANK){if(!WORD_BANK_BY_LETTER.has(w.letter))WORD_BANK_BY_LETTER.set(w.letter,[]);WORD_BANK_BY_LETTER.get(w.letter).push(w)}return WORD_BANK_BY_LETTER.get(letter)||[]}
 function wordStat(state,letter,id){return state.letters[letter].exposure.wordStats[id]||{seen:0,correct:0,wrong:0,lastSeenAt:0}}
 function pickWord(state,letter,session,rng=Math.random,{multiple=false,audioOnly=false}={}){let pool=wordsForLetter(letter).filter(w=>!multiple||w.targetIndexes.length>1).filter(w=>!audioOnly||w.audioKey===letter);if(!pool.length)pool=wordsForLetter(letter);const used=new Set(session?.usedWordIds||[]);pool.sort((a,b)=>(used.has(a.id)-used.has(b.id))||(wordStat(state,letter,a.id).seen-wordStat(state,letter,b.id).seen)||(a.level-b.level));const best=pool.slice(0,Math.min(3,pool.length));return best[Math.floor(rng()*best.length)]||pool[0]}
 function promptForFamily(family,rng=Math.random){const a=FAMILY_PROMPTS[family]||['Wähle die richtige Antwort.'];const i=Math.floor(rng()*a.length);return {text:a[i],id:`${family}-${i+1}`}}
@@ -806,7 +812,19 @@ recomputeLearningPlan=function(state,now=Date.now(),opts={}){
   else if(added.length){plan.lastUnlockMainCount=mainCount;plan.lastIntroducedLetter=added[0]}
   plan.lastProductionRecomputedAt=now;return plan;
 };
-function wordUnknownCountV5(state,w,target){const introduced=new Set(state.learningPlan?.introducedLetters||[]),chars=uniq([...(w.knownLettersRequired||[...w.word.toLocaleUpperCase('uk')])].filter(ch=>ALPHABET.includes(ch)&&ch!==target));return chars.filter(ch=>!introduced.has(ch)).length}
+// Wird pro Kandidat über die gesamte Wordbank aufgerufen. knownLettersRequired ist
+// bereits dublettenfrei und alphabetgefiltert (siehe alphabet-core-v4-hardening.js),
+// deshalb ohne uniq/filter-Zwischenarrays und mit zwischengespeichertem Set der
+// eingeführten Buchstaben.
+const INTRODUCED_SET_CACHE=new WeakMap();
+function introducedSetV5(state){
+  const plan=state?.learningPlan;if(!plan)return new Set();
+  const letters=plan.introducedLetters||[];
+  let entry=INTRODUCED_SET_CACHE.get(plan);
+  if(!entry||entry.source!==letters||entry.size!==letters.length){entry={source:letters,size:letters.length,set:new Set(letters)};INTRODUCED_SET_CACHE.set(plan,entry)}
+  return entry.set;
+}
+function wordUnknownCountV5(state,w,target){const introduced=introducedSetV5(state),chars=w.knownLettersRequired||[...w.word.toLocaleUpperCase('uk')];let n=0;for(const ch of chars){if(ch===target||!ALPHABET.includes(ch))continue;if(!introduced.has(ch))n++}return n}
 function maxUnknownForDifficultyV5(d){return d<=0?0:d===1?1:d===2?3:99}
 const pickWordV5Base=pickWord;
 pickWord=function(state,letter,session,rng=Math.random,opts={}){
@@ -1085,6 +1103,391 @@ buildV4Task=function(state,letter,skill,difficulty,family,session,rng=Math.rando
   return task
 };
 
+/* source: alphabet-core-v62-question-integrity.js */
+'use strict';
+
+// Alphabet Lab V6.2 · Fragen-Integrität und Lösbarkeit
+//
+// Harte Invarianten, die dieses Modul herstellt und die
+// tests/validate-alphabet-lab-v62-solvability.mjs für jede erzeugte Frage prüft:
+//
+//  I1  Zielangabe: Jede Aufgabe, deren Antwort davon abhängt zu wissen, WELCHER
+//      Buchstabe gemeint ist, nennt diesen Buchstaben (oder – wo die Nennung die
+//      Lösung verraten würde – seinen Laut) im Promptext. Ein deutscher Anfänger
+//      wird nie nach „dem Zielzeichen“ gefragt, ohne zu erfahren, welches das ist.
+//  I2  Eindeutigkeit bei Buchstabenwahl über eine angezeigte Zeichenkette
+//      (word-plain, pseudoword): Genau eine angebotene Option kommt darin vor.
+//  I3  Kein Positionsleak: Kein Stimulus verrät die Lösung durch ihre Position
+//      (früher stand bei sound-contrast/visual-contrast das Ziel immer vorn).
+//  I4  Kein konstanter Erwartungswert: Keine Familie darf über alle Buchstaben
+//      hinweg fast immer dieselbe richtige Antwort haben (Auswendiglernen der App).
+//  I5  Optionslisten sind dublettenfrei, enthalten die richtige Antwort genau
+//      einmal und haben mindestens zwei Einträge.
+//
+// Die adaptive Architektur (Active Set, Mastery, Confidence, Repairs, SRS,
+// Production-Gating, Audio-Readiness) bleibt unverändert; dieses Modul greift
+// ausschließlich in die Aufgabenerzeugung ein.
+
+const V62_VERSION=62;
+
+const v62Lower=letter=>DATA[letter]?.lower||String(letter).toLocaleLowerCase('uk');
+const v62Cue=letter=>`${letter} ${v62Lower(letter)}`;
+const v62Sound=letter=>DATA[letter]?.sound||'';
+const v62Chars=word=>[...String(word||'').toLocaleLowerCase('uk')];
+
+// Ja/Nein- und Gleich/Verschieden-Entscheidungen dürfen nicht pro Kandidat neu
+// ausgewürfelt werden: Der Selektor bewertet mehrere Kandidaten pro Frageslot und
+// bevorzugt dabei den mit dem frischeren Wort. Da Negativwörter aus der gesamten
+// Wordbank stammen, wirkten sie immer „frischer“ – dadurch lag die Antwort
+// „Nein“ live bei 89 %. Ein stabiler Hash pro Frageslot entkoppelt die
+// Klassenwahl von der Kandidatenbewertung.
+function v62SlotHash(parts){let h=2166136261;for(const ch of String(parts))h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;return h>>>0}
+const v62SlotCoin=(session,letter,family)=>v62SlotHash(`${session?.sessionId||''}|${session?.mainIndex??0}|${letter}|${family}`)%2===0;
+const v62Contains=(word,letter)=>v62Chars(word).includes(v62Lower(letter));
+
+// I1 · Prompttexte, die das Ziel explizit benennen.
+const V62_TARGET_PROMPTS={
+  'visual-find':letter=>letter==='Ь'
+    ?'Gesucht ist das ukrainische Weichheitszeichen – es hat keinen eigenen Laut und macht den Konsonanten davor weich. Welches Zeichen im Feld ist es?'
+    :`Ziellaut: ${v62Sound(letter)}. Welches Zeichen im Feld gehört zu diesem Laut?`,
+  'multi-select':letter=>`Tippe jedes ${v62Cue(letter)} an – und nur dieses Zeichen.`,
+  'count-target':letter=>`Wie oft kommt ${v62Cue(letter)} in diesem Wort vor?`,
+  'word-position':letter=>`Wo steht ${v62Cue(letter)} in diesem Wort?`,
+  'word-contains':letter=>`Enthält dieses Wort den Buchstaben ${v62Cue(letter)}?`,
+  'word-choice':letter=>`Welches dieser Wörter enthält ${v62Cue(letter)}?`,
+  'tap-target':letter=>`Tippe ${v62Cue(letter)} im Wort an.`,
+  'multi-occurrence':letter=>`Tippe jedes ${v62Cue(letter)} im Wort an.`,
+  'missing-letter':letter=>letter==='Ь'
+    ?'In diesem Wort fehlt das Zeichen, das den Konsonanten davor weich macht. Welches ist es?'
+    :`Welcher Buchstabe fehlt? Ziellaut: ${v62Sound(letter)}.`,
+  'confusion-word-choice':letter=>`Welches dieser Wörter enthält ${v62Cue(letter)}?`
+};
+
+// Familien, die ohne explizite Zielnennung objektiv unlösbar wären.
+const V62_TARGET_REQUIRED=new Set(Object.keys(V62_TARGET_PROMPTS));
+// Familien, bei denen der Zielbuchstabe bewusst NICHT genannt wird, weil er die
+// Lösung wäre. Dort sichert I2 die Eindeutigkeit.
+const V62_UNIQUE_IN_DISPLAY=new Set(['word-plain','pseudoword']);
+// Familien, die dauerhaft aus der Auswahl genommen sind (Begründung unten).
+const V62_RETIRED=new Set(['odd-one-out','audio-word-position']);
+
+// Ersatz für die stillgelegten Familien, damit Varianz erhalten bleibt.
+QUESTION_FAMILIES['confusion-word-choice']={skill:'confusionDiscrimination',min:1,max:5,weight:.9,usesWord:true,production:1};
+QUESTION_FAMILIES['audio-word-match']={skill:'audioToLetter',min:2,max:5,weight:1,usesAudio:true,usesWord:true,production:1};
+FAMILY_PROMPTS['confusion-word-choice']=['Welches dieser Wörter enthält den Zielbuchstaben?'];
+FAMILY_PROMPTS['audio-word-match']=['Höre die menschliche Originalaufnahme. Welches geschriebene Wort hast du gehört?'];
+
+// Die Wordbank ist nach dem Laden statisch. Sie wuchs in V6.2 von 198 auf 328
+// Einträge und wird pro Aufgabe mehrfach gefiltert; ein einmaliger Index hält die
+// Fragegenerierung schneller als vor der Erweiterung.
+const v62WordsFor=letter=>wordsForLetter(letter);
+
+function v62AudioWord(letter){
+  return v62WordsFor(letter).find(w=>w.audioKey===letter)||v62WordsFor(letter)[0]||null;
+}
+
+// I5 · Optionsliste säubern: dublettenfrei, richtige Antwort genau einmal,
+// bei Bedarf mit passenden Füllern auf die Zielgröße gebracht.
+// Zufallsauswahl ohne vollständiges Mischen: Die Distraktorpools umfassen fast
+// die ganze Wordbank; ein shuffle() über 300 Einträge pro Kandidat ist der
+// teuerste Einzelposten der Fragegenerierung.
+function v62Sample(list,count,rng=Math.random){
+  if(!Array.isArray(list)||!list.length)return [];
+  if(list.length<=count)return shuffle(list.slice(),rng);
+  const out=[],used=new Set();
+  for(let guard=0;out.length<count&&guard<count*12;guard++){
+    const index=Math.floor(rng()*list.length);
+    if(used.has(index))continue;
+    used.add(index);out.push(list[index]);
+  }
+  return out;
+}
+
+function v62CleanOptions(task,rng=Math.random,{size=0,fill=null}={}){
+  if(!task||!Array.isArray(task.options)||!task.options.length)return task;
+  const correct=task.correct;
+  const out=[],seen=new Set();
+  const push=value=>{const key=String(value);if(value===undefined||value===null||key===''||seen.has(key))return;seen.add(key);out.push(value)};
+  if(correct!=='MULTI'&&correct!=='SELF')push(correct);
+  for(const option of task.options)push(option);
+  const target=size||out.length;
+  if(out.length<target&&typeof fill==='function'){
+    for(const candidate of fill()){if(out.length>=target)break;push(candidate)}
+  }
+  task.options=shuffle(out.slice(0,Math.max(target,2)),rng);
+  return task;
+}
+
+// I2 · Bei „welcher angebotene Buchstabe steckt in dieser Zeichenkette?“ darf genau
+// eine Option tatsächlich vorkommen. Vorher waren bis zu 38 % dieser Aufgaben
+// mehrdeutig (mehrere Optionen kamen im Wort/Pseudowort vor).
+function v62EnforceUniqueLetterInDisplay(task,rng=Math.random){
+  const correct=task.correct;
+  if(!ALPHABET.includes(correct))return task;
+  const haystack=v62Chars(task.display);
+  const keep=[correct],seen=new Set([correct]);
+  for(const option of task.options||[]){
+    if(seen.has(option)||!ALPHABET.includes(option))continue;
+    if(haystack.includes(v62Lower(option)))continue;
+    seen.add(option);keep.push(option);
+  }
+  task.options=keep;
+  return v62CleanOptions(task,rng,{size:4,fill:()=>shuffle(ALPHABET.filter(c=>!seen.has(c)&&!haystack.includes(v62Lower(c))),rng)});
+}
+
+// Wortwahl für Positionsaufgaben über alle vorhandenen Positionsklassen streuen.
+// Vorher stand der Zielbuchstabe in 56 % der Fälle am Wortanfang.
+function v62PickPositionDiverseWord(state,letter,session,rng,difficulty){
+  const pool=v62EligibleWords(state,letter,difficulty);
+  if(pool.length<2)return pickWord(state,letter,session,rng,{difficulty});
+  const byPosition=new Map();
+  for(const word of pool){
+    if(!byPosition.has(word.position))byPosition.set(word.position,[]);
+    byPosition.get(word.position).push(word);
+  }
+  const classes=shuffle([...byPosition.keys()],rng);
+  const used=new Set(session?.usedWordIds||[]);
+  for(const positionClass of classes){
+    const rows=byPosition.get(positionClass),fresh=rows.filter(w=>!used.has(w.id));
+    const pick=v62Sample(fresh.length?fresh:rows,1,rng)[0];
+    if(pick)return pick;
+  }
+  return pickWord(state,letter,session,rng,{difficulty});
+}
+
+// Negativbeispiel für „enthält das Wort X?“ kommt aus pickNegativeWordV5, das den
+// Unbekannt-Filter bereits kennt. Die frühere Schieflage („Nein“ war live in 81 %
+// richtig) lag nicht am Pool, sondern daran, dass der Neuheitsscore Kandidaten mit
+// noch ungenutzter wordId bevorzugte; deshalb trägt word-contains keine wordId mehr.
+function v62NegativeWord(state,letter,session,rng,difficulty){
+  if(typeof pickNegativeWordV5==='function'){
+    const picked=pickNegativeWordV5(state,letter,session,rng,Number(difficulty)||2);
+    if(picked)return picked;
+  }
+  const pool=WORD_BANK.filter(w=>w.letter!==letter&&!v62Contains(w.word,letter));
+  return v62Sample(pool,1,rng)[0]||null;
+}
+
+// Anfängertauglichkeit der Wortauswahl liegt bewusst weiterhin bei
+// alphabet-core-v5-progression.js: pickWord dort begrenzt die Zahl noch
+// unbekannter Buchstaben abhängig von der Schwierigkeit. V6.2 baut darauf auf und
+// darf diesen Filter nie lockern – jede eigene Wortwahl läuft deshalb durch
+// v62EligibleWords().
+function v62UnknownCap(difficulty){
+  return typeof maxUnknownForDifficultyV5==='function'?maxUnknownForDifficultyV5(Number(difficulty)||0):99;
+}
+const V62_ELIGIBLE_CACHE=new Map();
+function v62EligibleWords(state,letter,difficulty,rows){
+  const pool=rows||wordsForLetter(letter);
+  if(typeof wordUnknownCountV5!=='function')return pool;
+  const cap=v62UnknownCap(difficulty);
+  if(cap>=99)return pool;
+  // Der Filter läuft pro Kandidat über bis zu 328 Wörter; das Ergebnis hängt nur
+  // von Buchstabe, Kappe und dem Stand der eingeführten Buchstaben ab.
+  const introduced=(state?.learningPlan?.introducedLetters||[]).join('');
+  const key=`${rows?'bank':'letter'}|${letter}|${cap}|${introduced}`;
+  const cached=V62_ELIGIBLE_CACHE.get(key);
+  if(cached)return cached;
+  const allowed=pool.filter(w=>wordUnknownCountV5(state,w,letter)<=cap);
+  const result=allowed.length?allowed:pool;
+  if(V62_ELIGIBLE_CACHE.size>600)V62_ELIGIBLE_CACHE.clear();
+  V62_ELIGIBLE_CACHE.set(key,result);
+  return result;
+}
+
+// odd-one-out war zu 94 % mit „А“ zu lösen, weil der Außenseiter deterministisch
+// der erste Alphabetbuchstabe außerhalb der Verwechslungsgruppe war; zudem konnte
+// ein Anfänger die Gruppenzugehörigkeit nicht aus dem Bildschirm ableiten.
+// audio-word-position hatte pro Buchstabe genau ein Audiowort und damit eine
+// feste richtige Antwort („1“ in 100 % der real gezogenen Aufgaben).
+// Beide sind ersetzt statt repariert, weil ihre Aufgabenform keine variierende,
+// objektiv belegbare Lösung zulässt.
+const familyAllowedForV62Base=familyAllowedFor;
+familyAllowedFor=function(letter,family){
+  if(V62_RETIRED.has(family))return false;
+  // Beide Prüfungen bleiben bewusst billig: familyAllowedFor läuft pro Kandidat.
+  if(family==='confusion-word-choice')return letter!=='Ь'&&!!LETTER_PEDAGOGY[letter]?.confusions?.length;
+  if(family==='audio-word-match')return wordsForLetter(letter).length>0;
+  return familyAllowedForV62Base(letter,family);
+};
+
+function v62ConfusionPartner(state,letter){
+  const personal=state&&state.letters?personalConfusions(state,letter)||[]:[];
+  const candidates=uniq([...personal,...(LETTER_PEDAGOGY[letter]?.confusions||[]),...(SOUND_GROUPS[letter]||[])]).filter(c=>ALPHABET.includes(c)&&c!==letter);
+  return candidates[0]||null;
+}
+
+const familyCandidatesV62Base=familyCandidates;
+familyCandidates=function(state,letter,skill,difficulty,session){
+  let families=familyCandidatesV62Base(state,letter,skill,difficulty,session).filter(f=>!V62_RETIRED.has(f));
+  if(skill==='audioToLetter'){
+    families=uniq([...families,'audio-to-letter','audio-word-match']).filter(f=>familyAllowedFor(letter,f));
+  }
+  if(skill==='confusionDiscrimination'&&letter!=='Ь'&&familyAllowedFor(letter,'confusion-word-choice')){
+    families=uniq([...families,'confusion-word-choice']);
+  }
+  return families.length?families:['visual-to-sound'];
+};
+
+// Ь bleibt ohne erfundenen Eigenlaut: audioToLetter läuft ausschließlich über den
+// Wortkontext (menschliche Originalaufnahme von „кінь“).
+const SOFT_SIGN_V62_FAMILIES=['audio-to-letter','audio-word-match','confusion-word-choice'];
+for(const family of SOFT_SIGN_V62_FAMILIES)if(!SOFT_FOCUSED.includes(family))SOFT_FOCUSED.push(family);
+for(const retired of V62_RETIRED){
+  const index=SOFT_FOCUSED.indexOf(retired);
+  if(index>=0)SOFT_FOCUSED.splice(index,1);
+}
+
+function v62BuildConfusionWordChoice(state,letter,session,rng,task,difficulty){
+  const partner=v62ConfusionPartner(state,letter);
+  const good=pickWord(state,letter,session,rng,{difficulty});
+  if(!good||!partner)return null;
+  const partnerWords=v62EligibleWords(state,partner,difficulty).filter(w=>w.word!==good.word&&!v62Contains(w.word,letter));
+  const picked=v62Sample(partnerWords,3,rng);
+  if(picked.length<3){
+    const neutral=v62EligibleWords(state,letter,difficulty,WORD_BANK).filter(w=>w.word!==good.word&&!v62Contains(w.word,letter));
+    picked.push(...v62Sample(neutral,3-picked.length,rng));
+  }
+  const distractors=uniq(picked.map(w=>w.word)).filter(w=>w!==good.word).slice(0,3);
+  if(distractors.length<2)return null;
+  task.type='choice';
+  task.wordId=good.id;
+  task.display='';
+  task.icon='';
+  task.correct=good.word;
+  task.options=[good.word,...distractors];
+  task.confusionTarget=partner;
+  task.stimulusId=`confusion-word-${good.id}-${partner}`;
+  task.prompt=`Welches dieser Wörter enthält ${v62Cue(letter)}? Die anderen enthalten ${v62Cue(partner)} oder keines von beiden.`;
+  return v62CleanOptions(task,rng,{size:Math.min(4,1+distractors.length)});
+}
+
+function v62BuildAudioWordMatch(state,letter,session,rng,task,difficulty){
+  const target=v62AudioWord(letter);
+  if(!target)return null;
+  const pool=v62EligibleWords(state,letter,difficulty,WORD_BANK);
+  const distractors=uniq(v62Sample(pool,6,rng).map(w=>w.word)).filter(w=>w!==target.word).slice(0,3);
+  if(distractors.length<2)return null;
+  task.type='audio';
+  // Bewusst ohne wordId: taskBody blendet bei Audiofragen mit wordId das Wort als
+  // Text ein – bei „welches Wort hast du gehört?“ wäre das die Lösung.
+  task.wordId='';
+  task.display='';
+  task.correct=target.word;
+  task.options=[target.word,...distractors];
+  task.audioWord=target.word;
+  task.audioKind='word-context';
+  task.requiresHumanAudio=true;
+  task.humanAudioRequired=true;
+  task.requiresHumanLetterAudio=false;
+  task.letterAudioAvailable=false;
+  task.audioStimulusId=`human-word-${letter}`;
+  task.stimulusId=`audio-word-match-${target.id}`;
+  task.prompt=`Höre die menschliche Originalaufnahme. Welches geschriebene Wort hast du gehört? Achte besonders auf ${v62Cue(letter)}.`;
+  delete task.audioIndex;
+  return v62CleanOptions(task,rng,{size:Math.min(4,1+distractors.length)});
+}
+
+const buildV4TaskV62Base=buildV4Task;
+buildV4Task=function(state,letter,skill,difficulty,family,session,rng=Math.random,meta={}){
+  const task=buildV4TaskV62Base(state,letter,skill,difficulty,family,session,rng,meta);
+  if(!task)return task;
+  const target=task.letter||letter,resolved=task.family||family;
+
+  if(resolved==='confusion-word-choice'){
+    const built=v62BuildConfusionWordChoice(state,target,session,rng,task,difficulty);
+    if(built)return built;
+    return buildV4TaskV62Base(state,target,'confusionDiscrimination',difficulty,'visual-contrast',session,rng,meta);
+  }
+  if(resolved==='audio-word-match'){
+    const built=v62BuildAudioWordMatch(state,target,session,rng,task,difficulty);
+    if(built)return built;
+    return buildV4TaskV62Base(state,target,'audioToLetter',difficulty,'audio-to-letter',session,rng,meta);
+  }
+
+  // I1 · Ziel explizit benennen.
+  if(V62_TARGET_REQUIRED.has(resolved)){
+    task.targetLetter=target;
+    task.targetCue=v62Cue(target);
+    task.prompt=V62_TARGET_PROMPTS[resolved](target);
+  }
+
+  // Wortauswahl und Antwortverteilung je Familie korrigieren.
+  if(resolved==='word-position'){
+    const word=v62PickPositionDiverseWord(state,target,session,rng,difficulty);
+    if(word){
+    task.wordId=word.id;task.display=word.word;task.icon=word.icon;task.stimulusId=word.id;
+    task.correct=targetPosition(word);
+    task.options=shuffle(['Anfang','Mitte','Ende','Mehrfach'],rng);
+    }
+  }
+  if(resolved==='word-contains'){
+    const wantsYes=v62SlotCoin(session,target,'word-contains');
+    const word=(wantsYes?pickWord(state,target,session,rng,{difficulty}):v62NegativeWord(state,target,session,rng,difficulty))||pickWord(state,target,session,rng,{difficulty});
+    if(word){
+    // Bewusst ohne wordId: noveltyScore/registerSelectedTask würden sonst die
+    // Nein-Variante bevorzugen, weil deren Wort nicht von den übrigen
+    // Wortfamilien desselben Buchstabens „verbraucht“ wird.
+    task.wordId='';task.display=word.word;task.icon='';task.stimulusId=`contains-${word.id}`;
+    task.correct=v62Contains(word.word,target)?'Ja':'Nein';
+    task.options=['Ja','Nein'];
+    }
+  }
+  if(resolved==='word-choice'){
+    const good=pickWord(state,target,session,rng,{difficulty});
+    if(good){
+      const pool=v62EligibleWords(state,target,difficulty,WORD_BANK).filter(w=>w.word!==good.word&&!v62Contains(w.word,target));
+      const distractors=uniq(v62Sample(pool,6,rng).map(w=>w.word)).slice(0,3);
+      task.wordId=good.id;task.correct=good.word;task.stimulusId=good.id;
+      task.options=[good.word,...distractors];
+    }
+  }
+  if(resolved==='count-target'){
+    const word=pickWord(state,target,session,rng,{difficulty,multiple:true})||pickWord(state,target,session,rng,{difficulty});
+    if(word){
+    const count=word.targetIndexes.length;
+    task.wordId=word.id;task.display=word.word;task.icon=word.icon;task.stimulusId=word.id;
+    task.correct=String(count);
+    task.options=[String(count),...['1','2','3','0','4'].filter(x=>x!==String(count))].slice(0,4);
+    }
+  }
+  if(resolved==='same-different'){
+    // Vorher 55 % „Gleich“; die Verteilung wird jetzt fair ausgelost.
+    const same=v62SlotCoin(session,target,'same-different'),partner=task.confusionTarget||v62ConfusionPartner(state,target)||ALPHABET.find(c=>c!==target);
+    const other=same?target:partner;
+    const fonts=relevantFonts(difficulty);
+    const first=fonts[Math.floor(rng()*fonts.length)],second=fonts[Math.floor(rng()*fonts.length)];
+    task.displayParts=[{text:target,fontId:first.id,style:first.style},{text:v62Lower(other),fontId:second.id,style:second.style}];
+    task.display=`${target}|${v62Lower(other)}`;
+    task.fontId=`${first.id}-${second.id}`;
+    task.correct=same?'Gleich':'Verschieden';
+    task.options=['Gleich','Verschieden'];
+    task.stimulusId=`${same?'same':'diff'}-${other}`;
+  }
+
+  if(resolved==='visual-contrast'){
+    // Der Prompt nennt das Ziel bereits; die zusätzliche Paaranzeige verriet die
+    // Lösung durch ihre Reihenfolge.
+    task.display='';
+  }
+
+  // I2 · Eindeutigkeit bei Buchstabenwahl über eine angezeigte Zeichenkette.
+  if(V62_UNIQUE_IN_DISPLAY.has(resolved))v62EnforceUniqueLetterInDisplay(task,rng);
+
+  // I5 · Generelle Optionshygiene für alle Auswahlaufgaben.
+  if(Array.isArray(task.options)&&task.options.length&&task.correct!=='MULTI'&&task.correct!=='SELF'){
+    v62CleanOptions(task,rng);
+  }
+
+  // I3 · Positionsleak beseitigen: Die Paaranzeige folgt exakt der bereits
+  // gemischten Optionsreihenfolge, statt das Ziel immer vorn zu zeigen.
+  if(resolved==='sound-contrast'){
+    const pair=(task.options||[]).filter(c=>ALPHABET.includes(c));
+    task.display=pair.length>=2?pair.join(' · '):'';
+  }
+  return task;
+};
+
 /* source: alphabet-core-v4-export.js */
 'use strict';
 const familyCandidatesRunBase=familyCandidates;
@@ -1110,7 +1513,7 @@ globalThis.AlphabetCoreV2=Object.freeze({
   skillMastery:exportSkillMastery,skillConfidence:exportSkillConfidence,productionMastery:v5Available?productionMastery:()=>0,productionConfidence:v5Available?productionConfidence:()=>0,productionStage:v5Available?productionStage:()=> 'locked',productionStatusLabel:v5Available?productionStatusLabel:()=> 'noch nicht sinnvoll',coreSkillScores:coreSkillScoresV4,retentionDaysForLetter,letterMastery:letterMasteryV4,
   letterReady:letterReadyV4,letterStatus:letterStatusV4,learningState,problemFlag,writtenProductionReady:v5Available?writtenProductionReady:()=>false,audioWrittenProductionReady:v5Available?audioWrittenProductionReady:()=>false,productionNeed:v5Available?productionNeed:()=>-999,productionDifficulty:v5Available?productionDifficulty:()=>0,productionFamiliesFor:v5Available?productionFamiliesFor:()=>[],productionGate:v5Available?productionGate:()=>({done:false}),productionCoverageSummary:v6Available?productionCoverageSummaryV6:()=>({byFamily:{},totalLetters:0}),readyProductionLetters:v6Available?readyProductionLettersV6:()=>[],readyProductionLettersUncached:v6Available?readyProductionLettersUncachedV6:()=>[],syncRepairAggregates:v6Available?syncRepairAggregates:()=>null,validateStateInvariants:v6Available?validateStateInvariants:()=>({ok:true,errors:[]}),normalizeExamHistoryNewest:v6Available?normalizeExamHistoryNewest:(rows=>rows||[]),
   recordAnswer:v6Available?recordAnswerV6:recordAnswerV4,recordWriting,recordProductionSelfCheck:v6Available?recordProductionSelfCheckV6:v5Available?recordProductionSelfCheck:()=>null,topConfusions,errorPriority,weakLetters,errorLetters,dueSkillPairs,dueLetters,secureLetters:secureLettersV4,
-  calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor:exportDifficulty,wordsForLetter,pickWord,pickNegativeWordV5:v5Available?pickNegativeWordV5:()=>null,familyCandidates,
+  calculateLearningNeed,shouldUnlockNextLetter,recomputeLearningPlan,activeLearningSet,reviewSetFor,difficultyFor:exportDifficulty,wordsForLetter,pickWord,pickNegativeWordV5:v5Available?pickNegativeWordV5:()=>null,familyCandidates,familyAllowedFor,
   buildDistractors,makeTask,variantizeTask,buildExam,buildV4Task,questionSignature,noveltyScore,noteExposure,detectLatinTrap,productionTask:v5Available?productionTask:()=>null,selectProductionTask:v5Available?selectProductionTask:()=>null,productionQuotaForSession:v5Available?productionQuotaForSession:()=>0,shouldInsertProduction:v5Available?shouldInsertProduction:()=>false,initProductionSession:v5Available?initProductionSession:s=>s,createProductionTestSession:v5Available?createProductionTestSession:()=>null,productionTestAvailability:v5Available?productionTestAvailability:()=>({ready:0}),productionSummary:v5Available?productionSummary:()=>({total:0,pass:0,unsure:0,again:0,repairTotal:0,repairPass:0}),
   selectNextMainQuestion,selectLetterV4,selectSkillV4,selectFamilyV4,overexposurePenalty,createAdaptiveSession,createFocusedSession,createBattleSession,createMacroSession:completionCreateMacro,macroPhase:completionMacroPhase,isolatedHumanAudioSupported:completionAudioSupported,sessionQualityMetrics,sessionDelta,
   repairTask:repairTaskV4,registerRepair,openRepairIds,syncRepairPending,scheduleRepairForSession:scheduleRepairForSessionV4,productionRepairTask:v5Available?productionRepairTask:()=>null,scheduleProductionRepairForSession:v5Available?scheduleProductionRepairForSession:()=>null,dueRepairForSession,applyMainAnswer,applyRepairAnswer,sessionScore,

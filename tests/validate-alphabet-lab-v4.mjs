@@ -19,9 +19,9 @@ assert(C&&C.SCHEMA_VERSION===4&&C.VERSION===3,'V4 schema with V3 compatibility e
 assert.deepEqual([...C.ALPHABET],EXPECTED);assert.equal(new Set(C.ALPHABET).size,33);for(const c of ['ы','э','ё','ъ','Ы','Э','Ё','Ъ'])assert(!C.ALPHABET.includes(c));
 
 // Wordbank: six validated contexts for every Ukrainian letter, no Russian-only signs.
-assert.equal(C.WORD_BANK.length,198);assert.equal(new Set(C.WORD_BANK.map(w=>w.id)).size,198);
+assert(C.WORD_BANK.length>=198,`wordbank must not shrink, got ${C.WORD_BANK.length}`);assert.equal(new Set(C.WORD_BANK.map(w=>w.id)).size,C.WORD_BANK.length,'word ids must stay unique');for(const c of C.ALPHABET)assert(C.WORD_BANK.filter(w=>w.letter===c).length>=8,`${c} braucht mindestens 8 echte Wortkontexte`);
 for(const c of C.ALPHABET){
-  const words=C.WORD_BANK.filter(w=>w.letter===c);assert.equal(words.length,6,`${c}: exactly six contexts`);assert(C.LETTER_PEDAGOGY[c],`${c}: pedagogy missing`);
+  const words=C.WORD_BANK.filter(w=>w.letter===c);assert(words.length>=8,`${c}: mindestens acht echte Wortkontexte, hat ${words.length}`);assert.equal(new Set(words.map(w=>w.word)).size,words.length,`${c}: Wortkontexte müssen verschieden sein`);assert(C.LETTER_PEDAGOGY[c],`${c}: pedagogy missing`);
   for(const w of words){
     const chars=[...w.word.toLocaleLowerCase('uk')],target=C.DATA[c].lower;
     const actual=chars.map((x,i)=>x===target?i:-1).filter(i=>i>=0);

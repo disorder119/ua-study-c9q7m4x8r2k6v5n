@@ -15,6 +15,47 @@ Der Hauptweg bleibt prüfungsbasiert:
 
 30 Hauptfragen bleiben 30 unabhängige Hauptfragen. Repairs laufen getrennt, verändern den Hauptscore nicht und zählen nicht wie ein späterer unabhängiger Recall. Recognition-Skills und `writtenProduction` bleiben getrennte Evidenzspuren. `Ь` besitzt keinen erfundenen isolierten Eigenlaut. Human-Audio-Zertifizierung und Audio→Writing verwenden nur menschliche Referenzaufnahmen.
 
+## V6.2 · Fragen-Integrität, Wortschatz und Home-Screen-App
+
+V6.2 beantwortet für jede erzeugte Aufgabe eine einzige Frage: **Kann ein deutscher
+Anfänger sie aus dem, was er tatsächlich sieht oder hört, eindeutig beantworten?**
+`alphabet-core-v62-question-integrity.js` stellt dafür fünf Invarianten her, die
+`tests/validate-alphabet-lab-v62-solvability.mjs` für jede Frage prüft:
+
+- **I1 Zielangabe** – Jede Aufgabe, deren Antwort davon abhängt zu wissen, *welcher*
+  Buchstabe gemeint ist, nennt ihn im Prompt. Wo die Nennung die Lösung wäre, wird
+  über den Ziellaut bzw. die Funktion des Zeichens identifiziert.
+- **I2 Eindeutigkeit** – Buchstabenwahl über eine angezeigte Zeichenkette hat genau
+  eine passende Option; Wort-, Zähl- und Positionsaufgaben stimmen mit dem
+  angezeigten Wort überein.
+- **I3 Kein Positionsleak** – Kein Stimulus verrät die Lösung durch seine Position,
+  und keine Audiofrage schreibt ihre eigene Lösung als Text daneben.
+- **I4 Kein konstanter Erwartungswert** – Keine kategoriale Familie darf über alle
+  Buchstaben hinweg überwiegend dieselbe richtige Antwort haben.
+- **I5 Optionshygiene** – dublettenfrei, richtige Antwort genau einmal, mindestens
+  zwei Optionen.
+
+Zwei Familien sind dauerhaft stillgelegt, weil ihre Aufgabenform keine variierende,
+objektiv belegbare Lösung zulässt: `odd-one-out` (die Gruppenzugehörigkeit war für
+den Lernenden nicht ableitbar) und `audio-word-position` (pro Buchstabe existiert nur
+ein Audiowort, die Antwort war damit konstant). Ersetzt werden sie durch
+`confusion-word-choice` (Zielbuchstabe gegen seinen Verwechslungspartner im echten
+Wort) und `audio-word-match` (menschliche Wortaufnahme → geschriebenes Wort).
+
+Die Wordbank umfasst 328 echte ukrainische Wörter, mindestens acht pro Buchstaben,
+mit Positionsvielfalt (Anfang, Mitte, Ende, mehrfach), soweit die Sprache sie
+hergibt – `ц` steht praktisch nie am Wortende, `ь` und `ґ` nie am Wortanfang.
+Wortauswahl und Beispielkarten bevorzugen Wörter, die überwiegend aus bereits
+eingeführten Buchstaben bestehen.
+
+Für den iPhone-Home-Screen liefert `alphabet-app-v62-pwa.js` Standalone-Erkennung und
+einen Update-Hinweis: Eine installierte PWA wird nie geschlossen, lief aber bisher
+unbemerkt mit altem HTML gegen einen neueren Service Worker. Es wird nie automatisch
+neu geladen – ein Reload mitten in einer Prüfung wäre schlimmer als eine Version
+Verzögerung. Die Home-Screen-Icons sind deckend: iOS komponiert transparente Ecken
+auf Schwarz, weshalb `ukrainisch-icon-apple-180.png` (180 × 180, randlos) und ein
+eigenes Android-Maskable-Icon ausgeliefert werden.
+
 ## V6.1-State und Persistenz
 
 Aktueller State: **Schema 6**. Kanonischer Browser-Key ist ausschließlich:
@@ -104,7 +145,16 @@ Playwright ist über `package-lock.json` reproduzierbar gepinnt. CI verwendet `n
 
 Die Budgets stehen in `tests/performance-budget.json`. Gemessen werden u. a. Bundle-Größe, initiale JS-Requests, App-ready/Interactive, Renderpfade, Question Generation, Production Readiness/Quota, State-Serialisierung, LocalStorage-Schreibzeit und Long Tasks.
 
-Ein grüner Validator beweist die getesteten technischen und fachlichen Invarianten, nicht automatisch empirische Lernwirkung.
+V6.2 ergänzt `tests/validate-alphabet-lab-v62-solvability.mjs` (Lösbarkeit jeder
+Frage, erzwungen über alle Familien und live über den produktiven Selektor) und
+`tests/alphabet-lab-v62-pwa-mobile.spec.mjs` (Manifest, Apple-Metadaten,
+Icon-Deckkraft, Standalone-Erkennung, Update-Hinweis, Safe Areas, Touchflächen und
+horizontales Scrollen auf 320/375/430 px).
+
+Der Node-Performance-Benchmark lädt seit V6.2 denselben Core-Stack, der auch
+ausgeliefert wird; vorher maß er eine Teilmenge ohne die Fragen-Integritätsschicht.
+
+Ein grüner Validator beweist die getesteten technischen und fachlichen Invarianten, nicht automatisch empirische Lernwirkung. Ein physischer iPhone-Test ist damit ausdrücklich nicht ersetzt.
 
 ## Debugmodus
 

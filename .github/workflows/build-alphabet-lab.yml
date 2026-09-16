@@ -10,6 +10,7 @@ on:
       - 'alphabet-lab.template.html'
       - 'alphabet-lab-sw.template.js'
       - 'alphabet-lab.webmanifest'
+      - 'ukrainisch-icon-*.png'
       - 'ukrainischkurs-native-audio.js'
       - 'scripts/build-alphabet-lab.mjs'
       - '.github/workflows/build-alphabet-lab.yml'
