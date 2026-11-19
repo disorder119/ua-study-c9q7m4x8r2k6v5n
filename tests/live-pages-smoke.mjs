@@ -15,7 +15,7 @@ for(let i=0;i<36;i++){
   await sleep(10000);
 }
 if(!published)throw new Error(`Expected Pages build not published: ${expected.buildId}`);
-for(const file of ['alphabet-lab.html','alphabet-core.bundle.js','alphabet-app.bundle.js','alphabet-lab.webmanifest']){
+for(const file of ['alphabet-lab.html','alphabet-path-data.js','alphabet-core.bundle.js','alphabet-app.bundle.js','alphabet-lab.webmanifest']){
   const r=await get(`${file}?v=${expected.buildId}`);if(!r.ok)throw new Error(`${file} HTTP ${r.status}`);const type=r.headers.get('content-type')||'';if(file.endsWith('.js')&&/html/i.test(type))throw new Error(`${file} served as HTML`)
 }
 const manifestResponse=await get(`alphabet-lab.webmanifest?v=${expected.buildId}&probe=${Date.now()}`);
@@ -64,6 +64,20 @@ const maskable=await page.evaluate(async src=>{
 },pwa.manifest);
 if(maskable<1)throw new Error('manifest must ship a maskable icon for the Android home screen');
 if(!pwa.manifest.includes('alphabet-lab.webmanifest')||!pwa.manifest.includes(expected.buildId))throw new Error(`versioned manifest link missing: ${pwa.manifest}`);
-if(!(await page.getByRole('button',{name:'MEIN TRAINING STARTEN'}).isVisible()))throw new Error('start button not visible');
+// V7: Der Lernpfad ist der Haupteinstieg; das adaptive Training liegt darunter.
+if(!(await page.locator('#pathStart').isVisible()))throw new Error('learning path start button not visible');
+if((await page.locator('[data-path-lesson]').count())!==8)throw new Error('learning path must list eight lessons');
+await page.locator('#advancedHome > summary').click();
+if(!(await page.getByRole('button',{name:'MEIN TRAINING STARTEN'}).isVisible()))throw new Error('adaptive training not reachable under „Vertiefen & Prüfen“');
 if(errors.length)throw new Error(errors.join('\n'));
+// Die erste Lektion beginnt mit einer Lernkarte, nicht mit einer Frage. Ab hier
+// zählen nur noch Skriptfehler: Die Lernkarte spielt eine externe menschliche
+// Aufnahme ab, deren Erreichbarkeit nicht Sache dieses Deployments ist.
+await page.locator('#pathStart').click();
+await page.locator('[data-path-step="teach"]').waitFor({state:'visible',timeout:5000});
+if(!(await page.locator('#pathNext').isVisible()))throw new Error('lesson 1 must start with a teaching card');
+await page.locator('#pathNext').click();
+await page.locator('[data-path-step]').first().waitFor({state:'visible',timeout:5000});
+const scriptErrors=errors.filter(entry=>entry.startsWith('pageerror'));
+if(scriptErrors.length)throw new Error(scriptErrors.join('\n'));
 await browser.close();console.log(`Live Pages smoke OK · build ${expected.buildId} · ${expected.appVersion} · iPhone standalone metadata OK`);

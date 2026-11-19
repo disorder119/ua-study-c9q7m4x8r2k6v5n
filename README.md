@@ -1,4 +1,4 @@
-# Alphabet Lab V6.1
+# Alphabet Lab V7
 
 Dieses Repository enthält zwei getrennte Lernoberflächen:
 
@@ -7,9 +7,65 @@ Dieses Repository enthält zwei getrennte Lernoberflächen:
 
 Die Repository-Root führt zum Alphabet Lab.
 
+## V7 · Lernpfad: erst zeigen, dann fragen, dann lesen
+
+Bis V6.3 war das Alphabet Lab ein sehr gründliches Prüfwerkzeug – und genau
+daran scheiterte die Motivation: Die erste Frage an einen Anfänger betraf ein
+Zeichen, das ihm niemand gezeigt hatte, die Startseite war ein Prüfungs-Dashboard
+mit null Prozent überall, und nach hunderten Fragen gab es immer noch nichts zu
+LESEN. Der Lernpfad ist deshalb der neue Haupteinstieg:
+
+**zeigen → sofort ausprobieren → echte Wörter entziffern → fertig (≈ 5 Minuten)**
+
+- **8 Lektionen, 33 Buchstaben.** Lektion 1 beginnt mit sechs Zeichen, die fast
+  wie im Deutschen funktionieren (А О К М Т Е); danach kommen die „falschen
+  Freunde“ (Н Р С, В У Х), neue Formen, die i-Familie, Г/Ґ, die Zischlaute und
+  zum Schluss Я Ю Є Ї Ь.
+- **Jeder Buchstabe wird erst erklärt** (Lernkarte mit Lautangabe, Merksatz,
+  Beispielwort und – wo vorhanden – menschlicher Originalaufnahme) und erst
+  danach gefragt. Kein Distraktor zeigt ein Zeichen, das noch nicht dran war.
+- **323 echte ukrainische Wörter**, fast durchweg Internationalismen (ресторан,
+  таксі, шоколад): Wer sie entziffert, versteht sie. Ein Wort erscheint erst,
+  wenn JEDER seiner Buchstaben eingeführt ist – die Lektion eines Wortes wird aus
+  seinen Buchstaben berechnet, nie von Hand gesetzt.
+- **Keine Wiederholung als Füllstoff.** In einem Durchgang kommt kein Schritt und
+  kein Wort zweimal vor. Alte Buchstaben werden über NEUE Wörter wiederholt. Das
+  Lesetraining besteht nur aus ungelesenen Wörtern; sind sie aufgebraucht, heißt
+  der Knopf ehrlich „Wiederholung“ und stellt jedes Wort in einer anderen
+  Aufgabenform als beim letzten Mal.
+- **Fehler werden Lernmaterial:** Die Auflösung erklärt das Zeichen, und derselbe
+  Inhalt kommt ein paar Schritte später genau einmal wieder – in ANDERER
+  Aufgabenform, damit nicht die Antwort von eben wiedererkannt wird.
+- **Fünf Aufgabenformen** statt einer: Laut zum Zeichen, Zeichen zum Laut, Wort
+  lesen (Bedeutung), Wort aussprechen (mit Fallen wie „pectopah“ für ресторан),
+  Wort finden, Wort aus Plättchen schreiben.
+- **Kurztest für Vorwissen:** „Kenne ich schon“ prüft jeden Buchstaben der
+  Lektion einmal einzeln und in drei Wörtern. Höchstens ein Fehler – dann zählt
+  die Lektion als erledigt; sonst ändert sich nichts.
+- **Ton ist Hilfe, nie Sperre:** nur menschliche Originalaufnahmen, kein TTS.
+  Ist eine Aufnahme nicht erreichbar, läuft die Lektion ohne sie weiter.
+
+Die adaptive Engine bleibt vollständig erhalten und liegt auf der Startseite
+unter „Vertiefen & Prüfen“. Buchstabenantworten aus dem Pfad fließen mit
+reduziertem Gewicht als Evidenz in die Engine, und die Buchstaben einer
+abgeschlossenen Lektion gelten dort als eingeführt – „Mein Training“ fängt nach
+dem Pfad also nicht bei null an.
+
+Technik: Der Pfadfortschritt liegt in einem eigenen kleinen Speicherschlüssel
+(`uk-alpha-path-v1`) mit eigener Normalisierung; beschädigte Daten führen zu
+einem sauberen Neustart des Pfads, ohne den Engine-Zustand zu berühren. Die
+Daten (Lektionen, Lautangaben, Wörter) stehen in `alphabet-path-data.js`, die
+Logik in `alphabet-core-v7-path.js`, die Oberfläche in `alphabet-app-v7-path.js`.
+Fehlt die Datendatei, startet die App ohne Lernpfad mit der bisherigen
+Startseite.
+
+Nicht belegt ist, was nur echte Lernende zeigen können: wie viel nach Tagen und
+Wochen hängen bleibt. Die Tests sichern Regeln (Lesbarkeit, keine Wiederholung,
+eindeutige Lösungen), keine Lernwirkung.
+
 ## Lernprinzip
 
-Der Hauptweg bleibt prüfungsbasiert:
+Der adaptive Weg unter „Vertiefen & Prüfen“ bleibt prüfungsbasiert:
 
 **sehen → erkennen → unterscheiden → hören → erinnern → selbst produzieren → automatisieren**
 
@@ -137,6 +193,17 @@ Die produktive App wird deterministisch aus Source-Dateien erzeugt:
 - App-Sources → `alphabet-app.bundle.js`
 - Build-Metadaten → `alphabet-build.json`
 
+Unverändert ausgeliefert, aber Teil der Build-ID: `ukrainischkurs-native-audio.js`
+und `alphabet-path-data.js`.
+
+Die Bundles enthalten seit V7 keine reinen Kommentar- und Leerzeilen und keine
+Code-Einrückung mehr. Der Build erkennt dafür Strings, Regex-Literale,
+Kommentare und verschachtelte Template-Literale; Zeilen innerhalb eines
+Template-Literals bleiben Byte für Byte erhalten, und endet eine Datei nicht im
+Code, bricht der Build ab, statt zu raten. `validate-alphabet-lab-v6-build.mjs`
+prüft unabhängig davon, dass die Bundles eine Teilfolge der Quellzeilen sind und
+nichts außer Kommentar- und Leerzeilen fehlt.
+
 Build:
 
 ```bash
@@ -182,6 +249,23 @@ Die Haupt-CI prüft in Reihenfolge A1/Kurs, Alphabet-Legacy, V2, V3, V4, V5 und 
 Playwright ist über `package-lock.json` reproduzierbar gepinnt. CI verwendet `npm ci`; kein `@latest`.
 
 Die Budgets stehen in `tests/performance-budget.json`. Gemessen werden u. a. Bundle-Größe, initiale JS-Requests, App-ready/Interactive, Renderpfade, Question Generation, Production Readiness/Quota, State-Serialisierung, LocalStorage-Schreibzeit und Long Tasks.
+
+V7 ergänzt `tests/validate-alphabet-lab-v7-path.mjs` (genau 33 Buchstaben,
+Lesbarkeit jedes Wortes, kein doppelter Schritt und kein doppeltes Wort je
+Durchgang, genau eine richtige Option, keine noch nicht gezeigten Distraktoren,
+Wiederholung nach Fehlern in anderer Aufgabenform, Lesetraining nur mit
+ungelesenen Wörtern, Kurztest-Regeln, Speichern/Laden, beschädigte Daten) und
+`tests/alphabet-lab-v7-path.spec.mjs` (der Pfad im echten Browser: Lernkarte vor
+der ersten Frage, Fehler und spätere Wiederholung, Lesetraining, Kurztest,
+Abbruch, beschädigter Speicher, Tastatur, 320 px ohne Überlauf und mit
+ausreichenden Touchflächen in allen Aufgabenformen, Start ohne Datendatei).
+Die Bundle-Budgets sind unverändert; `alphabet-path-data.js` hat ein eigenes
+zusätzliches Budget.
+
+Der Readiness-Cache ist seit V7 zusätzlich an den Tag gebunden. Vorher galt er
+allein über die Revisionsnummer und lieferte nach Tagen ohne neue Antwort einen
+veralteten Stand – der Fuzz-Test, der mit fester Testuhr gegen die echte Uhr der
+Migration verglich, schlug deshalb rund zwei Monate nach seinem Entstehen fehl.
 
 V6.3 ergänzt `tests/validate-alphabet-lab-v63-retrieval.mjs` (Optionsleiter
 monoton, Anfängerschutz auf Stufe 0–1, Kontrastpaare unverändert,

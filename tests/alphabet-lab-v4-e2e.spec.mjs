@@ -26,6 +26,10 @@ async function drawProductionStroke(page){
 
 test('home, adaptive training, mobile layout and service worker are operational',async({page})=>{
   await openLab(page);
+  // V7: Der Lernpfad ist der Haupteinstieg; das adaptive Training liegt darunter.
+  await expect(page.locator('#pathStart')).toBeVisible();
+  await expect(page.getByRole('button',{name:'MEIN TRAINING STARTEN'})).toBeHidden();
+  await page.locator('#advancedHome > summary').click();
   await expect(page.getByRole('button',{name:'MEIN TRAINING STARTEN'})).toBeVisible();
   await expect(page.getByText('Dein aktuelles Lernfeld')).toBeVisible();
   const noHorizontalOverflow=await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+2);

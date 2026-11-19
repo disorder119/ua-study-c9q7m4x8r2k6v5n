@@ -5,7 +5,7 @@ const CACHE=`alphabet-lab-${BUILD_ID}`;
 const PREFIX='alphabet-lab-';
 const V=`?v=${BUILD_ID}`;
 const FALLBACK_HTML=`./alphabet-lab.html${V}`;
-const CRITICAL=[FALLBACK_HTML,`./alphabet-core.bundle.js${V}`,`./alphabet-app.bundle.js${V}`,`./ukrainischkurs-native-audio.js${V}`,`./alphabet-lab.webmanifest${V}`,`./alphabet-build.json${V}`];
+const CRITICAL=[FALLBACK_HTML,`./alphabet-core.bundle.js${V}`,`./alphabet-app.bundle.js${V}`,`./ukrainischkurs-native-audio.js${V}`,`./alphabet-path-data.js${V}`,`./alphabet-lab.webmanifest${V}`,`./alphabet-build.json${V}`];
 const OPTIONAL=[`./index.html${V}`,`./ukrainisch-icon-192.png${V}`,`./ukrainisch-icon-512.png${V}`,`./ukrainisch-icon-apple-180.png${V}`,`./ukrainisch-icon-maskable-512.png${V}`];
 const CORE=[...CRITICAL,...OPTIONAL];
 const isCodeAsset=url=>/\.(?:js|css|webmanifest|json)$/i.test(url.pathname);

@@ -94,8 +94,11 @@ function writtenProductionReadySyncedV6(state,c,now=Date.now()){
 writtenProductionReady=function(state,c,now=Date.now()){ensureV6Metrics(state);return writtenProductionReadySyncedV6(state,c,now)};
 function readyProductionLettersUncachedV6(state,now=Date.now()){ensureV6Metrics(state);return ALPHABET.filter(c=>writtenProductionReadySyncedV6(state,c,now))}
 function readyProductionLettersV6(state,now=Date.now()){
-  ensureV6Metrics(state);if(state.metrics.readinessRevision===state.metrics.revision&&Array.isArray(state.metrics.readyProductionLetters))return state.metrics.readyProductionLetters;
-  const ready=ALPHABET.filter(c=>writtenProductionReadySyncedV6(state,c,now));state.metrics.readyProductionLetters=ready;state.metrics.readinessRevision=state.metrics.revision;return ready
+  // Bereitschaft hängt über den Vergessensabfall auch von der Zeit ab. Der Cache
+  // gilt deshalb nur für denselben Tag: Ohne diese Bindung lieferte er nach
+  // Tagen ohne neue Antwort (Revision unverändert) einen veralteten Stand.
+  ensureV6Metrics(state);const day=Math.floor(now/DAY);if(state.metrics.readinessRevision===state.metrics.revision&&state.metrics.readinessDay===day&&Array.isArray(state.metrics.readyProductionLetters))return state.metrics.readyProductionLetters;
+  const ready=ALPHABET.filter(c=>writtenProductionReadySyncedV6(state,c,now));state.metrics.readyProductionLetters=ready;state.metrics.readinessRevision=state.metrics.revision;state.metrics.readinessDay=day;return ready
 }
 productionQuotaForSession=function(state,session,now=Date.now()){
   if(session?.feedback==='real'||session?.preset==='diagnostic'||session?.certification)return 0;if(session?.productionOnly)return Math.max(0,Number(session.productionTargetCount)||0);

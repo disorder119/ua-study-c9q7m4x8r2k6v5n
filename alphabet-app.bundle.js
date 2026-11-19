@@ -8,7 +8,6 @@ const STORAGE=C.VERSION>=6?'uk-alpha-lab-v6':'uk-alpha-lab-v3',LEGACY3='uk-alpha
 const app=document.getElementById('app');
 let S=load(),screen='home',session=null,selectedLetter='',selectedPair=null,toastTimer=null,memoryTimer=null,guidedLetter='',lastFocus=null;
 let timing={startedAt:0,invalid:false,audioDurationMs:0};
-
 function parseStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
 function load(){let raw=parseStored(STORAGE),source=raw?STORAGE:'';if(!raw){for(const key of [LEGACY3,LEGACY2,LEGACY1]){if(key===STORAGE)continue;raw=parseStored(key);if(raw){source=key;break}}}const s=C.migrate(raw);try{localStorage.setItem(STORAGE,JSON.stringify(s));window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh'}catch(_){}return s}
 function persist(state=S){localStorage.setItem(STORAGE,JSON.stringify(state))}
@@ -22,7 +21,6 @@ function wireNav(){app.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{
 function toast(msg){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.className='toast';e.setAttribute('role','status');e.setAttribute('aria-live','polite');document.body.append(e)}e.textContent=msg;e.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.hidden=true,2400)}
 function modal(icon,title,text,buttons=[['Weiter',()=>{}]]){lastFocus=document.activeElement;const wrap=document.createElement('div');wrap.className='modal';wrap.innerHTML=`<section class="card modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="badge">${icon}</div><h2 id="modalTitle">${esc(title)}</h2><p class="muted">${esc(text)}</p><div class="actions" id="modalActions"></div></section>`;document.body.append(wrap);const a=wrap.querySelector('#modalActions');buttons.forEach(([label,fn,cls='primary'])=>{const b=document.createElement('button');b.className=`btn ${cls}`;b.textContent=label;b.onclick=()=>{wrap.remove();fn?.();setTimeout(()=>lastFocus?.focus?.(),0)};a.append(b)});const first=a.querySelector('button');first?.focus();wrap.addEventListener('keydown',e=>{if(e.key==='Escape'&&buttons.length){e.preventDefault();first?.click()}})}
 function render(){clearTimeout(memoryTimer);const map={home:renderHome,examMenu:renderExamMenu,exam:renderExam,results:renderResults,alphabet:renderAlphabet,detail:renderDetail,stats:renderStats,errors:renderErrors,battle:renderBattleLanding,mastery:renderMastery,science:renderScience,write:renderWrite,guided:renderGuided,bookmarks:renderBookmarks};(map[screen]||renderHome)()}
-
 function statusClass(s){return s==='Sicher'?'good':s==='Stabil'?'good':s==='Unsicher'?'warn':'muted'}
 function allMastery(){return Math.round(C.ALPHABET.reduce((a,c)=>a+C.letterMastery(S,c),0)/33)}
 function writeOpen(){return C.ALPHABET.filter(c=>!S.letters[c].writeDays.length)}
@@ -32,7 +30,6 @@ function renderHome(){const st=C.statsToday(S),master=C.mastered(S),conf=C.topCo
 <section class="card"><div class="section-title"><h2>Alphabet Mastery</h2><small>${allMastery()}% · Skill-Gating</small></div><div class="progress"><i style="width:${allMastery()}%"></i></div><p class="muted">Ein starker Skill kann einen schwachen Pflichtskill nicht überdecken. Neue Fehler können den Status wieder senken.</p><div class="actions"><button class="btn" data-nav="mastery">Was fehlt noch?</button><button class="btn" data-nav="alphabet">Alle 33</button></div></section>
 <section class="split"><div class="card"><div class="section-title"><h2>Aktuelle Schwächen</h2></div>${weak.map(c=>{const x=C.summaryForLetter(S,c);return `<button class="row-link" data-letter="${c}"><span class="row-letter">${c}${C.DATA[c].lower}</span><span><b>${x.mastery}% · ${x.status}</b><small>${esc(x.problem||'')}</small></span></button>`}).join('')}</div><div class="card"><div class="section-title"><h2>Verwechslungen</h2></div>${conf.length?conf.map(([p,n])=>`<button class="row-link" data-pair="${esc(p)}"><span>${esc(p)}</span><b>${n}×</b></button>`).join(''):'<p class="muted">Noch keine Verwechslungsmuster.</p>'}<div class="actions"><button class="btn" data-nav="errors">Meine Fehler</button></div></div></section>
 <section class="card"><div class="section-title"><h2>Schreiben</h2><small>${openWrite.length} offen</small></div><p class="muted">Schreiben bleibt Teil der endgültigen Mastery.</p><div class="actions"><button class="btn" id="writeNext" ${openWrite.length?'':'disabled'}>Schreibtraining starten</button></div></section>`);document.getElementById('bigStart').onclick=()=>startExam('standard','learning');document.getElementById('startDiagnostic')?.addEventListener('click',startDiagnostic);document.getElementById('writeNext').onclick=()=>{selectedLetter=openWrite[0]||'А';screen='write';render()};wireLetterPair()}
-
 function presetConfig(name){const map={quick:{size:10,scope:'standard',title:'Schnellprüfung'},standard:{size:30,scope:'standard',title:'Standardprüfung'},large:{size:50,scope:'standard',title:'Große Prüfung'},weak:{size:30,scope:'weak',title:'Schwächenprüfung'},errors:{size:30,scope:'errors',title:'Fehlerprüfung'},fake:{size:30,scope:'fake',title:'Fake-Friend-Prüfung'},speed:{size:30,scope:'speed',title:'Speed-Prüfung'},audio:{size:30,scope:'audio',title:'Audio-Prüfung'}};return map[name]||map.standard}
 function renderExamMenu(){shell(`<section class="card hero"><div class="eyebrow">Prüfungssimulator</div><h1>Prüfen ist der Hauptlernweg.</h1><p><strong>Lernprüfung:</strong> Sofortkorrektur + verzögerte Reparatur. <strong>Realprüfung:</strong> keine Lösungen und keine Repairs während des Durchgangs.</p></section><section class="exam-list">${[['quick','Schnellprüfung','10 Hauptfragen'],['standard','Standardprüfung','30 Hauptfragen'],['large','Große Prüfung','50 Hauptfragen'],['weak','Schwächenprüfung','30 aktuelle Lücken'],['errors','Nur meine Fehler','aktuelle Fehler zuerst'],['fake','Fake Friends','В Н Р С У Х'],['speed','Speed-Prüfung','Automatisierung'],['audio','Audio-Prüfung','menschliche Referenzaufnahmen']].map(([id,t,d])=>`<section class="card exam-row"><div><h3>${t}</h3><p>${d}</p></div><div class="exam-actions"><button class="btn primary" data-start="${id}:learning">Lernprüfung</button><button class="btn" data-start="${id}:real">Realprüfung</button></div></section>`).join('')}</section>`);app.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>{const [p,f]=b.dataset.start.split(':');startExam(p,f)})}
 function newSession(tasks,title,feedback,extra={}){return C.createExamSession(tasks,{title,feedback,preset:extra.preset||'custom',scope:extra.scope||'custom',certification:extra.certification||'',battle:extra.battle||null})}
@@ -49,15 +46,15 @@ function latency(){return {latencyMs:timing.startedAt?Math.max(1,Math.round(perf
 /* source: alphabet-app-v3-exam.js */
 'use strict';
 function renderExam(){const t=currentTask();if(!t)return finishExam();session.locked=false;let body='',opts=t.options||[],isRepair=!!t.isRepair;timing={startedAt:0,invalid:false,audioDurationMs:0};if(t.type!=='audio'&&t.type!=='memory')beginTiming();
- if(t.type==='visual'||t.type==='speed')body=`<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
- else if(t.type==='memory')body=`<div id="memoryFlash" class="big-letter">${esc(t.display)}</div><div id="memoryQuestion" class="hidden"><div class="prompt">Welcher Laut gehörte zum Zeichen?</div>${answerButtons(opts)}</div><div class="micro">500 ms ansehen → erinnern</div>`;
- else if(['reverse','find','contrast'].includes(t.type))body=`${t.display?`<div class="pair">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
- else if(['lowercase','uppercase'].includes(t.type))body=`<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
- else if(t.type==='trueFalse')body=`<div class="big-letter">${t.letter}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
- else if(t.type==='audio')body=`<div class="audio-orb">🔊</div><div class="prompt">${esc(t.prompt)}</div><p class="muted center">Gewertet wird erst nach erfolgreich gestarteter und beendeter menschlicher Aufnahme.</p><div class="audio-row"><button class="btn primary" id="playAudio">Audio starten</button></div>${letterButtons(opts,true)}<div id="audioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`;
- shell(`<section class="lesson"><div class="lesson-head"><button class="btn" id="exitExam">← Menü</button><div class="progress"><i style="width:${progress()}%"></i></div><span class="tag">${isRepair?'Reparatur':`${session.mainIndex+1}/${session.mainTasks.length}`}</span></div><section class="card stage"><div class="eyebrow">${esc(session.title)} · ${session.feedback==='learning'?'Lernprüfung':'Realprüfung'} · ${isRepair?'Reparatur':'Hauptfrage'}</div>${body}<div class="actions question-actions"><button class="btn small" id="bookmark">${C.isBookmarked(S,t)?'★ Gemerkt':'☆ Merken'}</button></div><div id="feedback" class="feedback" role="status" aria-live="assertive"></div><div id="correction" class="correction hidden"></div></section></section>`,{navVisible:false});
- document.getElementById('exitExam').onclick=()=>modal('↩','Prüfung verlassen?','Die laufende Prüfung wird nicht gewertet.',[['Verlassen',()=>{session=null;screen='home';render()},'danger'],['Weiterlernen',()=>{},'primary']]);document.getElementById('bookmark').onclick=e=>{const on=C.toggleBookmark(S,t);persist();e.currentTarget.textContent=on?'★ Gemerkt':'☆ Merken'};
- if(t.type==='audio')setupAudioQuestion(t);if(t.type==='memory'){const flash=document.getElementById('memoryFlash'),q=document.getElementById('memoryQuestion');memoryTimer=setTimeout(()=>{flash.classList.add('hidden');q.classList.remove('hidden');beginTiming()},500)}wireAnswers()}
+if(t.type==='visual'||t.type==='speed')body=`<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
+else if(t.type==='memory')body=`<div id="memoryFlash" class="big-letter">${esc(t.display)}</div><div id="memoryQuestion" class="hidden"><div class="prompt">Welcher Laut gehörte zum Zeichen?</div>${answerButtons(opts)}</div><div class="micro">500 ms ansehen → erinnern</div>`;
+else if(['reverse','find','contrast'].includes(t.type))body=`${t.display?`<div class="pair">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
+else if(['lowercase','uppercase'].includes(t.type))body=`<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
+else if(t.type==='trueFalse')body=`<div class="big-letter">${t.letter}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
+else if(t.type==='audio')body=`<div class="audio-orb">🔊</div><div class="prompt">${esc(t.prompt)}</div><p class="muted center">Gewertet wird erst nach erfolgreich gestarteter und beendeter menschlicher Aufnahme.</p><div class="audio-row"><button class="btn primary" id="playAudio">Audio starten</button></div>${letterButtons(opts,true)}<div id="audioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`;
+shell(`<section class="lesson"><div class="lesson-head"><button class="btn" id="exitExam">← Menü</button><div class="progress"><i style="width:${progress()}%"></i></div><span class="tag">${isRepair?'Reparatur':`${session.mainIndex+1}/${session.mainTasks.length}`}</span></div><section class="card stage"><div class="eyebrow">${esc(session.title)} · ${session.feedback==='learning'?'Lernprüfung':'Realprüfung'} · ${isRepair?'Reparatur':'Hauptfrage'}</div>${body}<div class="actions question-actions"><button class="btn small" id="bookmark">${C.isBookmarked(S,t)?'★ Gemerkt':'☆ Merken'}</button></div><div id="feedback" class="feedback" role="status" aria-live="assertive"></div><div id="correction" class="correction hidden"></div></section></section>`,{navVisible:false});
+document.getElementById('exitExam').onclick=()=>modal('↩','Prüfung verlassen?','Die laufende Prüfung wird nicht gewertet.',[['Verlassen',()=>{session=null;screen='home';render()},'danger'],['Weiterlernen',()=>{},'primary']]);document.getElementById('bookmark').onclick=e=>{const on=C.toggleBookmark(S,t);persist();e.currentTarget.textContent=on?'★ Gemerkt':'☆ Merken'};
+if(t.type==='audio')setupAudioQuestion(t);if(t.type==='memory'){const flash=document.getElementById('memoryFlash'),q=document.getElementById('memoryQuestion');memoryTimer=setTimeout(()=>{flash.classList.add('hidden');q.classList.remove('hidden');beginTiming()},500)}wireAnswers()}
 function answerButtons(opts,disabled=false){return `<div class="answers">${opts.map((x,i)=>`<button class="answer" data-ans="${esc(x)}" ${disabled?'disabled':''}><span class="kbd">${i+1}</span>${esc(x)}</button>`).join('')}</div>`}
 function letterButtons(opts,disabled=false){return `<div class="answers letter-answers">${opts.map((x,i)=>`<button class="answer" data-ans="${esc(x)}" ${disabled?'disabled':''}><span class="kbd">${i+1}</span><strong>${esc(x)}</strong></button>`).join('')}</div>`}
 function wireAnswers(){app.querySelectorAll('[data-ans]').forEach(b=>b.onclick=()=>submitExamAnswer(b.dataset.ans,b));document.onkeydown=e=>{if(screen!=='exam'||session?.locked)return;const n=Number(e.key);if(n>=1&&n<=4){const b=app.querySelectorAll('[data-ans]')[n-1];if(b&&!b.disabled){e.preventDefault();b.click()}}}}
@@ -65,9 +62,9 @@ function setupAudioQuestion(t){const button=document.getElementById('playAudio')
 function playHumanExamAudio(t,button,status){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter];if(!src){handleAudioFailure(t,'Keine menschliche Quelle verfügbar.');return}const a=new Audio(src);button.disabled=true;status.textContent='Lädt …';let startedAt=0,settled=false;const timeout=setTimeout(()=>{if(!settled){settled=true;a.pause?.();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')}},9000);a.onplay=()=>{startedAt=performance.now();status.textContent='Audio läuft …';};a.onended=()=>{if(settled)return;settled=true;clearTimeout(timeout);timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human'};a.onerror=()=>{if(settled)return;settled=true;clearTimeout(timeout);handleAudioFailure(t,'Menschliche Aufnahme nicht erreichbar. Frage wird ersetzt.')};a.play().catch(()=>{if(settled)return;settled=true;clearTimeout(timeout);button.disabled=false;status.textContent='Browser hat Autoplay blockiert. Tippe auf „Audio starten“.'})}
 function handleAudioFailure(t,msg){session.audioTechnicalFailures++;toast(msg);const replacement=C.makeTask(t.letter,'audio',S,Math.random,{sessionId:session.sessionId,scheduledReason:t.scheduledReason||'audio-replacement',isRepair:t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError,originalQuestionId:t.originalQuestionId,parentAttemptId:t.parentAttemptId});if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;setTimeout(renderExam,500)}
 function submitExamAnswer(value,button){if(session.locked||button.disabled)return;session.locked=true;const t=currentTask(),good=value===t.correct,isRepair=!!t.isRepair,tm=latency(),attemptId=C.id('attempt'),confusedWith=resolveConfusedLetter(t,value);const row=C.recordAnswer(S,{attemptId,questionId:t.questionId,sessionId:session.sessionId,parentAttemptId:t.parentAttemptId,originalQuestionId:t.originalQuestionId||t.questionId,letter:t.letter,skill:t.skill,type:t.type,firstAttempt:!isRepair,isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError,scheduledReason:t.scheduledReason,repairForSkill:t.repairForSkill||'',selected:value,expected:t.correct,good,confusedWith,latencyMs:tm.latencyMs,latencyValid:tm.latencyValid,shownAt:Date.now()-tm.latencyMs,now:Date.now(),source:session.preset});persist();
- if(isRepair){C.applyRepairAnswer(session,{...row,audioSource:t.audioSource||null},session.repairCurrent)}
- else{const err=good?null:{letter:t.letter,skill:t.skill,type:t.type,selected:value,correct:t.correct,latencyMs:tm.latencyMs,note:C.DATA[t.letter].note};C.applyMainAnswer(session,{...row,audioSource:t.audioSource||null},err);if(!good&&session.feedback==='learning')scheduleRepair(t,attemptId)}
- if(session.feedback==='real'){setTimeout(nextQuestion,100);return}button.classList.add(good?'correct':'wrong');const fb=document.getElementById('feedback'),cor=document.getElementById('correction');fb.className=`feedback ${good?'good':'bad'}`;fb.textContent=good?'✓ Richtig':'✕ Falsch';cor.classList.remove('hidden');cor.innerHTML=good?(isRepair?'<strong>Reparatur verstanden. Langzeit-Mastery steigt dadurch nicht.</strong>':`<strong>${esc(t.letter)} = ${esc(C.DATA[t.letter].sound)}</strong>`):`<div class="correction-grid"><span>Deine Antwort <b class="bad-text">${esc(value)}</b></span><span>Richtig <b class="good-text">${esc(t.correct)}</b></span></div><p><strong>${esc(t.letter)}</strong>: ${esc(C.DATA[t.letter].note)}</p><button class="btn" id="feedbackAudio">🔊 Referenzwort anhören</button>`;if(!good)document.getElementById('feedbackAudio').onclick=e=>playLearningAudio(t.letter,e.currentTarget);setTimeout(nextQuestion,good?650:1800)}
+if(isRepair){C.applyRepairAnswer(session,{...row,audioSource:t.audioSource||null},session.repairCurrent)}
+else{const err=good?null:{letter:t.letter,skill:t.skill,type:t.type,selected:value,correct:t.correct,latencyMs:tm.latencyMs,note:C.DATA[t.letter].note};C.applyMainAnswer(session,{...row,audioSource:t.audioSource||null},err);if(!good&&session.feedback==='learning')scheduleRepair(t,attemptId)}
+if(session.feedback==='real'){setTimeout(nextQuestion,100);return}button.classList.add(good?'correct':'wrong');const fb=document.getElementById('feedback'),cor=document.getElementById('correction');fb.className=`feedback ${good?'good':'bad'}`;fb.textContent=good?'✓ Richtig':'✕ Falsch';cor.classList.remove('hidden');cor.innerHTML=good?(isRepair?'<strong>Reparatur verstanden. Langzeit-Mastery steigt dadurch nicht.</strong>':`<strong>${esc(t.letter)} = ${esc(C.DATA[t.letter].sound)}</strong>`):`<div class="correction-grid"><span>Deine Antwort <b class="bad-text">${esc(value)}</b></span><span>Richtig <b class="good-text">${esc(t.correct)}</b></span></div><p><strong>${esc(t.letter)}</strong>: ${esc(C.DATA[t.letter].note)}</p><button class="btn" id="feedbackAudio">🔊 Referenzwort anhören</button>`;if(!good)document.getElementById('feedbackAudio').onclick=e=>playLearningAudio(t.letter,e.currentTarget);setTimeout(nextQuestion,good?650:1800)}
 function scheduleRepair(t,parentAttemptId){C.scheduleRepairForSession(session,t,S,parentAttemptId,Math.random)}
 function resolveConfusedLetter(t,value){if(value===t.letter||value===t.correct)return '';if(C.ALPHABET.includes(value))return value;const bySound=C.ALPHABET.find(c=>C.DATA[c].sound===value);if(bySound)return bySound;const byLower=C.ALPHABET.find(c=>C.DATA[c].lower===value);return byLower||''}
 function nextQuestion(){if(session.repairCurrent){session.repairCurrent=null}else session.mainIndex++;session.locked=false;if(session.mainIndex>=session.mainTasks.length&&!dueRepair()){const pending=session.pendingRepairs.find(x=>!x.done);if(pending&&session.feedback==='learning'){pending.dueAfterMainIndex=session.mainIndex;renderExam();return}finishExam()}else renderExam()}
@@ -85,7 +82,6 @@ function startFocusedExam(c){const types=['visual','reverse','audio','lowercase'
 function renderGuided(){const c=guidedLetter||selectedLetter||'А',d=C.DATA[c],x=C.summaryForLetter(S,c);shell(`<section class="card hero"><div class="eyebrow">Geführtes Training · optional</div><div class="detail-letter">${c}<span>${d.lower}</span></div><h1>${esc(d.sound)}</h1><p>${esc(d.note)}</p><div class="word"><strong>${esc(d.word)}</strong> · ${esc(d.de)}</div><div class="actions"><button class="btn primary" id="guidedAudio">🔊 Menschliche Aufnahme</button><button class="btn" id="guidedWrite">✍ Schreiben</button><button class="btn" id="guidedQuiz">Kurzes Training</button></div><p class="muted">Danach geht es zurück in normale Prüfungen. Aktueller Status: ${x.status}.</p></section>`);document.getElementById('guidedAudio').onclick=e=>playLearningAudio(c,e.currentTarget);document.getElementById('guidedWrite').onclick=()=>{selectedLetter=c;screen='write';render()};document.getElementById('guidedQuiz').onclick=()=>{const sid=C.id('guided'),tasks=['visual','reverse','lowercase','contrast'].map(t=>C.makeTask(c,t,S,Math.random,{sessionId:sid,scheduledReason:'guided'}));startCustomTasks(tasks,`${c} Kurztraining`,'learning',{preset:'guided',scope:'guided'})}}
 function renderWrite(){const c=selectedLetter||'А';shell(`<section class="lesson"><div class="lesson-head"><button class="btn" id="writeBack">← Buchstabe</button><div class="spacer"></div><span class="tag">Handschrift</span></div><section class="card stage"><div class="eyebrow">Motorische Spur</div><div class="prompt">Schreibe ${c} mehrfach über die helle Vorlage. Es gibt keine erfundene Handschrift-Note.</div><div class="canvas-wrap"><canvas class="trace-canvas" id="writeCanvas" width="760" height="760" role="img" aria-label="Schreibfläche zum Nachziehen des Buchstabens ${c}"></canvas><p class="sr-only">Ziehe den Buchstaben mit Maus, Stift oder Finger nach. Die App misst nur, ob ausreichend gezeichnet wurde.</p><div class="trace-actions"><button class="btn" id="clearCanvas">Neu</button><button class="btn primary" id="saveWriting">Geschrieben</button></div></div></section></section>`,{navVisible:false});document.getElementById('writeBack').onclick=()=>{screen='detail';render()};setupWriteCanvas(c)}
 function setupWriteCanvas(c){const canvas=document.getElementById('writeCanvas'),ctx=canvas.getContext('2d');let drawing=false,last=null,ink=0;function guide(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 540px system-ui';ctx.fillStyle='#e5e7eb';ctx.fillText(c,380,390);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#111827';ctx.lineWidth=24;ink=0}guide();const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};canvas.onpointerdown=e=>{e.preventDefault();drawing=true;last=point(e);canvas.setPointerCapture?.(e.pointerId)};canvas.onpointermove=e=>{if(!drawing)return;e.preventDefault();const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();ink+=Math.hypot(p.x-last.x,p.y-last.y);last=p};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;last=null};document.getElementById('clearCanvas').onclick=guide;document.getElementById('saveWriting').onclick=()=>{if(ink<700){toast('Bitte das Zeichen erst sichtbar mehrfach nachziehen.');return}C.recordWriting(S,c);persist();toast('Schreibübung gespeichert.');screen='detail';render()}}
-
 function renderStats(){const t=C.statsToday(S),hist=S.examHistory.slice(0,12);shell(`<section class="card hero"><div class="eyebrow">Statistik</div><h1>Messbar statt gefühlt.</h1><p>Repairs und Hauptfragen werden getrennt gezählt. Nur gültige Reaktionszeiten fließen in Tempo ein.</p></section><div class="grid stats-grid"><section class="card stat"><strong>${t.mainQuestions}</strong><span>Hauptfragen heute</span></section><section class="card stat"><strong>${t.repairQuestions}</strong><span>Repair-Fragen</span></section><section class="card stat"><strong>${t.accuracy}%</strong><span>Hauptgenauigkeit</span></section><section class="card stat"><strong>${fmtMs(t.avgMs)}</strong><span>Ø gültige Zeit</span></section><section class="card stat"><strong>${t.openRepairs}</strong><span>offene Repairs</span></section><section class="card stat"><strong>${t.dueSkills}</strong><span>fällige Skills</span></section><section class="card stat"><strong>${t.studyDays}</strong><span>Lerntage</span></section><section class="card stat"><strong>${t.exams}</strong><span>Prüfungen heute</span></section></div><section class="card"><h2>Letzte Prüfungen</h2>${hist.length?hist.map(h=>`<div class="history-row"><div><b>${esc(h.title||h.preset)}</b><small>${esc(h.date)} · ${h.feedback==='real'?'Real':'Lernen'} · Repairs ${h.repairsCorrect||0}/${h.repairsTotal||0}</small></div><strong>${h.correct}/${h.total} · ${Math.round((h.accuracy||0)*100)}%</strong></div>`).join(''):'<p class="muted">Noch keine Prüfungen.</p>'}</section>`)}
 function renderBattleLanding(){const pair=selectedPair||C.topConfusions(S,1)[0]?.[0]?.split(' ↔ ')||['Ш','Щ'];selectedPair=pair;const[a,b]=pair;shell(`<section class="card hero"><div class="eyebrow">Schwächen-Battle</div><h1>${a} VS ${b}</h1><p>20 Aufgaben wechseln zwischen Laut, Zeichen, Audio, Kontrast und Gedächtnis.</p><div class="actions"><button class="btn primary" id="startBattle">BATTLE STARTEN</button></div></section>`);document.getElementById('startBattle').onclick=()=>{const sid=C.id('battle'),types=['contrast','visual','reverse','audio','memory','speed','trueFalse','find'],tasks=[];for(let i=0;i<20;i++){const c=i%2?a:b;tasks.push(C.makeTask(c,types[i%types.length],S,Math.random,{sessionId:sid,scheduledReason:'battle'}))}startCustomTasks(tasks,`${a} VS ${b}`,'learning',{preset:'battle',scope:'battle',battle:pair})}}
 function renderMastery(){const m=C.mastered(S),open=C.openMasteryItems(S),finalDays=new Set((S.masteryChecks.final||[]).filter(x=>x.accuracy>=.95).map(x=>x.date)).size;shell(`<section class="card hero"><div class="eyebrow">Abschlussstatus</div><h1>${m.done?'UKRAINISCHES ALPHABET GEMEISTERT':'Noch offen.'}</h1><p>Kein globaler Durchschnitt kann einen ungelösten Einzelbuchstaben verstecken.</p></section><section class="card"><h2>${m.readyCount}/33 Buchstaben sicher</h2>${open.slice(0,12).map(x=>`<button class="row-link" data-letter="${x.letter}"><span class="row-letter">${x.letter}</span><span><b>${esc(x.reason)}</b><small>${x.status}</small></span></button>`).join('')||'<p class="good-text">Alle Einzelbuchstaben erfüllen die Gates.</p>'}</section><section class="mastery-grid"><div class="mastery-item ${m.finals?'pass':''}"><strong>Finalprüfung</strong><small>${Math.min(finalDays,2)}/2 erfolgreiche Tage · ≥95 % · 33/33 Coverage</small></div><div class="mastery-item ${m.fake?'pass':''}"><strong>Fake Friends</strong><small>30 Fragen · 100 %</small></div><div class="mastery-item ${m.audio?'pass':''}"><strong>Audio</strong><small>33/33 menschliche Quellen · ≥95 %</small></div><div class="mastery-item ${m.retention?'pass':''}"><strong>Langzeit</strong><small>unabhängige Kernabrufe über mehrere Tage</small></div><div class="mastery-item ${m.speed?'pass':''}"><strong>Automatisierung</strong><small>visuelle/reverse Speed-Evidenz ≤2,5 s</small></div></section><section class="card"><div class="mode-grid"><button class="mode-card" id="finalTest"><b>100</b><span>Abschlussprüfung</span></button><button class="mode-card" id="fakeTest"><b>30</b><span>Fake Friends</span></button><button class="mode-card" id="audioTest"><b>33</b><span>Audio 33/33</span></button><button class="mode-card" id="retTest"><b>50</b><span>Langzeitcheck</span></button></div></section>`);wireLetterPair();document.getElementById('finalTest').onclick=()=>startCertification('final','Abschlussprüfung');document.getElementById('fakeTest').onclick=()=>startCertification('fake','Fake-Friend-Mastery');document.getElementById('audioTest').onclick=()=>startCertification('audio','Audio-Mastery');document.getElementById('retTest').onclick=()=>startCertification('retention','Langzeitprüfung')}
@@ -105,7 +101,6 @@ function ttsWord(c){if(!('speechSynthesis' in window))return;const u=new SpeechS
 /* source: alphabet-app-v4-a.js */
 'use strict';
 const DEBUG_LEARNING=typeof location!=='undefined' && new URLSearchParams(location.search||'').get('debugLearning')==='1';
-
 function learningFieldRows(){const p=C.recomputeLearningPlan(S,Date.now(),{force:true});return p.activeLetters.map(c=>C.summaryForLetter(S,c))}
 function renderHome(){const st=C.statsToday(S),master=C.mastered(S),conf=C.topConfusions(S,5),field=learningFieldRows(),openWrite=writeOpen(),focus=field.flatMap(x=>x.trainNow.map((k,i)=>({letter:x.letter,label:k,score:C.calculateLearningNeed(S,x.letter,C.CORE_SKILLS.find(s=>C.SKILL_LABELS[s]===k)||'visualToSound')}))).sort((a,b)=>b.score-a.score).slice(0,3);shell(`${!S.diagnostic?`<section class="card diagnostic-callout"><div><div class="eyebrow">Erster Start</div><h2>50-Fragen-Startdiagnose</h2><p>Alle 33 mindestens einmal. Danach baut die App sofort dein erstes Lernfeld.</p></div><button class="btn primary" id="startDiagnostic">STARTDIAGNOSE</button></section>`:''}
 <section class="card hero"><div class="eyebrow">Dein adaptiver Hauptweg</div><h1>Mein Training</h1><p>Die nächste Hauptfrage wird erst <strong>nach deiner letzten Antwort</strong> ausgewählt. Schwache Skills bekommen mehr Gewicht; identische Aufgaben werden blockiert.</p><div class="actions"><button class="btn primary xl" id="myTraining">MEIN TRAINING STARTEN</button><button class="btn" data-nav="examMenu">Spezialmodi</button></div><p class="muted" style="margin-top:12px">Aktuell: ${field.map(x=>`${x.letter} ${x.mastery}%`).join(' · ')||'wird berechnet'} · 20 adaptive Hauptfragen</p></section>
@@ -113,7 +108,7 @@ function renderHome(){const st=C.statsToday(S),master=C.mastered(S),conf=C.topCo
 <div class="grid stats-grid"><section class="card stat"><strong>${st.mainQuestions}</strong><span>Hauptfragen heute</span></section><section class="card stat"><strong>${st.accuracy}%</strong><span>Hauptgenauigkeit</span></section><section class="card stat"><strong>${st.repairCorrect}/${st.repairQuestions}</strong><span>Repairs heute</span></section><section class="card stat"><strong>${master.readyCount}/33</strong><span>wirklich sicher</span></section></div>
 <section class="card"><div class="section-title"><h2>Alphabet Mastery</h2><small>${allMastery()}% · Pflichtskills</small></div><div class="progress"><i style="width:${allMastery()}%"></i></div><p class="muted">Ein perfekter Groß/Klein-Skill kann einen schwachen Audio- oder Reverse-Skill nicht verstecken.</p><div class="actions"><button class="btn" data-nav="mastery">Was fehlt noch?</button><button class="btn" data-nav="alphabet">Alle 33</button></div></section>
 <section class="split"><div class="card"><div class="section-title"><h2>Verwechslungen</h2></div>${conf.length?conf.map(([p,n])=>`<button class="row-link" data-pair="${esc(p)}"><span>${esc(p)}</span><b>${n}×</b></button>`).join(''):'<p class="muted">Noch keine Verwechslungsmuster.</p>'}</div><div class="card"><div class="section-title"><h2>Schreiben</h2><small>${openWrite.length} offen</small></div><p class="muted">Motorische Übung bleibt separat und kann nicht durch leichte Find-Aufgaben ersetzt werden.</p><div class="actions"><button class="btn" id="writeNext" ${openWrite.length?'':'disabled'}>Schreibtraining</button></div></div></section>`);
- document.getElementById('myTraining').onclick=startMyTraining;document.getElementById('startDiagnostic')?.addEventListener('click',startDiagnostic);document.getElementById('writeNext').onclick=()=>{selectedLetter=openWrite[0]||'А';screen='write';render()};wireLetterPair()}
+document.getElementById('myTraining').onclick=startMyTraining;document.getElementById('startDiagnostic')?.addEventListener('click',startDiagnostic);document.getElementById('writeNext').onclick=()=>{selectedLetter=openWrite[0]||'А';screen='write';render()};wireLetterPair()}
 function startMyTraining(){session=C.createAdaptiveSession(S,{targetMainCount:20,title:'Mein Training',preset:'my-training',scope:'adaptive',feedback:'learning'});screen='exam';renderExam()}
 function newSession(tasks,title,feedback,extra={}){const s=C.createExamSession(tasks,{title,feedback,preset:extra.preset||'custom',scope:extra.scope||'custom',certification:extra.certification||'',battle:extra.battle||null});s.targetMainCount=tasks.length;s.startSnapshot=C.snapshotMastery(S,C.uniq(tasks.map(t=>t.letter)));s.audioRetryBudget={};s.audioIncompleteLetters=[];s.technicalSkips=[];s.recentQuestionSignatures=[];s.coverageState={skillCounts:{},familyCounts:{},letterCounts:{}};s.usedWordIds=[];s.debug=[];return s}
 function startExam(preset='standard',feedback='learning',extra={}){const cfg=presetConfig(preset);if(feedback==='learning'){session=C.createAdaptiveSession(S,{targetMainCount:cfg.size,title:extra.title||cfg.title,preset,scope:cfg.scope,feedback,battle:extra.battle||null});screen='exam';renderExam();return}const exam=(C.buildExamV4||C.buildExam)(S,{size:cfg.size,scope:cfg.scope,feedback});session=newSession(exam.tasks,extra.title||cfg.title,feedback,{preset,scope:cfg.scope,certification:extra.certification||'',battle:extra.battle});screen='exam';renderExam()}
@@ -126,25 +121,25 @@ function whyHtml(t){return `<details class="why"><summary>Warum diese Frage?</su
 
 /* source: alphabet-app-v4-b.js */
 function taskBody(t){const opts=t.options||[];if(t.interaction==='multiSelect'){return `${t.icon?`<div class="visual-anchor" aria-label="Bildanker">${esc(t.icon)}</div>`:''}${t.display?`<div class="word-display">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div><div class="token-grid" id="multiTokens">${(t.tokens||[]).map((x,i)=>`<button class="token" data-token="${i}" aria-pressed="false">${esc(x)}</button>`).join('')}</div><button class="btn primary multi-submit" id="multiSubmit">Auswahl prüfen</button>`}
- if(t.interaction==='writingRecall')return `<div id="writeRecallCue" class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div><div class="canvas-wrap"><canvas class="trace-canvas" id="recallCanvas" width="600" height="600" aria-label="Schreibfläche"></canvas><div class="trace-actions"><button class="btn" id="showReference">Referenz zeigen</button><button class="btn good" id="selfGood" disabled>passt</button><button class="btn" id="selfBad" disabled>noch üben</button></div></div>`;
- if(t.type==='visual'||t.type==='speed')return `${t.icon?`<div class="visual-anchor" role="img" aria-label="Visueller Wortanker">${esc(t.icon)}</div>`:''}<div class="${t.wordId?'word-display':'big-letter'}" ${t.displayStyle?`style="${esc(t.displayStyle)}"`:''}>${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
- if(t.type==='memory')return `<div id="memoryFlash" class="big-letter">${esc(t.display)}</div><div id="memoryQuestion" class="hidden"><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}</div><div class="micro">${t.flashMs||500} ms ansehen → erinnern</div>`;
- if(t.type==='sameDifferent')return `<div class="font-pair">${(t.displayParts||[]).map(x=>`<span style="${esc(x.style)}">${esc(x.text)}</span>`).join('')}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
- if(['reverse','find','contrast','choice'].includes(t.type))return `${t.icon?`<div class="visual-anchor" role="img" aria-label="Visueller Wortanker">${esc(t.icon)}</div>`:''}${t.display?`<div class="${t.wordId?'word-display':'pair'}">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>${t.type==='choice'?answerButtons(opts):letterButtons(opts)}`;
- if(['lowercase','uppercase'].includes(t.type))return `<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
- if(t.type==='trueFalse')return `<div class="big-letter">${t.letter}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
- if(t.type==='audio')return `<div class="audio-orb">🔊</div>${t.wordId?`<div class="word-display muted">${esc(t.audioWord||'')}</div>`:''}<div class="prompt">${esc(t.prompt)}</div><p class="muted center">Antwort erst nach vollständig abgespielter menschlicher Aufnahme.</p><div class="audio-row"><button class="btn primary" id="playAudio">Audio starten</button></div>${t.options?.every(x=>C.ALPHABET.includes(x))?letterButtons(opts,true):answerButtons(opts,true)}<div id="audioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`;
- return `<div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`}
+if(t.interaction==='writingRecall')return `<div id="writeRecallCue" class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div><div class="canvas-wrap"><canvas class="trace-canvas" id="recallCanvas" width="600" height="600" aria-label="Schreibfläche"></canvas><div class="trace-actions"><button class="btn" id="showReference">Referenz zeigen</button><button class="btn good" id="selfGood" disabled>passt</button><button class="btn" id="selfBad" disabled>noch üben</button></div></div>`;
+if(t.type==='visual'||t.type==='speed')return `${t.icon?`<div class="visual-anchor" role="img" aria-label="Visueller Wortanker">${esc(t.icon)}</div>`:''}<div class="${t.wordId?'word-display':'big-letter'}" ${t.displayStyle?`style="${esc(t.displayStyle)}"`:''}>${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
+if(t.type==='memory')return `<div id="memoryFlash" class="big-letter">${esc(t.display)}</div><div id="memoryQuestion" class="hidden"><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}</div><div class="micro">${t.flashMs||500} ms ansehen → erinnern</div>`;
+if(t.type==='sameDifferent')return `<div class="font-pair">${(t.displayParts||[]).map(x=>`<span style="${esc(x.style)}">${esc(x.text)}</span>`).join('')}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
+if(['reverse','find','contrast','choice'].includes(t.type))return `${t.icon?`<div class="visual-anchor" role="img" aria-label="Visueller Wortanker">${esc(t.icon)}</div>`:''}${t.display?`<div class="${t.wordId?'word-display':'pair'}">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>${t.type==='choice'?answerButtons(opts):letterButtons(opts)}`;
+if(['lowercase','uppercase'].includes(t.type))return `<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div>${letterButtons(opts)}`;
+if(t.type==='trueFalse')return `<div class="big-letter">${t.letter}</div><div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`;
+if(t.type==='audio')return `<div class="audio-orb">🔊</div>${t.wordId?`<div class="word-display muted">${esc(t.audioWord||'')}</div>`:''}<div class="prompt">${esc(t.prompt)}</div><p class="muted center">Antwort erst nach vollständig abgespielter menschlicher Aufnahme.</p><div class="audio-row"><button class="btn primary" id="playAudio">Audio starten</button></div>${t.options?.every(x=>C.ALPHABET.includes(x))?letterButtons(opts,true):answerButtons(opts,true)}<div id="audioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`;
+return `<div class="prompt">${esc(t.prompt)}</div>${answerButtons(opts)}`}
 
 /* source: alphabet-app-v4-c.js */
 function renderExam(){const t=currentTask();if(!t)return finishExam();session.locked=false;timing={startedAt:0,invalid:false,audioDurationMs:0};if(t.type!=='audio'&&t.type!=='memory'&&t.interaction!=='writingRecall')beginTiming();shell(`<section class="lesson"><div class="lesson-head"><button class="btn" id="exitExam">← Menü</button><div class="progress"><i style="width:${progress()}%"></i></div><span class="tag">${t.isRepair?'Reparatur':`${session.mainIndex+1}/${targetCount()}`}</span></div><section class="card stage"><div class="eyebrow">${esc(session.title)} · ${session.feedback==='learning'?'Lernprüfung':'Realprüfung'} · ${t.isRepair?'Reparatur':'Hauptfrage'}</div>${taskBody(t)}${whyHtml(t)}<div class="actions question-actions"><button class="btn small" id="bookmark">${C.isBookmarked(S,t)?'★ Gemerkt':'☆ Merken'}</button></div><div id="feedback" class="feedback" role="status" aria-live="assertive"></div><div id="correction" class="correction hidden"></div></section></section>`,{navVisible:false});
- document.getElementById('exitExam').onclick=()=>modal('↩','Prüfung verlassen?','Die laufende Prüfung wird nicht gewertet.',[['Verlassen',()=>{session=null;screen='home';render()},'danger'],['Weiterlernen',()=>{},'primary']]);document.getElementById('bookmark').onclick=e=>{const on=C.toggleBookmark(S,t);persist();e.currentTarget.textContent=on?'★ Gemerkt':'☆ Merken'};
- if(t.type==='audio')setupAudioQuestion(t);if(t.type==='memory'){const flash=document.getElementById('memoryFlash'),q=document.getElementById('memoryQuestion');memoryTimer=setTimeout(()=>{flash.classList.add('hidden');q.classList.remove('hidden');beginTiming()},t.flashMs||500)}if(t.interaction==='multiSelect')setupMultiSelect(t);else if(t.interaction==='writingRecall')setupWritingRecall(t);else wireAnswers()}
+document.getElementById('exitExam').onclick=()=>modal('↩','Prüfung verlassen?','Die laufende Prüfung wird nicht gewertet.',[['Verlassen',()=>{session=null;screen='home';render()},'danger'],['Weiterlernen',()=>{},'primary']]);document.getElementById('bookmark').onclick=e=>{const on=C.toggleBookmark(S,t);persist();e.currentTarget.textContent=on?'★ Gemerkt':'☆ Merken'};
+if(t.type==='audio')setupAudioQuestion(t);if(t.type==='memory'){const flash=document.getElementById('memoryFlash'),q=document.getElementById('memoryQuestion');memoryTimer=setTimeout(()=>{flash.classList.add('hidden');q.classList.remove('hidden');beginTiming()},t.flashMs||500)}if(t.interaction==='multiSelect')setupMultiSelect(t);else if(t.interaction==='writingRecall')setupWritingRecall(t);else wireAnswers()}
 function setupMultiSelect(t){const selected=new Set();app.querySelectorAll('[data-token]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.token);selected.has(i)?selected.delete(i):selected.add(i);b.setAttribute('aria-pressed',selected.has(i)?'true':'false');b.classList.toggle('selected',selected.has(i))});document.getElementById('multiSubmit').onclick=()=>{const got=[...selected].sort((a,b)=>a-b),want=[...(t.correctIndexes||[])].sort((a,b)=>a-b),good=got.length===want.length&&got.every((x,i)=>x===want[i]);submitExamAnswer(got.join(','),document.getElementById('multiSubmit'),{forcedGood:good})}}
 function setupWritingRecall(t){const cue=document.getElementById('writeRecallCue'),canvas=document.getElementById('recallCanvas'),ctx=canvas.getContext('2d');let drawing=false,last=null,ink=0;setTimeout(()=>cue?.classList.add('hidden'),2000);const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};ctx.lineWidth=18;ctx.lineCap='round';ctx.strokeStyle='#111827';canvas.onpointerdown=e=>{drawing=true;last=point(e);canvas.setPointerCapture?.(e.pointerId)};canvas.onpointermove=e=>{if(!drawing)return;const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();ink+=Math.hypot(p.x-last.x,p.y-last.y);last=p};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false};document.getElementById('showReference').onclick=()=>{cue.classList.remove('hidden');cue.textContent=t.letter;document.getElementById('selfGood').disabled=ink<250;document.getElementById('selfBad').disabled=ink<250};document.getElementById('selfGood').onclick=e=>submitExamAnswer('SELF_OK',e.currentTarget,{forcedGood:true,latencyValid:false});document.getElementById('selfBad').onclick=e=>submitExamAnswer('SELF_AGAIN',e.currentTarget,{forcedGood:false,latencyValid:false})}
 function submitExamAnswer(value,button,extra={}){if(session.locked||button?.disabled)return;session.locked=true;const t=currentTask(),good=extra.forcedGood??(value===t.correct),isRepair=!!t.isRepair,tm=latency(),attemptId=C.id('attempt'),confusedWith=resolveConfusedLetter(t,value);const row=C.recordAnswer(S,{attemptId,questionId:t.questionId,sessionId:session.sessionId,parentAttemptId:t.parentAttemptId,originalQuestionId:t.originalQuestionId||t.questionId,repairId:t.repairId||'',originAttemptId:t.originAttemptId||'',originLetter:t.originLetter||'',originSkill:t.originSkill||'',letter:t.letter,skill:t.skill,type:t.type,kind:t.type,task:t,family:t.family,evidenceWeight:t.evidenceWeight,firstAttempt:!isRepair,isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError,scheduledReason:t.scheduledReason,selected:value,expected:t.correct,good,confusedWith,latencyMs:tm.latencyMs,latencyValid:extra.latencyValid??tm.latencyValid,shownAt:Date.now()-tm.latencyMs,now:Date.now(),source:session.preset});persist();
- const rowPlus={...row,audioSource:t.audioSource||null,family:t.family,variant:t.variant,wordId:t.wordId,signature:C.questionSignature(t),difficulty:t.difficulty};if(isRepair){C.applyRepairAnswer(session,rowPlus,session.repairCurrent)}else{const err=good?null:{letter:t.letter,skill:t.skill,type:t.type,family:t.family,selected:value,correct:t.correct,latencyMs:tm.latencyMs,note:C.DATA[t.letter].note};C.applyMainAnswer(session,rowPlus,err);if(!good&&session.feedback==='learning')scheduleRepair(t,attemptId)}
- if(session.feedback==='real'){setTimeout(nextQuestion,100);return}button?.classList.add(good?'correct':'wrong');const fb=document.getElementById('feedback'),cor=document.getElementById('correction');if(fb){fb.className=`feedback ${good?'good':'bad'}`;fb.textContent=good?'✓ Richtig':'✕ Falsch'}if(cor){cor.classList.remove('hidden');cor.innerHTML=good?(isRepair?'<strong>Reparatur verstanden. Sie schließt nur ihren Ursprungsfehler.</strong>':`<strong>${esc(t.letter)} · ${esc(C.SKILL_LABELS[t.skill]||t.skill)}</strong>`):`<div class="correction-grid"><span>Deine Antwort <b class="bad-text">${esc(value)}</b></span><span>Richtig <b class="good-text">${esc(t.correct)}</b></span></div><p><strong>${esc(t.letter)}</strong>: ${esc(C.DATA[t.letter].note)}</p>`}setTimeout(nextQuestion,good?600:1500)}
+const rowPlus={...row,audioSource:t.audioSource||null,family:t.family,variant:t.variant,wordId:t.wordId,signature:C.questionSignature(t),difficulty:t.difficulty};if(isRepair){C.applyRepairAnswer(session,rowPlus,session.repairCurrent)}else{const err=good?null:{letter:t.letter,skill:t.skill,type:t.type,family:t.family,selected:value,correct:t.correct,latencyMs:tm.latencyMs,note:C.DATA[t.letter].note};C.applyMainAnswer(session,rowPlus,err);if(!good&&session.feedback==='learning')scheduleRepair(t,attemptId)}
+if(session.feedback==='real'){setTimeout(nextQuestion,100);return}button?.classList.add(good?'correct':'wrong');const fb=document.getElementById('feedback'),cor=document.getElementById('correction');if(fb){fb.className=`feedback ${good?'good':'bad'}`;fb.textContent=good?'✓ Richtig':'✕ Falsch'}if(cor){cor.classList.remove('hidden');cor.innerHTML=good?(isRepair?'<strong>Reparatur verstanden. Sie schließt nur ihren Ursprungsfehler.</strong>':`<strong>${esc(t.letter)} · ${esc(C.SKILL_LABELS[t.skill]||t.skill)}</strong>`):`<div class="correction-grid"><span>Deine Antwort <b class="bad-text">${esc(value)}</b></span><span>Richtig <b class="good-text">${esc(t.correct)}</b></span></div><p><strong>${esc(t.letter)}</strong>: ${esc(C.DATA[t.letter].note)}</p>`}setTimeout(nextQuestion,good?600:1500)}
 function handleAudioFailure(t,msg){const status=document.getElementById('audioStatus'),button=document.getElementById('playAudio'),decision=C.technicalAudioFailureDecision(session,t);if(decision.action==='retry'){if(button)button.disabled=false;if(status)status.textContent=`Technischer Fehler. Noch ein Versuch möglich (${decision.attempt}/2).`;toast(msg);return}if(decision.action==='fallback'){const replacement=C.makeAudioFallback(S,t,session,Math.random);if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;toast('Audio zweimal nicht erreichbar. Diese Lernfrage wird ohne Audio ersetzt.');setTimeout(renderExam,300);return}session.technicalSkips.push({letter:t.letter,questionId:t.questionId,reason:'human-audio-unavailable'});toast(`${t.letter}: Audio technisch nicht verfügbar. Nicht als Fehler gewertet.`);if(session.repairCurrent){session.repairCurrent.done=true;session.repairCurrent=null}else session.mainIndex++;setTimeout(()=>{if(session.mainIndex>=targetCount()&&!dueRepair())finishExam();else renderExam()},350)}
 
 /* source: alphabet-app-v4-d.js */
@@ -156,601 +151,804 @@ function renderGuided(){const c=guidedLetter||selectedLetter||'А',d=C.DATA[c],x
 
 /* source: alphabet-app-v4-completion.js */
 'use strict';
-
 const taskBodyCompletionBase=taskBody;
 taskBody=function(t){
-  if(t.interaction==='audioChoice'){
-    return `<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div><p class="muted center">Höre alle vier menschlichen Buchstabenaufnahmen. Erst danach kannst du eine Aufnahme auswählen.</p><div class="audio-choice-grid">${(t.audioChoiceLetters||t.options||[]).map((c,i)=>`<div class="audio-choice-card"><button class="btn audio-play-candidate" data-play-letter-audio="${esc(c)}" aria-label="Aufnahme ${i+1} abspielen">▶ Aufnahme ${i+1}</button><button class="answer audio-pick-candidate" data-ans="${esc(c)}" disabled aria-label="Aufnahme ${i+1} als Antwort wählen"><span class="kbd">${i+1}</span>Diese Aufnahme wählen</button><small data-audio-choice-status="${esc(c)}">noch nicht gehört</small></div>`).join('')}</div><div id="audioChoiceStatus" class="feedback" role="status" aria-live="polite">0/${(t.audioChoiceLetters||[]).length} Originalaufnahmen gehört.</div>`;
-  }
-  return taskBodyCompletionBase(t)
+if(t.interaction==='audioChoice'){
+return `<div class="big-letter">${esc(t.display)}</div><div class="prompt">${esc(t.prompt)}</div><p class="muted center">Höre alle vier menschlichen Buchstabenaufnahmen. Erst danach kannst du eine Aufnahme auswählen.</p><div class="audio-choice-grid">${(t.audioChoiceLetters||t.options||[]).map((c,i)=>`<div class="audio-choice-card"><button class="btn audio-play-candidate" data-play-letter-audio="${esc(c)}" aria-label="Aufnahme ${i+1} abspielen">▶ Aufnahme ${i+1}</button><button class="answer audio-pick-candidate" data-ans="${esc(c)}" disabled aria-label="Aufnahme ${i+1} als Antwort wählen"><span class="kbd">${i+1}</span>Diese Aufnahme wählen</button><small data-audio-choice-status="${esc(c)}">noch nicht gehört</small></div>`).join('')}</div><div id="audioChoiceStatus" class="feedback" role="status" aria-live="polite">0/${(t.audioChoiceLetters||[]).length} Originalaufnahmen gehört.</div>`;
+}
+return taskBodyCompletionBase(t)
 };
-
 function setupAudioChoice(t){
-  const heard=new Set(),failures={},all=t.audioChoiceLetters||t.options||[],status=document.getElementById('audioChoiceStatus');
-  const refresh=()=>{if(status)status.textContent=`${heard.size}/${all.length} Aufnahmen gehört.${heard.size===all.length?' Jetzt auswählen.':''}`;if(heard.size===all.length){app.querySelectorAll('.audio-pick-candidate').forEach(b=>b.disabled=false);beginTiming()}};
-  app.querySelectorAll('[data-play-letter-audio]').forEach(btn=>btn.onclick=()=>{
-    const letter=btn.dataset.playLetterAudio,src=window.UKRAINIAN_LETTER_AUDIO?.[letter],small=app.querySelector(`[data-audio-choice-status="${CSS.escape(letter)}"]`);
-    if(!src){fallbackAudioChoice(t,`Keine isolierte menschliche Buchstabenaufnahme für ${letter}.`);return}
-    btn.disabled=true;if(small)small.textContent='lädt …';const a=new Audio(src);let settled=false;const timeout=setTimeout(()=>{if(!settled){settled=true;a.pause?.();fail()}},9000);
-    const fail=()=>{clearTimeout(timeout);failures[letter]=(failures[letter]||0)+1;btn.disabled=false;if(small)small.textContent=failures[letter]<2?'Fehler · erneut versuchen':'nicht erreichbar';if(failures[letter]>=2)fallbackAudioChoice(t,`${letter}: Buchstabenaufnahme zweimal nicht erreichbar.`)};
-    a.onplay=()=>{if(small)small.textContent='läuft …'};
-    a.onended=()=>{if(settled)return;settled=true;clearTimeout(timeout);heard.add(letter);btn.disabled=false;if(small)small.textContent='gehört ✓';refresh()};
-    a.onerror=()=>{if(settled)return;settled=true;fail()};
-    a.play().catch(()=>{if(settled)return;settled=true;clearTimeout(timeout);btn.disabled=false;if(small)small.textContent='Tippen zum Starten'})
-  });
-  refresh()
+const heard=new Set(),failures={},all=t.audioChoiceLetters||t.options||[],status=document.getElementById('audioChoiceStatus');
+const refresh=()=>{if(status)status.textContent=`${heard.size}/${all.length} Aufnahmen gehört.${heard.size===all.length?' Jetzt auswählen.':''}`;if(heard.size===all.length){app.querySelectorAll('.audio-pick-candidate').forEach(b=>b.disabled=false);beginTiming()}};
+app.querySelectorAll('[data-play-letter-audio]').forEach(btn=>btn.onclick=()=>{
+const letter=btn.dataset.playLetterAudio,src=window.UKRAINIAN_LETTER_AUDIO?.[letter],small=app.querySelector(`[data-audio-choice-status="${CSS.escape(letter)}"]`);
+if(!src){fallbackAudioChoice(t,`Keine isolierte menschliche Buchstabenaufnahme für ${letter}.`);return}
+btn.disabled=true;if(small)small.textContent='lädt …';const a=new Audio(src);let settled=false;const timeout=setTimeout(()=>{if(!settled){settled=true;a.pause?.();fail()}},9000);
+const fail=()=>{clearTimeout(timeout);failures[letter]=(failures[letter]||0)+1;btn.disabled=false;if(small)small.textContent=failures[letter]<2?'Fehler · erneut versuchen':'nicht erreichbar';if(failures[letter]>=2)fallbackAudioChoice(t,`${letter}: Buchstabenaufnahme zweimal nicht erreichbar.`)};
+a.onplay=()=>{if(small)small.textContent='läuft …'};
+a.onended=()=>{if(settled)return;settled=true;clearTimeout(timeout);heard.add(letter);btn.disabled=false;if(small)small.textContent='gehört ✓';refresh()};
+a.onerror=()=>{if(settled)return;settled=true;fail()};
+a.play().catch(()=>{if(settled)return;settled=true;clearTimeout(timeout);btn.disabled=false;if(small)small.textContent='Tippen zum Starten'})
+});
+refresh()
 }
 function fallbackAudioChoice(t,msg){
-  if(session?.locked)return;toast(msg+' Frage wird ohne Audio ersetzt.');const replacement=C.makeAudioFallback(S,{...t,type:'audio'},session,Math.random);session.mainTasks[session.mainIndex]=replacement;setTimeout(renderExam,300)
+if(session?.locked)return;toast(msg+' Frage wird ohne Audio ersetzt.');const replacement=C.makeAudioFallback(S,{...t,type:'audio'},session,Math.random);session.mainTasks[session.mainIndex]=replacement;setTimeout(renderExam,300)
 }
-
 const renderExamCompletionBase=renderExam;
 renderExam=function(){renderExamCompletionBase();const t=session&&currentTask();if(t?.interaction==='audioChoice')setupAudioChoice(t)};
-
 const renderExamMenuCompletionBase=renderExamMenu;
 renderExamMenu=function(){renderExamMenuCompletionBase();const nav=app.querySelector('.bottom-nav'),card=document.createElement('section');card.className='card macro-card';card.innerHTML=`<div><div class="eyebrow">Adaptiver Langmodus</div><h2>20-Minuten Intensiv</h2><p>36 Hauptfragen in fünf adaptiven Phasen: Warm-up → Fehler & Schwächen → aktives Lernfeld → Mischprüfung → Automatisierung. Die konkreten Fragen werden weiterhin erst nach deiner letzten Antwort ausgewählt.</p></div><button class="btn primary" id="startMacro">INTENSIV STARTEN</button>`;(nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',card);document.getElementById('startMacro').onclick=startMacroTraining};
 function startMacroTraining(){session=C.createMacroSession(S);screen='exam';renderExam()}
-
 const whyHtmlCompletionBase=whyHtml;
 whyHtml=function(t){const phase=session?.macro?C.macroPhase(session):null;return `${phase?`<div class="micro center"><strong>Phase: ${esc(phase.label)}</strong></div>`:''}${whyHtmlCompletionBase(t)}`};
-
 let pronunciationObjectUrl='';
 const renderDetailCompletionBase=renderDetail;
 renderDetail=function(){renderDetailCompletionBase();appendPronunciationRecorder(selectedLetter||'А')};
 function appendPronunciationRecorder(letter){
-  const nav=app.querySelector('.bottom-nav'),section=document.createElement('section');section.className='card pronunciation-card';const isolated=C.isolatedHumanAudioSupported(letter);
-  section.innerHTML=`<h2>🎙 Aussprache selbst vergleichen</h2><p>${isolated?'Höre zuerst die isolierte menschliche Buchstabenaussprache.':'Ь hat keinen eigenen Laut. Vergleiche hier nur die Aussprache im Referenzwort.'}</p><div class="actions"><button class="btn" id="micReference">🔊 Menschliche Referenz</button><button class="btn primary" id="micStart">● Aufnahme starten</button><button class="btn" id="micStop" disabled>■ Stoppen</button></div><audio id="micPlayback" controls hidden></audio><div id="micStatus" class="feedback" role="status" aria-live="polite">Keine Bewertung: Du hörst dich selbst zurück und vergleichst mit der Referenz. Die Aufnahme wird nicht hochgeladen und zählt nicht zur Mastery.</div>`;
-  (nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',section);setupPronunciationRecorder(letter)
+const nav=app.querySelector('.bottom-nav'),section=document.createElement('section');section.className='card pronunciation-card';const isolated=C.isolatedHumanAudioSupported(letter);
+section.innerHTML=`<h2>🎙 Aussprache selbst vergleichen</h2><p>${isolated?'Höre zuerst die isolierte menschliche Buchstabenaussprache.':'Ь hat keinen eigenen Laut. Vergleiche hier nur die Aussprache im Referenzwort.'}</p><div class="actions"><button class="btn" id="micReference">🔊 Menschliche Referenz</button><button class="btn primary" id="micStart">● Aufnahme starten</button><button class="btn" id="micStop" disabled>■ Stoppen</button></div><audio id="micPlayback" controls hidden></audio><div id="micStatus" class="feedback" role="status" aria-live="polite">Keine Bewertung: Du hörst dich selbst zurück und vergleichst mit der Referenz. Die Aufnahme wird nicht hochgeladen und zählt nicht zur Mastery.</div>`;
+(nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',section);setupPronunciationRecorder(letter)
 }
 function setupPronunciationRecorder(letter){
-  const ref=document.getElementById('micReference'),start=document.getElementById('micStart'),stop=document.getElementById('micStop'),playback=document.getElementById('micPlayback'),status=document.getElementById('micStatus');let recorder=null,stream=null,chunks=[],limitTimer=null;
-  ref.onclick=()=>{const src=C.isolatedHumanAudioSupported(letter)?window.UKRAINIAN_LETTER_AUDIO?.[letter]:window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(!src){status.textContent='Menschliche Referenz ist gerade nicht verfügbar.';return}const a=new Audio(src);status.textContent='Menschliche Referenz läuft …';a.onended=()=>status.textContent='Jetzt kannst du dich aufnehmen und direkt vergleichen.';a.onerror=()=>status.textContent='Referenz konnte technisch nicht geladen werden.';a.play().catch(()=>status.textContent='Tippe erneut auf die Referenz, falls der Browser Audio blockiert.')};
-  const cleanup=()=>{clearTimeout(limitTimer);stream?.getTracks?.().forEach(t=>t.stop());stream=null;start.disabled=false;stop.disabled=true};
-  start.onclick=async()=>{if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){status.textContent='Dieser Browser stellt hier keine Mikrofonaufnahme bereit.';return}try{stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(pronunciationObjectUrl)URL.revokeObjectURL(pronunciationObjectUrl);pronunciationObjectUrl=URL.createObjectURL(blob);playback.src=pronunciationObjectUrl;playback.hidden=false;status.textContent='Aufnahme fertig. Höre dich zurück und vergleiche mit der menschlichen Referenz – ohne automatische Note.';cleanup()};recorder.start();start.disabled=true;stop.disabled=false;status.textContent='Aufnahme läuft … maximal 5 Sekunden.';limitTimer=setTimeout(()=>{if(recorder?.state==='recording')recorder.stop()},5000)}catch(_){status.textContent='Mikrofonzugriff wurde nicht erlaubt oder ist nicht verfügbar.';cleanup()}};
-  stop.onclick=()=>{if(recorder?.state==='recording')recorder.stop()}
+const ref=document.getElementById('micReference'),start=document.getElementById('micStart'),stop=document.getElementById('micStop'),playback=document.getElementById('micPlayback'),status=document.getElementById('micStatus');let recorder=null,stream=null,chunks=[],limitTimer=null;
+ref.onclick=()=>{const src=C.isolatedHumanAudioSupported(letter)?window.UKRAINIAN_LETTER_AUDIO?.[letter]:window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter];if(!src){status.textContent='Menschliche Referenz ist gerade nicht verfügbar.';return}const a=new Audio(src);status.textContent='Menschliche Referenz läuft …';a.onended=()=>status.textContent='Jetzt kannst du dich aufnehmen und direkt vergleichen.';a.onerror=()=>status.textContent='Referenz konnte technisch nicht geladen werden.';a.play().catch(()=>status.textContent='Tippe erneut auf die Referenz, falls der Browser Audio blockiert.')};
+const cleanup=()=>{clearTimeout(limitTimer);stream?.getTracks?.().forEach(t=>t.stop());stream=null;start.disabled=false;stop.disabled=true};
+start.onclick=async()=>{if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){status.textContent='Dieser Browser stellt hier keine Mikrofonaufnahme bereit.';return}try{stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});if(pronunciationObjectUrl)URL.revokeObjectURL(pronunciationObjectUrl);pronunciationObjectUrl=URL.createObjectURL(blob);playback.src=pronunciationObjectUrl;playback.hidden=false;status.textContent='Aufnahme fertig. Höre dich zurück und vergleiche mit der menschlichen Referenz – ohne automatische Note.';cleanup()};recorder.start();start.disabled=true;stop.disabled=false;status.textContent='Aufnahme läuft … maximal 5 Sekunden.';limitTimer=setTimeout(()=>{if(recorder?.state==='recording')recorder.stop()},5000)}catch(_){status.textContent='Mikrofonzugriff wurde nicht erlaubt oder ist nicht verfügbar.';cleanup()}};
+stop.onclick=()=>{if(recorder?.state==='recording')recorder.stop()}
 }
-
 const taskBodyStyle=document.createElement('style');taskBodyStyle.textContent=`.audio-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.audio-choice-card{border:1px solid var(--line,#d1d5db);border-radius:16px;padding:12px;display:grid;gap:9px}.audio-choice-card .answer{width:100%;min-height:52px}.audio-choice-card small{text-align:center;color:#6b7280}.pronunciation-card audio{width:100%;margin-top:14px}.macro-card{display:flex;gap:20px;align-items:center;justify-content:space-between}.macro-card>div{max-width:680px}@media(max-width:760px){.audio-choice-grid{grid-template-columns:1fr}.macro-card{display:block}.macro-card .btn{width:100%;margin-top:12px}}`;document.head.append(taskBodyStyle);
 
 /* source: alphabet-app-v5-production-ui.js */
 'use strict';
-
 const taskBodyV5Base=taskBody;
 taskBody=function(t){
-  if(t.interaction!=='writtenProduction')return taskBodyV5Base(t);
-  const cue=t.display?`<div id="productionCue" class="big-letter">${esc(t.display)}</div>`:'',audio=t.family==='audio-to-writing'?`<div class="audio-row"><button class="btn primary" id="productionAudio">🔊 Menschliche Aufnahme starten</button></div><div id="productionAudioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`:'';
-  return `<div class="production-task">${cue}<div class="prompt">${esc(t.prompt)}</div>${audio}<p class="muted center">Zeichne aus dem Gedächtnis. Die Referenz bleibt bis zu deiner Aktion verborgen.</p><div class="canvas-wrap"><canvas class="trace-canvas" id="productionCanvas" width="600" height="600" aria-label="Schreibfläche für freie Zeichenproduktion"></canvas><div class="trace-actions"><button class="btn primary" id="productionCompare" disabled>Jetzt vergleichen</button><button class="btn" id="productionClear">Neu zeichnen</button></div></div><div id="productionReference" class="production-reference hidden"><div><span>Deine Zeichnung bleibt links sichtbar.</span><strong>${esc(t.referenceUpper)} <small>${esc(t.referenceLower)}</small></strong></div><p>Wie gut passt deine Form? Diese Schreibaufgabe wird von dir selbst bewertet und zählt nicht zum objektiven Prüfungs-Score.</p><div class="actions"><button class="btn good" data-production-rating="pass">Passt</button><button class="btn" data-production-rating="unsure">Fast / unsicher</button><button class="btn danger" data-production-rating="again">Nochmal</button></div></div><div id="productionStatus" class="feedback" role="status" aria-live="polite"></div></div>`;
+if(t.interaction!=='writtenProduction')return taskBodyV5Base(t);
+const cue=t.display?`<div id="productionCue" class="big-letter">${esc(t.display)}</div>`:'',audio=t.family==='audio-to-writing'?`<div class="audio-row"><button class="btn primary" id="productionAudio">🔊 Menschliche Aufnahme starten</button></div><div id="productionAudioStatus" class="feedback" aria-live="polite">Audio noch nicht gestartet.</div>`:'';
+return `<div class="production-task">${cue}<div class="prompt">${esc(t.prompt)}</div>${audio}<p class="muted center">Zeichne aus dem Gedächtnis. Die Referenz bleibt bis zu deiner Aktion verborgen.</p><div class="canvas-wrap"><canvas class="trace-canvas" id="productionCanvas" width="600" height="600" aria-label="Schreibfläche für freie Zeichenproduktion"></canvas><div class="trace-actions"><button class="btn primary" id="productionCompare" disabled>Jetzt vergleichen</button><button class="btn" id="productionClear">Neu zeichnen</button></div></div><div id="productionReference" class="production-reference hidden"><div><span>Deine Zeichnung bleibt links sichtbar.</span><strong>${esc(t.referenceUpper)} <small>${esc(t.referenceLower)}</small></strong></div><p>Wie gut passt deine Form? Diese Schreibaufgabe wird von dir selbst bewertet und zählt nicht zum objektiven Prüfungs-Score.</p><div class="actions"><button class="btn good" data-production-rating="pass">Passt</button><button class="btn" data-production-rating="unsure">Fast / unsicher</button><button class="btn danger" data-production-rating="again">Nochmal</button></div></div><div id="productionStatus" class="feedback" role="status" aria-live="polite"></div></div>`;
 };
 const whyHtmlV5Base=whyHtml;
 whyHtml=function(t){
-  if(t.interaction!=='writtenProduction')return whyHtmlV5Base(t);
-  return `<details class="why"><summary>Warum diese Frage?</summary><p>Freier Abruf wurde freigeschaltet, weil die nötigen Erkennungs-Skills bereits ausreichend stabil sind.</p><p>Die Lösung bleibt bis zum Vergleich verborgen.${DEBUG_LEARNING?' Debugdaten werden bei Produktionsaufgaben absichtlich nicht mit dem Zielzeichen angezeigt.':''}</p></details>`;
+if(t.interaction!=='writtenProduction')return whyHtmlV5Base(t);
+return `<details class="why"><summary>Warum diese Frage?</summary><p>Freier Abruf wurde freigeschaltet, weil die nötigen Erkennungs-Skills bereits ausreichend stabil sind.</p><p>Die Lösung bleibt bis zum Vergleich verborgen.${DEBUG_LEARNING?' Debugdaten werden bei Produktionsaufgaben absichtlich nicht mit dem Zielzeichen angezeigt.':''}</p></details>`;
 };
-
 function setupWrittenProduction(t){
-  const canvas=document.getElementById('productionCanvas'),ctx=canvas?.getContext('2d'),compare=document.getElementById('productionCompare'),clear=document.getElementById('productionClear'),reference=document.getElementById('productionReference'),status=document.getElementById('productionStatus'),cue=document.getElementById('productionCue');if(!canvas||!ctx)return;
-  let drawing=false,last=null,ink=0,strokeCount=0,startedAt=0,minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,inputReady=!['audio-to-writing','visual-memory-writing'].includes(t.family),audioFailures=0;
-  ctx.lineWidth=18;ctx.lineCap='round';ctx.strokeStyle='#111827';if(!inputReady)canvas.style.opacity='.55';
-  const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};
-  const updateCompare=()=>compare.disabled=ink<180||!inputReady;
-  const reset=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ink=0;strokeCount=0;startedAt=0;minX=minY=Infinity;maxX=maxY=-Infinity;reference.classList.add('hidden');updateCompare()};
-  canvas.onpointerdown=e=>{if(!inputReady)return;drawing=true;strokeCount++;if(!startedAt)startedAt=Date.now();last=point(e);minX=Math.min(minX,last.x);minY=Math.min(minY,last.y);maxX=Math.max(maxX,last.x);maxY=Math.max(maxY,last.y);canvas.setPointerCapture?.(e.pointerId)};
-  canvas.onpointermove=e=>{if(!drawing)return;const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();ink+=Math.hypot(p.x-last.x,p.y-last.y);last=p;minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);updateCompare()};
-  canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;updateCompare()};
-  clear.onclick=reset;compare.onclick=()=>{reference.classList.remove('hidden');status.textContent='Vergleiche deine Form mit der Referenz. Keine automatische Handschriftbewertung.'};
-  reference.querySelectorAll('[data-production-rating]').forEach(b=>b.onclick=()=>submitProductionRating(t,b.dataset.productionRating,{strokeCount,durationMs:startedAt?Date.now()-startedAt:0,bounds:{w:Number.isFinite(maxX-minX)?maxX-minX:0,h:Number.isFinite(maxY-minY)?maxY-minY:0}}));
-  if(t.family==='visual-memory-writing'&&cue)setTimeout(()=>{cue.classList.add('hidden');inputReady=true;canvas.style.opacity='1';status.textContent='Vorlage ausgeblendet. Jetzt aus dem Gedächtnis zeichnen.';updateCompare()},t.cueMs||1500);
-  if(t.family==='audio-to-writing'){
-    const btn=document.getElementById('productionAudio'),audioStatus=document.getElementById('productionAudioStatus');
-    btn.onclick=()=>{const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter];if(!src){replaceProductionAudio(t,'Keine menschliche Buchstabenaufnahme verfügbar.');return}btn.disabled=true;audioStatus.textContent='Menschliche Aufnahme läuft …';const a=new Audio(src);let settled=false,timer=setTimeout(()=>{if(!settled){settled=true;a.pause?.();fail()}},9000);const fail=()=>{clearTimeout(timer);audioFailures++;btn.disabled=false;audioStatus.textContent=audioFailures<2?'Technischer Fehler · erneut versuchen':'Audio technisch nicht verfügbar';if(audioFailures>=2)replaceProductionAudio(t,`${t.letter}: Audio zweimal nicht erreichbar.`)};a.onended=()=>{if(settled)return;settled=true;clearTimeout(timer);inputReady=true;canvas.style.opacity='1';btn.disabled=false;audioStatus.textContent='Gehört. Jetzt aus dem Gedächtnis zeichnen.';updateCompare()};a.onerror=()=>{if(settled)return;settled=true;fail()};a.play().catch(()=>{if(settled)return;settled=true;clearTimeout(timer);btn.disabled=false;audioStatus.textContent='Tippe erneut zum Starten, falls der Browser Audio blockiert.'})};
-  }
-  updateCompare();
+const canvas=document.getElementById('productionCanvas'),ctx=canvas?.getContext('2d'),compare=document.getElementById('productionCompare'),clear=document.getElementById('productionClear'),reference=document.getElementById('productionReference'),status=document.getElementById('productionStatus'),cue=document.getElementById('productionCue');if(!canvas||!ctx)return;
+let drawing=false,last=null,ink=0,strokeCount=0,startedAt=0,minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,inputReady=!['audio-to-writing','visual-memory-writing'].includes(t.family),audioFailures=0;
+ctx.lineWidth=18;ctx.lineCap='round';ctx.strokeStyle='#111827';if(!inputReady)canvas.style.opacity='.55';
+const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}};
+const updateCompare=()=>compare.disabled=ink<180||!inputReady;
+const reset=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ink=0;strokeCount=0;startedAt=0;minX=minY=Infinity;maxX=maxY=-Infinity;reference.classList.add('hidden');updateCompare()};
+canvas.onpointerdown=e=>{if(!inputReady)return;drawing=true;strokeCount++;if(!startedAt)startedAt=Date.now();last=point(e);minX=Math.min(minX,last.x);minY=Math.min(minY,last.y);maxX=Math.max(maxX,last.x);maxY=Math.max(maxY,last.y);canvas.setPointerCapture?.(e.pointerId)};
+canvas.onpointermove=e=>{if(!drawing)return;const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();ink+=Math.hypot(p.x-last.x,p.y-last.y);last=p;minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);updateCompare()};
+canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;updateCompare()};
+clear.onclick=reset;compare.onclick=()=>{reference.classList.remove('hidden');status.textContent='Vergleiche deine Form mit der Referenz. Keine automatische Handschriftbewertung.'};
+reference.querySelectorAll('[data-production-rating]').forEach(b=>b.onclick=()=>submitProductionRating(t,b.dataset.productionRating,{strokeCount,durationMs:startedAt?Date.now()-startedAt:0,bounds:{w:Number.isFinite(maxX-minX)?maxX-minX:0,h:Number.isFinite(maxY-minY)?maxY-minY:0}}));
+if(t.family==='visual-memory-writing'&&cue)setTimeout(()=>{cue.classList.add('hidden');inputReady=true;canvas.style.opacity='1';status.textContent='Vorlage ausgeblendet. Jetzt aus dem Gedächtnis zeichnen.';updateCompare()},t.cueMs||1500);
+if(t.family==='audio-to-writing'){
+const btn=document.getElementById('productionAudio'),audioStatus=document.getElementById('productionAudioStatus');
+btn.onclick=()=>{const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter];if(!src){replaceProductionAudio(t,'Keine menschliche Buchstabenaufnahme verfügbar.');return}btn.disabled=true;audioStatus.textContent='Menschliche Aufnahme läuft …';const a=new Audio(src);let settled=false,timer=setTimeout(()=>{if(!settled){settled=true;a.pause?.();fail()}},9000);const fail=()=>{clearTimeout(timer);audioFailures++;btn.disabled=false;audioStatus.textContent=audioFailures<2?'Technischer Fehler · erneut versuchen':'Audio technisch nicht verfügbar';if(audioFailures>=2)replaceProductionAudio(t,`${t.letter}: Audio zweimal nicht erreichbar.`)};a.onended=()=>{if(settled)return;settled=true;clearTimeout(timer);inputReady=true;canvas.style.opacity='1';btn.disabled=false;audioStatus.textContent='Gehört. Jetzt aus dem Gedächtnis zeichnen.';updateCompare()};a.onerror=()=>{if(settled)return;settled=true;fail()};a.play().catch(()=>{if(settled)return;settled=true;clearTimeout(timer);btn.disabled=false;audioStatus.textContent='Tippe erneut zum Starten, falls der Browser Audio blockiert.'})};
+}
+updateCompare();
 }
 function replaceProductionAudio(t,msg){
-  toast(msg+' Kein Benutzerfehler. Die Aufgabe wird ohne Audio ersetzt.');
-  const alternatives=C.productionFamiliesFor(S,t.letter).filter(f=>f!=='audio-to-writing'),family=alternatives.includes('sound-to-writing')?'sound-to-writing':alternatives[0];
-  if(!family){session.productionTechnicalSkips.push({letter:t.letter,family:t.family,at:Date.now()});session.productionCurrent=null;setTimeout(nextQuestion,250);return}
-  session.productionCurrent=C.productionTask(S,t.letter,family,session,Math.random,{scheduledReason:'audio-production-fallback'});setTimeout(renderExam,250);
+toast(msg+' Kein Benutzerfehler. Die Aufgabe wird ohne Audio ersetzt.');
+const alternatives=C.productionFamiliesFor(S,t.letter).filter(f=>f!=='audio-to-writing'),family=alternatives.includes('sound-to-writing')?'sound-to-writing':alternatives[0];
+if(!family){session.productionTechnicalSkips.push({letter:t.letter,family:t.family,at:Date.now()});session.productionCurrent=null;setTimeout(nextQuestion,250);return}
+session.productionCurrent=C.productionTask(S,t.letter,family,session,Math.random,{scheduledReason:'audio-production-fallback'});setTimeout(renderExam,250);
 }
-
 const v5ProductionStyle=document.createElement('style');
 v5ProductionStyle.textContent=`.production-reference{margin-top:16px;border-top:1px solid var(--line,#d1d5db);padding-top:16px}.production-reference>div{display:flex;justify-content:space-between;align-items:center;gap:16px}.production-reference strong{font-size:64px;line-height:1}.production-reference strong small{font-size:34px}.production-task .canvas-wrap{margin-top:14px}.production-task canvas{touch-action:none}.production-profile .type-grid{margin-top:12px}@media(max-width:760px){.production-reference>div{align-items:flex-start;flex-direction:column}.production-reference strong{font-size:54px}.production-tests .actions .btn{width:100%}}`;
 document.head.append(v5ProductionStyle);
 
 /* source: alphabet-app-v5-production-session.js */
 'use strict';
-
 function submitProductionRating(t,rating,metrics={}){
-  if(session.locked)return;session.locked=true;const isRepair=!!t.isRepair;
-  const row=C.recordProductionSelfCheck(S,{letter:t.letter,family:t.family,rating,isRepair,repairId:t.repairId||'',sessionId:session.sessionId,questionId:t.questionId,audioSource:t.family==='audio-to-writing'?'human':'',...metrics});
-  session.productionAnswers.push({...row,masteryAfter:C.productionMastery(S,t.letter),confidenceAfter:C.productionConfidence(S,t.letter)});session.lastProductionLetter=t.letter;
-  if(isRepair&&session.repairCurrent){
-    const current=session.repairCurrent;current.done=true;current.resolved=rating==='pass';
-    if(rating==='pass')session.repairsResolved++;
-    else{session.repairsFailed++;C.scheduleProductionRepairForSession(session,t,S,row.repairId||t.repairId,Math.random)}
-  }else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
-  persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
+if(session.locked)return;session.locked=true;const isRepair=!!t.isRepair;
+const row=C.recordProductionSelfCheck(S,{letter:t.letter,family:t.family,rating,isRepair,repairId:t.repairId||'',sessionId:session.sessionId,questionId:t.questionId,audioSource:t.family==='audio-to-writing'?'human':'',...metrics});
+session.productionAnswers.push({...row,masteryAfter:C.productionMastery(S,t.letter),confidenceAfter:C.productionConfidence(S,t.letter)});session.lastProductionLetter=t.letter;
+if(isRepair&&session.repairCurrent){
+const current=session.repairCurrent;current.done=true;current.resolved=rating==='pass';
+if(rating==='pass')session.repairsResolved++;
+else{session.repairsFailed++;C.scheduleProductionRepairForSession(session,t,S,row.repairId||t.repairId,Math.random)}
+}else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
+persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
 }
-
 const currentTaskV5Base=currentTask;
 currentTask=function(){
-  if(!session)return null;C.initProductionSession(session,S);
-  const repair=dueRepair();if(repair){session.repairCurrent=repair;return repair.task}session.repairCurrent=null;
-  if(session.productionCurrent)return session.productionCurrent;
-  if(C.shouldInsertProduction(S,session,Date.now())){session.productionCurrent=C.selectProductionTask(S,session,Math.random,Date.now());if(session.productionCurrent)return session.productionCurrent}
-  if(session.productionOnly)return null;
-  return currentTaskV5Base();
+if(!session)return null;C.initProductionSession(session,S);
+const repair=dueRepair();if(repair){session.repairCurrent=repair;return repair.task}session.repairCurrent=null;
+if(session.productionCurrent)return session.productionCurrent;
+if(C.shouldInsertProduction(S,session,Date.now())){session.productionCurrent=C.selectProductionTask(S,session,Math.random,Date.now());if(session.productionCurrent)return session.productionCurrent}
+if(session.productionOnly)return null;
+return currentTaskV5Base();
 };
-
 nextQuestion=function(){
-  if(session.repairCurrent){session.repairCurrent=null}
-  else if(session.productionCurrent){session.productionCurrent=null;session.lastProductionMainIndex=session.mainIndex}
-  else session.mainIndex++;
-  session.locked=false;
-  if(C.shouldInsertProduction(S,session,Date.now())){renderExam();return}
-  if(session.productionOnly){const ps=C.productionSummary(session);if(ps.total>=session.productionTargetCount){finishExam();return}renderExam();return}
-  const target=targetCount();
-  if(session.mainIndex>=target&&!dueRepair()){
-    // Normale Repairs dürfen am Ende wie bisher vorgezogen werden. Produktions-Repairs bleiben offen,
-    // wenn ihr Abstand von 3–7 objektiven Hauptfragen in dieser Session nicht mehr erreicht wird.
-    const pending=session.pendingRepairs.find(x=>!x.done&&x.originSkill!=='writtenProduction');
-    if(pending&&session.feedback==='learning'){pending.dueAfterMainIndex=session.mainIndex;renderExam();return}
-    finishExam();
-  }else renderExam();
+if(session.repairCurrent){session.repairCurrent=null}
+else if(session.productionCurrent){session.productionCurrent=null;session.lastProductionMainIndex=session.mainIndex}
+else session.mainIndex++;
+session.locked=false;
+if(C.shouldInsertProduction(S,session,Date.now())){renderExam();return}
+if(session.productionOnly){const ps=C.productionSummary(session);if(ps.total>=session.productionTargetCount){finishExam();return}renderExam();return}
+const target=targetCount();
+if(session.mainIndex>=target&&!dueRepair()){
+const pending=session.pendingRepairs.find(x=>!x.done&&x.originSkill!=='writtenProduction');
+if(pending&&session.feedback==='learning'){pending.dueAfterMainIndex=session.mainIndex;renderExam();return}
+finishExam();
+}else renderExam();
 };
-
 const renderExamV5Base=renderExam;
 renderExam=function(){
-  renderExamV5Base();const t=session&&currentTask();
-  if(t?.interaction==='writtenProduction'){
-    setupWrittenProduction(t);const tag=app.querySelector('.lesson-head .tag');if(tag)tag.textContent=t.isRepair?'Produktions-Repair':'Freie Produktion';
-    const eye=app.querySelector('.stage>.eyebrow');if(eye)eye.textContent=`${session.title} · freie Produktion${t.isRepair?' · Repair':''}`;
-  }
+renderExamV5Base();const t=session&&currentTask();
+if(t?.interaction==='writtenProduction'){
+setupWrittenProduction(t);const tag=app.querySelector('.lesson-head .tag');if(tag)tag.textContent=t.isRepair?'Produktions-Repair':'Freie Produktion';
+const eye=app.querySelector('.stage>.eyebrow');if(eye)eye.textContent=`${session.title} · freie Produktion${t.isRepair?' · Repair':''}`;
+}
 };
-
 const finishExamV5Base=finishExam;
 finishExam=function(){if(session)session.productionSummary=C.productionSummary(session);return finishExamV5Base()};
 const renderResultsV5Base=renderResults;
 renderResults=function(){
-  const prod=session?.productionSummary||C.productionSummary(session);
-  if(session?.productionOnly){
-    shell(`<section class="card hero"><div class="eyebrow">PRODUKTIONSTEST</div><h1>${prod.pass}/${prod.total} selbst als „passt“ bewertet</h1><p>Freie Produktion wird ehrlich getrennt vom objektiven Prüfungs-Score geführt.</p></section><section class="card"><div class="result-grid"><div><span>Passt</span><b>${prod.pass}</b></div><div><span>Fast / unsicher</span><b>${prod.unsure}</b></div><div><span>Nochmal</span><b>${prod.again}</b></div><div><span>Production Repairs</span><b>${prod.repairPass}/${prod.repairTotal}</b></div></div><div class="actions"><button class="btn primary" data-nav="examMenu">Weitere Tests</button><button class="btn" data-nav="home">Startseite</button></div></section>`);return;
-  }
-  renderResultsV5Base();if(prod.total){const card=document.createElement('section');card.className='card production-result';card.innerHTML=`<h2>Freie Produktion</h2><p>Separat vom objektiven Hauptscore.</p><div class="result-grid"><div><span>Aufgaben</span><b>${prod.total}</b></div><div><span>Passt</span><b>${prod.pass}</b></div><div><span>Fast / unsicher</span><b>${prod.unsure}</b></div><div><span>Nochmal</span><b>${prod.again}</b></div></div>`;app.querySelector('.card.hero')?.insertAdjacentElement('afterend',card)}
+const prod=session?.productionSummary||C.productionSummary(session);
+if(session?.productionOnly){
+shell(`<section class="card hero"><div class="eyebrow">PRODUKTIONSTEST</div><h1>${prod.pass}/${prod.total} selbst als „passt“ bewertet</h1><p>Freie Produktion wird ehrlich getrennt vom objektiven Prüfungs-Score geführt.</p></section><section class="card"><div class="result-grid"><div><span>Passt</span><b>${prod.pass}</b></div><div><span>Fast / unsicher</span><b>${prod.unsure}</b></div><div><span>Nochmal</span><b>${prod.again}</b></div><div><span>Production Repairs</span><b>${prod.repairPass}/${prod.repairTotal}</b></div></div><div class="actions"><button class="btn primary" data-nav="examMenu">Weitere Tests</button><button class="btn" data-nav="home">Startseite</button></div></section>`);return;
+}
+renderResultsV5Base();if(prod.total){const card=document.createElement('section');card.className='card production-result';card.innerHTML=`<h2>Freie Produktion</h2><p>Separat vom objektiven Hauptscore.</p><div class="result-grid"><div><span>Aufgaben</span><b>${prod.total}</b></div><div><span>Passt</span><b>${prod.pass}</b></div><div><span>Fast / unsicher</span><b>${prod.unsure}</b></div><div><span>Nochmal</span><b>${prod.again}</b></div></div>`;app.querySelector('.card.hero')?.insertAdjacentElement('afterend',card)}
 };
-
 const renderDetailV5Base=renderDetail;
 renderDetail=function(){
-  renderDetailV5Base();const c=selectedLetter||'А',x=C.summaryForLetter(S,c),p=x.production,nav=app.querySelector('.bottom-nav'),card=document.createElement('section');card.className='card production-profile';
-  card.innerHTML=`<h2>Freie Produktion</h2><div class="type-grid"><div><span>Produktion</span><b>${p.mastery}%</b><small>${esc(p.status)} · Confidence ${p.confidence}%</small></div><div><span>Freie Abrufe</span><b>${p.attempts}</b><small>${p.pass} passt · ${p.unsure} unsicher · ${p.again} nochmal</small></div><div><span>Audio → Zeichnen</span><b>${p.audioReady?'freigeschaltet':'noch gesperrt'}</b><small>${p.lastAudioAt?`zuletzt ${new Date(p.lastAudioAt).toLocaleDateString('de-DE')}`:'noch kein Versuch'}</small></div><div><span>Nächster Schritt</span><b>${esc(p.next)}</b><small>${p.lastErrorAt?'letzter Produktionsfehler vorhanden':'kein aktueller Produktionsfehler'}</small></div></div>`;
-  (nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',card);
+renderDetailV5Base();const c=selectedLetter||'А',x=C.summaryForLetter(S,c),p=x.production,nav=app.querySelector('.bottom-nav'),card=document.createElement('section');card.className='card production-profile';
+card.innerHTML=`<h2>Freie Produktion</h2><div class="type-grid"><div><span>Produktion</span><b>${p.mastery}%</b><small>${esc(p.status)} · Confidence ${p.confidence}%</small></div><div><span>Freie Abrufe</span><b>${p.attempts}</b><small>${p.pass} passt · ${p.unsure} unsicher · ${p.again} nochmal</small></div><div><span>Audio → Zeichnen</span><b>${p.audioReady?'freigeschaltet':'noch gesperrt'}</b><small>${p.lastAudioAt?`zuletzt ${new Date(p.lastAudioAt).toLocaleDateString('de-DE')}`:'noch kein Versuch'}</small></div><div><span>Nächster Schritt</span><b>${esc(p.next)}</b><small>${p.lastErrorAt?'letzter Produktionsfehler vorhanden':'kein aktueller Produktionsfehler'}</small></div></div>`;
+(nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',card);
 };
-
 const renderExamMenuV5Base=renderExamMenu;
 renderExamMenu=function(){
-  renderExamMenuV5Base();const a=C.productionTestAvailability(S),nav=app.querySelector('.bottom-nav'),card=document.createElement('section');card.className='card production-tests';
-  card.innerHTML=`<div class="eyebrow">Freie Produktion</div><h2>Zeichentests</h2><p>Diese Tests erscheinen erst, wenn genügend Buchstaben stabil genug für echten Abruf ohne Antwortoptionen sind. Aktuell bereit: ${a.ready}/33.</p><div class="actions"><button class="btn" data-prod-test="5" ${a.test5?'':'disabled'}>Produktionstest 5</button><button class="btn" data-prod-test="10" ${a.test10?'':'disabled'}>Produktionstest 10</button><button class="btn" data-prod-test="20" ${a.test20?'':'disabled'}>Produktionstest 20</button><button class="btn" data-prod-test="33" ${a.full?'':'disabled'}>Vollständiger Produktionscheck</button></div>`;
-  (nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',card);card.querySelectorAll('[data-prod-test]').forEach(b=>b.onclick=()=>{const requested=Number(b.dataset.prodTest),count=requested===33?20:requested;session=C.createProductionTestSession(S,count);screen='exam';renderExam()});
+renderExamMenuV5Base();const a=C.productionTestAvailability(S),nav=app.querySelector('.bottom-nav'),card=document.createElement('section');card.className='card production-tests';
+card.innerHTML=`<div class="eyebrow">Freie Produktion</div><h2>Zeichentests</h2><p>Diese Tests erscheinen erst, wenn genügend Buchstaben stabil genug für echten Abruf ohne Antwortoptionen sind. Aktuell bereit: ${a.ready}/33.</p><div class="actions"><button class="btn" data-prod-test="5" ${a.test5?'':'disabled'}>Produktionstest 5</button><button class="btn" data-prod-test="10" ${a.test10?'':'disabled'}>Produktionstest 10</button><button class="btn" data-prod-test="20" ${a.test20?'':'disabled'}>Produktionstest 20</button><button class="btn" data-prod-test="33" ${a.full?'':'disabled'}>Vollständiger Produktionscheck</button></div>`;
+(nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',card);card.querySelectorAll('[data-prod-test]').forEach(b=>b.onclick=()=>{const requested=Number(b.dataset.prodTest),count=requested===33?20:requested;session=C.createProductionTestSession(S,count);screen='exam';renderExam()});
 };
 
 /* source: alphabet-app-v5-production-repairs.js */
 'use strict';
-
 const currentTaskProductionRepairBase=currentTask;
 currentTask=function(){if(session)C.initProductionSession(session,S,Math.random);return currentTaskProductionRepairBase()};
-
 submitProductionRating=function(t,rating,metrics={}){
-  if(session.locked)return;session.locked=true;const isRepair=!!t.isRepair;
-  const row=C.recordProductionSelfCheck(S,{letter:t.letter,family:t.family,rating,isRepair,repairId:t.repairId||'',sessionId:session.sessionId,questionId:t.questionId,audioSource:t.family==='audio-to-writing'?'human':'',...metrics});
-  session.productionAnswers.push({...row,masteryAfter:C.productionMastery(S,t.letter),confidenceAfter:C.productionConfidence(S,t.letter)});session.lastProductionLetter=t.letter;
-  if(isRepair&&session.repairCurrent){
-    const current=session.repairCurrent;current.done=true;current.resolved=rating==='pass';
-    if(rating==='pass')session.repairsResolved++;
-    else{session.repairsFailed++;C.scheduleProductionRepairForSession(session,t,S,t.repairId,Math.random)}
-  }else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
-  persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
+if(session.locked)return;session.locked=true;const isRepair=!!t.isRepair;
+const row=C.recordProductionSelfCheck(S,{letter:t.letter,family:t.family,rating,isRepair,repairId:t.repairId||'',sessionId:session.sessionId,questionId:t.questionId,audioSource:t.family==='audio-to-writing'?'human':'',...metrics});
+session.productionAnswers.push({...row,masteryAfter:C.productionMastery(S,t.letter),confidenceAfter:C.productionConfidence(S,t.letter)});session.lastProductionLetter=t.letter;
+if(isRepair&&session.repairCurrent){
+const current=session.repairCurrent;current.done=true;current.resolved=rating==='pass';
+if(rating==='pass')session.repairsResolved++;
+else{session.repairsFailed++;C.scheduleProductionRepairForSession(session,t,S,t.repairId,Math.random)}
+}else if(rating==='again')C.scheduleProductionRepairForSession(session,t,S,row.repairId,Math.random);
+persist();const el=document.getElementById('productionStatus');if(el)el.textContent=rating==='pass'?'Selbstbewertung: passt. Als Produktions-Evidenz gespeichert.':rating==='unsure'?'Selbstbewertung: unsicher. Kein voller Mastery-Erfolg; später erneut prüfen.':'Selbstbewertung: nochmal. Eine spätere, andere Reparatur wurde eingeplant.';setTimeout(nextQuestion,700);
 };
 
 /* source: alphabet-app-v6-media.js */
 'use strict';
-
 let alphabetAudioGeneration=0,alphabetActiveAudio=null;
 function stopAlphabetAudio(){alphabetAudioGeneration++;if(alphabetActiveAudio){try{alphabetActiveAudio.onended=null;alphabetActiveAudio.onerror=null;alphabetActiveAudio.onplay=null;alphabetActiveAudio.pause?.();alphabetActiveAudio.currentTime=0}catch(_){}}alphabetActiveAudio=null}
 function createAlphabetAudio(src){stopAlphabetAudio();const generation=alphabetAudioGeneration,a=new Audio(src);alphabetActiveAudio=a;return {audio:a,isCurrent:()=>alphabetActiveAudio===a&&alphabetAudioGeneration===generation,release:()=>{if(alphabetActiveAudio===a)alphabetActiveAudio=null}}}
 function humanAudioMeta(letter,kind='word'){return kind==='letter'?window.UKRAINIAN_LETTER_AUDIO_META?.[letter]:window.UKRAINIAN_PRONUNCIATION_META?.[letter]}
 function verifiedHumanSource(letter,kind='word'){const meta=humanAudioMeta(letter,kind);return !!(meta?.human&&meta?.sourceVerified&&meta?.language==='uk'&&meta?.source)}
 function markHumanAudioButton(button,meta){if(!button||!meta)return;button.dataset.audioSource='human';button.dataset.humanAudio='1';button.title=`Menschliche Originalaufnahme · ${meta.speaker||'Quelle geprüft'} · ${meta.project||''}`.trim()}
-
 const renderMediaBase=render;
 render=function(){stopAlphabetAudio();clearTimeout(memoryTimer);return renderMediaBase()};
 const renderExamMediaBase=renderExam;
 renderExam=function(){stopAlphabetAudio();clearTimeout(memoryTimer);return renderExamMediaBase()};
-
 setupAudioQuestion=function(t){const button=document.getElementById('playAudio'),status=document.getElementById('audioStatus');if(!button||!status)return;const qid=t.questionId;button.onclick=()=>{if(!session||currentTask()?.questionId!==qid)return;playHumanExamAudio(t,button,status)}};
 playHumanExamAudio=function(t,button,status){
-  const useLetter=t.audioKind==='letter'||t.requiresHumanLetterAudio===true;
-  const kind=useLetter?'letter':'word';
-  const src=useLetter?window.UKRAINIAN_LETTER_AUDIO?.[t.letter]:window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter];
-  const meta=humanAudioMeta(t.letter,kind);
-  if(t.letter==='Ь'&&useLetter){handleAudioFailure(t,'Ь hat keinen eigenen isolierten Laut. Die Aufgabe wird durch Wortkontext ersetzt.');return}
-  if(!src||!verifiedHumanSource(t.letter,kind)){handleAudioFailure(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return}
-  markHumanAudioButton(button,meta);
-  const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;button.disabled=true;status.textContent='Originalaufnahme lädt …';let startedAt=0,settled=false;
-  const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid;
-  const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();tracked.release();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')},9000);
-  a.onplay=()=>{if(!current())return;startedAt=performance.now();status.textContent='Menschliche Originalaufnahme läuft …'};
-  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human';t.audioSourceKind=useLetter?'human-letter-original':'human-word-original';t.audioProvenance=meta?.source||''};
-  a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();handleAudioFailure(t,'Menschliche Originalaufnahme nicht erreichbar. Frage wird ersetzt.')};
-  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Audio starten“.'})
+const useLetter=t.audioKind==='letter'||t.requiresHumanLetterAudio===true;
+const kind=useLetter?'letter':'word';
+const src=useLetter?window.UKRAINIAN_LETTER_AUDIO?.[t.letter]:window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter];
+const meta=humanAudioMeta(t.letter,kind);
+if(t.letter==='Ь'&&useLetter){handleAudioFailure(t,'Ь hat keinen eigenen isolierten Laut. Die Aufgabe wird durch Wortkontext ersetzt.');return}
+if(!src||!verifiedHumanSource(t.letter,kind)){handleAudioFailure(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return}
+markHumanAudioButton(button,meta);
+const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;button.disabled=true;status.textContent='Originalaufnahme lädt …';let startedAt=0,settled=false;
+const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid;
+const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();tracked.release();handleAudioFailure(t,'Audio-Timeout. Die Frage wird nicht gewertet.')},9000);
+a.onplay=()=>{if(!current())return;startedAt=performance.now();status.textContent='Menschliche Originalaufnahme läuft …'};
+a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();timing.audioDurationMs=startedAt?Math.round(performance.now()-startedAt):0;beginTiming();status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.';app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;t.audioValidated=true;t.audioSource='human';t.audioSourceKind=useLetter?'human-letter-original':'human-word-original';t.audioProvenance=meta?.source||''};
+a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();handleAudioFailure(t,'Menschliche Originalaufnahme nicht erreichbar. Frage wird ersetzt.')};
+a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Audio starten“.'})
 };
-
 const handleAudioFailureMediaBase=handleAudioFailure;
 handleAudioFailure=function(t,msg){if(!session||currentTask()?.questionId!==t.questionId)return;return handleAudioFailureMediaBase(t,msg)};
-
-// Alphabet Lab is human-only: never substitute browser/system TTS or an AI voice.
-// If the human file cannot be played, the learner gets no synthetic pronunciation.
 playLearningAudio=function(c,button){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[c],meta=humanAudioMeta(c,'word');if(!src||!verifiedHumanSource(c,'word')){toast(`${c}: Keine quellengeprüfte menschliche Originalaufnahme verfügbar.`);if(button){button.dataset.audioSource='unavailable';button.title='Keine menschliche Originalaufnahme verfügbar'}return}markHumanAudioButton(button,meta);const tracked=createAlphabetAudio(src),a=tracked.audio;button.disabled=true;const current=()=>tracked.isCurrent()&&document.contains(button);const done=()=>{if(current())button.disabled=false;tracked.release()};a.onended=done;a.onerror=()=>{const valid=current();done();if(valid){button.dataset.audioSource='human-unavailable';toast('Menschliche Originalaufnahme konnte nicht geladen werden. Kein TTS-Ersatz.')}};a.play().catch(()=>{const valid=current();done();if(valid){button.dataset.audioSource='human-unavailable';toast('Originalaufnahme konnte nicht gestartet werden. Kein TTS-Ersatz.')}})};
-
 setupAudioChoice=function(t){const heard=new Set(),failures={},all=t.audioChoiceLetters||t.options||[],status=document.getElementById('audioChoiceStatus'),qid=t.questionId;const current=()=>session&&currentTask()?.questionId===qid;const refresh=()=>{if(!current())return;if(status)status.textContent=`${heard.size}/${all.length} Originalaufnahmen gehört.${heard.size===all.length?' Jetzt auswählen.':''}`;if(heard.size===all.length){app.querySelectorAll('.audio-pick-candidate').forEach(b=>b.disabled=false);beginTiming()}};app.querySelectorAll('[data-play-letter-audio]').forEach(btn=>btn.onclick=()=>{if(!current())return;const letter=btn.dataset.playLetterAudio,src=window.UKRAINIAN_LETTER_AUDIO?.[letter],meta=humanAudioMeta(letter,'letter'),small=app.querySelector(`[data-audio-choice-status="${CSS.escape(letter)}"]`);if(!src||!verifiedHumanSource(letter,'letter')){fallbackAudioChoice(t,`Keine quellengeprüfte isolierte menschliche Buchstabenaufnahme für ${letter}.`);return}markHumanAudioButton(btn,meta);const tracked=createAlphabetAudio(src),a=tracked.audio;btn.disabled=true;if(small)small.textContent='Originalaufnahme lädt …';let settled=false;const valid=()=>current()&&tracked.isCurrent();const timeout=setTimeout(()=>{if(settled||!valid())return;settled=true;a.pause?.();tracked.release();fail()},9000);const fail=()=>{clearTimeout(timeout);if(!current())return;failures[letter]=(failures[letter]||0)+1;btn.disabled=false;if(small)small.textContent=failures[letter]<2?'Fehler · erneut versuchen':'nicht erreichbar';if(failures[letter]>=2)fallbackAudioChoice(t,`${letter}: menschliche Originalaufnahme zweimal nicht erreichbar.`)};a.onplay=()=>{if(valid()&&small)small.textContent='Originalaufnahme läuft …'};a.onended=()=>{if(settled||!valid())return;settled=true;clearTimeout(timeout);tracked.release();heard.add(letter);btn.disabled=false;if(small)small.textContent='Original gehört ✓';refresh()};a.onerror=()=>{if(settled||!valid())return;settled=true;tracked.release();fail()};a.play().catch(()=>{if(settled||!valid())return;settled=true;clearTimeout(timeout);tracked.release();btn.disabled=false;if(small)small.textContent='Tippen zum Starten'})});refresh()};
 const fallbackAudioChoiceMediaBase=fallbackAudioChoice;
 fallbackAudioChoice=function(t,msg){if(!session||currentTask()?.questionId!==t.questionId)return;return fallbackAudioChoiceMediaBase(t,msg)};
 const replaceProductionAudioMediaBase=replaceProductionAudio;
 replaceProductionAudio=function(t,msg){if(!session||session.productionCurrent?.questionId!==t.questionId)return;return replaceProductionAudioMediaBase(t,msg)};
-
 window.AlphabetAudioLifecycle=Object.freeze({stop:stopAlphabetAudio,generation:()=>alphabetAudioGeneration,hasActive:()=>!!alphabetActiveAudio,policy:()=>window.UKRAINIAN_AUDIO_POLICY||null,verifiedHumanSource});
 
 /* source: alphabet-app-v6-question-fixes.js */
 'use strict';
-
-// Any non-<audio> task that depends on pronunciation is human-audio-first.
-// The answer stays locked until a source-verified Ukrainian human recording has
-// finished. Technical audio failures never become learner errors and never fall
-// back to browser TTS or an AI voice.
 const renderExamQuestionCueBase=renderExam;
 renderExam=function(){
-  const out=renderExamQuestionCueBase();
-  if(screen!=='exam'||!session)return out;
-  const t=currentTask();
-  if(!t||t.type==='audio'||t.requiresHumanLetterAudio!==true)return out;
-  if(t.letter==='Ь'){
-    replaceUnvoicedSoftSignTask(t);
-    return out
-  }
-  const stage=app.querySelector('.stage'),promptEl=stage?.querySelector('.prompt');
-  if(!stage||!promptEl||stage.querySelector('#playLetterCue'))return out;
-  app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=true);
-  timing.startedAt=0;timing.invalid=true;
-  const row=document.createElement('div');
-  row.className='audio-row reverse-audio-row';
-  row.innerHTML='<button class="btn primary" id="playLetterCue" type="button" aria-label="Menschliche Originalaufnahme anhören">🔊 Menschliche Originalaufnahme</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
-  promptEl.insertAdjacentElement('afterend',row);
-  const button=row.querySelector('#playLetterCue'),status=row.querySelector('#letterCueStatus');
-  const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
-  if(meta)markHumanAudioButton(button,meta);
-  button.onclick=()=>playRequiredLetterCue(t,button,status);
-  return out
+const out=renderExamQuestionCueBase();
+if(screen!=='exam'||!session)return out;
+const t=currentTask();
+if(!t||t.type==='audio'||t.requiresHumanLetterAudio!==true)return out;
+if(t.letter==='Ь'){
+replaceUnvoicedSoftSignTask(t);
+return out
+}
+const stage=app.querySelector('.stage'),promptEl=stage?.querySelector('.prompt');
+if(!stage||!promptEl||stage.querySelector('#playLetterCue'))return out;
+app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=true);
+timing.startedAt=0;timing.invalid=true;
+const row=document.createElement('div');
+row.className='audio-row reverse-audio-row';
+row.innerHTML='<button class="btn primary" id="playLetterCue" type="button" aria-label="Menschliche Originalaufnahme anhören">🔊 Menschliche Originalaufnahme</button><span id="letterCueStatus" class="muted" role="status" aria-live="polite">Erst vollständig anhören, dann antworten.</span>';
+promptEl.insertAdjacentElement('afterend',row);
+const button=row.querySelector('#playLetterCue'),status=row.querySelector('#letterCueStatus');
+const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
+if(meta)markHumanAudioButton(button,meta);
+button.onclick=()=>playRequiredLetterCue(t,button,status);
+return out
 };
-
 function playRequiredLetterCue(t,button,status){
-  const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter],meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
-  if(!src||!window.AlphabetAudioLifecycle?.verifiedHumanSource?.(t.letter,'letter')){
-    replaceRequiredLetterCue(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return
-  }
-  const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;
-  let settled=false;
-  const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid&&document.contains(button);
-  const fail=message=>{if(!current())return;tracked.release();t.requiredHumanAudioFailures=(Number(t.requiredHumanAudioFailures)||0)+1;button.disabled=false;if(t.requiredHumanAudioFailures<2){status.textContent='Originalaufnahme technisch nicht erreichbar · bitte erneut versuchen.';toast(message)}else replaceRequiredLetterCue(t,`${message} Nach zwei Versuchen wird die Audiofrage ersetzt.`)};
-  const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();fail('Audio-Timeout.')},9000);
-  button.disabled=true;status.textContent='Originalaufnahme lädt …';
-  a.onplay=()=>{if(current())status.textContent='Menschliche Originalaufnahme läuft …'};
-  a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();t.audioValidated=true;t.audioSource='human';t.audioSourceKind='human-original';t.audioProvenance=meta?.source||'';timing.invalid=false;beginTiming();app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.'};
-  a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);fail('Menschliche Originalaufnahme nicht erreichbar.')};
-  a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Menschliche Originalaufnahme“.'})
+const src=window.UKRAINIAN_LETTER_AUDIO?.[t.letter],meta=window.UKRAINIAN_LETTER_AUDIO_META?.[t.letter];
+if(!src||!window.AlphabetAudioLifecycle?.verifiedHumanSource?.(t.letter,'letter')){
+replaceRequiredLetterCue(t,'Keine quellengeprüfte menschliche Originalaufnahme verfügbar.');return
 }
-
+const tracked=createAlphabetAudio(src),a=tracked.audio,qid=t.questionId;
+let settled=false;
+const current=()=>tracked.isCurrent()&&session&&currentTask()?.questionId===qid&&document.contains(button);
+const fail=message=>{if(!current())return;tracked.release();t.requiredHumanAudioFailures=(Number(t.requiredHumanAudioFailures)||0)+1;button.disabled=false;if(t.requiredHumanAudioFailures<2){status.textContent='Originalaufnahme technisch nicht erreichbar · bitte erneut versuchen.';toast(message)}else replaceRequiredLetterCue(t,`${message} Nach zwei Versuchen wird die Audiofrage ersetzt.`)};
+const timeout=setTimeout(()=>{if(settled||!current())return;settled=true;a.pause?.();fail('Audio-Timeout.')},9000);
+button.disabled=true;status.textContent='Originalaufnahme lädt …';
+a.onplay=()=>{if(current())status.textContent='Menschliche Originalaufnahme läuft …'};
+a.onended=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();t.audioValidated=true;t.audioSource='human';t.audioSourceKind='human-original';t.audioProvenance=meta?.source||'';timing.invalid=false;beginTiming();app.querySelectorAll('[data-ans]').forEach(b=>b.disabled=false);button.disabled=false;status.textContent='Originalaufnahme vollständig gehört. Jetzt antworten.'};
+a.onerror=()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);fail('Menschliche Originalaufnahme nicht erreichbar.')};
+a.play().catch(()=>{if(settled||!current())return;settled=true;clearTimeout(timeout);tracked.release();button.disabled=false;status.textContent='Browser hat Audio blockiert. Tippe erneut auf „Menschliche Originalaufnahme“.'})
+}
 function replaceRequiredLetterCue(t,msg){
-  if(!session||currentTask()?.questionId!==t.questionId)return;
-  toast(`${msg} Kein Benutzerfehler; kein TTS-Ersatz.`);
-  const replacement=C.buildV4Task(S,t.letter,t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'visual-find',session,Math.random,{sessionId:session.sessionId,scheduledReason:'human-audio-unavailable',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
-  replacement.audioFallbackFrom=t.questionId;
-  replacement.countsForMastery=false;
-  replacement.evidenceWeight=0;
-  if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
-  setTimeout(renderExam,250)
+if(!session||currentTask()?.questionId!==t.questionId)return;
+toast(`${msg} Kein Benutzerfehler; kein TTS-Ersatz.`);
+const replacement=C.buildV4Task(S,t.letter,t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'visual-find',session,Math.random,{sessionId:session.sessionId,scheduledReason:'human-audio-unavailable',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
+replacement.audioFallbackFrom=t.questionId;
+replacement.countsForMastery=false;
+replacement.evidenceWeight=0;
+if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
+setTimeout(renderExam,250)
 }
-
 function replaceUnvoicedSoftSignTask(t){
-  if(!session||currentTask()?.questionId!==t.questionId||t._softSignReplacing)return;
-  t._softSignReplacing=true;
-  const replacement=C.buildV4Task(S,'Ь',t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'missing-letter',session,Math.random,{sessionId:session.sessionId,scheduledReason:'soft-sign-context-no-isolated-sound',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
-  replacement.softSignContextual=true;
-  if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
-  setTimeout(renderExam,0)
+if(!session||currentTask()?.questionId!==t.questionId||t._softSignReplacing)return;
+t._softSignReplacing=true;
+const replacement=C.buildV4Task(S,'Ь',t.skill||'soundToLetter',Math.max(1,Number(t.difficulty)||1),'missing-letter',session,Math.random,{sessionId:session.sessionId,scheduledReason:'soft-sign-context-no-isolated-sound',isRepair:!!t.isRepair,repairLevel:t.repairLevel,createdFromError:t.createdFromError});
+replacement.softSignContextual=true;
+if(t.isRepair&&session.repairCurrent)session.repairCurrent.task=replacement;else session.mainTasks[session.mainIndex]=replacement;
+setTimeout(renderExam,0)
 }
 
 /* source: alphabet-app-v6-word-examples.js */
 'use strict';
-
-// Beispielwörter werden nach zwei didaktischen Kriterien ausgewählt:
-//  1. Positionsvielfalt – der Zielbuchstabe soll am Anfang, in der Mitte, am Ende
-//     und mehrfach vorkommen, damit er nicht nur an einer Stelle erkannt wird.
-//  2. Anfängertauglichkeit – Wörter, die überwiegend aus bereits eingeführten
-//     Buchstaben bestehen, kommen zuerst. Ein Anfänger soll nicht an Wörtern
-//     scheitern, die fast nur aus unbekannten Zeichen bestehen.
 const ALPHABET_WORD_EXAMPLE_LIMIT=8;
 function alphabetKnownShare(word,letter){
-  const introduced=new Set(S?.learningPlan?.introducedLetters||[]);
-  const letters=C.uniq([...String(word||'').toLocaleUpperCase('uk')].filter(ch=>C.ALPHABET.includes(ch)));
-  if(!letters.length)return 1;
-  return letters.filter(ch=>ch===letter||introduced.has(ch)).length/letters.length;
+const introduced=new Set(S?.learningPlan?.introducedLetters||[]);
+const letters=C.uniq([...String(word||'').toLocaleUpperCase('uk')].filter(ch=>C.ALPHABET.includes(ch)));
+if(!letters.length)return 1;
+return letters.filter(ch=>ch===letter||introduced.has(ch)).length/letters.length;
 }
 function alphabetWordExamples(letter){
-  const rows=(C.WORD_BANK||[]).filter(x=>x.letter===letter);
-  if(rows.length<=ALPHABET_WORD_EXAMPLE_LIMIT)return rows;
-  const ranked=rows.slice().sort((a,b)=>alphabetKnownShare(b.word,letter)-alphabetKnownShare(a.word,letter)||a.level-b.level);
-  const picked=[],seenPositions=new Set();
-  for(const row of ranked){if(seenPositions.has(row.position))continue;seenPositions.add(row.position);picked.push(row)}
-  for(const row of ranked){if(picked.length>=ALPHABET_WORD_EXAMPLE_LIMIT)break;if(!picked.includes(row))picked.push(row)}
-  return rows.filter(row=>picked.includes(row)).slice(0,ALPHABET_WORD_EXAMPLE_LIMIT);
+const rows=(C.WORD_BANK||[]).filter(x=>x.letter===letter);
+if(rows.length<=ALPHABET_WORD_EXAMPLE_LIMIT)return rows;
+const ranked=rows.slice().sort((a,b)=>alphabetKnownShare(b.word,letter)-alphabetKnownShare(a.word,letter)||a.level-b.level);
+const picked=[],seenPositions=new Set();
+for(const row of ranked){if(seenPositions.has(row.position))continue;seenPositions.add(row.position);picked.push(row)}
+for(const row of ranked){if(picked.length>=ALPHABET_WORD_EXAMPLE_LIMIT)break;if(!picked.includes(row))picked.push(row)}
+return rows.filter(row=>picked.includes(row)).slice(0,ALPHABET_WORD_EXAMPLE_LIMIT);
 }
 function alphabetWordNorm(v){return String(v||'').normalize('NFC').toLocaleLowerCase('uk').replace(/[ʼ’‘'`]/g,'’').replace(/[.!?,…]/g,'').replace(/\s+/g,' ').trim()}
 function alphabetPositionLabel(position){return position==='initial'?'am Anfang':position==='final'?'am Ende':position==='multiple'?'mehrfach':'in der Mitte'}
 function highlightedUkrainianWord(word,letter){const low=letter.toLocaleLowerCase('uk');return [...String(word||'')].map(ch=>ch.toLocaleLowerCase('uk')===low?`<mark>${esc(ch)}</mark>`:esc(ch)).join('')}
 function humanWordAudioEntry(word){const key=alphabetWordNorm(word),src=window.UKRAINIAN_WORD_AUDIO?.[key],meta=window.UKRAINIAN_WORD_AUDIO_META?.[key];return src&&meta?.human&&meta?.sourceVerified&&meta?.language==='uk'?{src,meta}:null}
 function wordExamplesMarkup(letter,{allowAudio=false,question=false}={}){const rows=alphabetWordExamples(letter);if(!rows.length)return '';return `<section class="alphabet-word-examples${question?' question-word-examples':''}" data-word-examples="${esc(letter)}"><div class="word-example-head"><div><b>${rows.length} echte ukrainische Wörter mit ${esc(letter)}</b><small>${question?'Der Zielbuchstabe ist markiert. So siehst du ihn sofort in verschiedenen echten Wörtern.':'Finde zuerst selbst '+esc(letter)+' im Wort. Tippe eine Karte an und prüfe danach Position und Bedeutung.'}</small></div></div><div class="word-example-grid">${rows.map(row=>{const audio=allowAudio&&humanWordAudioEntry(row.word);if(question)return `<article class="word-example-card"><div class="word-example-main"><span class="word-example-icon" aria-hidden="true">${esc(row.icon||'')}</span><span><strong lang="uk">${highlightedUkrainianWord(row.word,letter)}</strong><small>${esc(row.de)} · ${alphabetPositionLabel(row.position)}</small></span></div></article>`;return `<article class="word-example-card interactive-word-card" data-word-example-card="1" tabindex="0" role="button" aria-expanded="false" aria-label="${esc(row.word)}: ${esc(letter)} im Wort finden"><div class="word-example-main"><span class="word-example-icon" aria-hidden="true">${esc(row.icon||'')}</span><span><strong class="word-example-plain" lang="uk">${esc(row.word)}</strong><strong class="word-example-solved hidden" lang="uk">${highlightedUkrainianWord(row.word,letter)}</strong><small class="word-example-challenge">Wo steht ${esc(letter)}? Tippe zum Prüfen.</small><small class="word-example-answer hidden">${esc(row.de)} · ${alphabetPositionLabel(row.position)}</small></span></div>${audio?`<button class="btn small word-audio-btn" type="button" data-human-word-audio="${esc(alphabetWordNorm(row.word))}">🔊 Original</button>`:''}</article>`}).join('')}</div>${question?'<p class="micro">Diese Beispiele erweitern die Buchstabenkenntnis; Aussprache wird vor der Antwort nicht verraten.</p>':'<p class="micro">🔊 bedeutet: menschliche ukrainische Originalaufnahme mit öffentlicher Quellenangabe. Kein Browser-TTS, keine KI-Stimme.</p>'}</section>`}
-
 function wireHumanWordExampleAudio(root=app){root?.querySelectorAll?.('[data-human-word-audio]').forEach(button=>{button.onclick=e=>{e.stopPropagation();playHumanWordExample(button.dataset.humanWordAudio,button)}});root?.querySelectorAll?.('[data-word-example-card]').forEach(card=>{const toggle=()=>{const open=card.getAttribute('aria-expanded')!=='true';card.setAttribute('aria-expanded',String(open));card.querySelector('.word-example-plain')?.classList.toggle('hidden',open);card.querySelector('.word-example-solved')?.classList.toggle('hidden',!open);card.querySelector('.word-example-challenge')?.classList.toggle('hidden',open);card.querySelector('.word-example-answer')?.classList.toggle('hidden',!open)};card.onclick=e=>{if(e.target.closest('[data-human-word-audio]'))return;toggle()};card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}}})}
 function playHumanWordExample(key,button){const src=window.UKRAINIAN_WORD_AUDIO?.[key],meta=window.UKRAINIAN_WORD_AUDIO_META?.[key];if(!src||!meta?.human||!meta?.sourceVerified||meta?.language!=='uk'){toast('Keine quellengeprüfte menschliche Originalaufnahme für dieses Wort.');return}markHumanAudioButton(button,meta);const tracked=createAlphabetAudio(src),a=tracked.audio;button.disabled=true;const old=button.textContent;button.textContent='Lädt …';let settled=false;const finish=label=>{if(settled)return;settled=true;tracked.release();if(document.contains(button)){button.disabled=false;button.textContent=label||old}};a.onplay=()=>{if(document.contains(button))button.textContent='Original läuft …'};a.onended=()=>finish('🔊 Nochmal');a.onerror=()=>{finish('🔊 Original');toast('Menschliche Originalaufnahme konnte nicht geladen werden. Kein TTS-Ersatz.')};a.play().catch(()=>{finish('🔊 Original');toast('Audio konnte nicht gestartet werden. Kein TTS-Ersatz.')})}
-
 const renderExamWordExamplesBase=renderExam;
 renderExam=function(){const out=renderExamWordExamplesBase();if(screen!=='exam'||!session||session.feedback!=='learning')return out;const t=currentTask();if(!t||t.isRepair||t.interaction==='writtenProduction')return out;
-  // For visual letter→sound learning questions the target letter is already visible,
-  // so real-word examples enrich learning without revealing a hidden target.
-  if(t.type==='visual'&&t.family==='visual-to-sound'){
-    const stage=app.querySelector('.stage'),anchor=stage?.querySelector('.why')||stage?.querySelector('.question-actions');if(stage&&anchor&&!stage.querySelector('.question-word-examples')){const wrap=document.createElement('div');wrap.innerHTML=wordExamplesMarkup(t.letter,{allowAudio:false,question:true});anchor.insertAdjacentElement('beforebegin',wrap.firstElementChild)}
-  }
-  return out
+if(t.type==='visual'&&t.family==='visual-to-sound'){
+const stage=app.querySelector('.stage'),anchor=stage?.querySelector('.why')||stage?.querySelector('.question-actions');if(stage&&anchor&&!stage.querySelector('.question-word-examples')){const wrap=document.createElement('div');wrap.innerHTML=wordExamplesMarkup(t.letter,{allowAudio:false,question:true});anchor.insertAdjacentElement('beforebegin',wrap.firstElementChild)}
+}
+return out
 };
-
 const renderDetailWordExamplesBase=renderDetail;
 renderDetail=function(){const out=renderDetailWordExamplesBase();const letter=selectedLetter||'А',nav=app.querySelector('.bottom-nav');if(!app.querySelector('[data-letter-word-library]')){const wrap=document.createElement('section');wrap.className='card';wrap.dataset.letterWordLibrary=letter;wrap.innerHTML=`<div class="eyebrow">Wortschatz zum Buchstaben</div><h2>${esc(letter)} in echten ukrainischen Wörtern</h2>${wordExamplesMarkup(letter,{allowAudio:true})}`;(nav||app).insertAdjacentElement(nav?'beforebegin':'beforeend',wrap);wireHumanWordExampleAudio(wrap)}return out};
-
 function attachHumanAnswerReinforcement(t){if(!session||session.feedback!=='learning'||!t?.letter||t.type==='audio'||t.interaction==='writtenProduction')return;const correction=document.getElementById('correction');if(!correction||correction.querySelector('.human-answer-reinforcement'))return;const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[t.letter],meta=window.UKRAINIAN_PRONUNCIATION_META?.[t.letter];if(!src||!meta?.human||!meta?.sourceVerified)return;
-  const row=document.createElement('div');row.className='human-answer-reinforcement';row.innerHTML=`<span>🔊 Originalbeispiel: <strong lang="uk">${esc(meta.label||C.DATA[t.letter]?.word||'')}</strong>${C.DATA[t.letter]?.de?` · ${esc(C.DATA[t.letter].de)}`:''}</span><button class="btn small" type="button">Nochmal anhören</button><small>Menschliche Aufnahme · ${esc(meta.speaker||'Quelle geprüft')}</small>`;correction.append(row);const button=row.querySelector('button'),status=row.querySelector('span');button.onclick=()=>playHumanReinforcement(t.letter,button,status);playHumanReinforcement(t.letter,button,status,true)}
+const row=document.createElement('div');row.className='human-answer-reinforcement';row.innerHTML=`<span>🔊 Originalbeispiel: <strong lang="uk">${esc(meta.label||C.DATA[t.letter]?.word||'')}</strong>${C.DATA[t.letter]?.de?` · ${esc(C.DATA[t.letter].de)}`:''}</span><button class="btn small" type="button">Nochmal anhören</button><small>Menschliche Aufnahme · ${esc(meta.speaker||'Quelle geprüft')}</small>`;correction.append(row);const button=row.querySelector('button'),status=row.querySelector('span');button.onclick=()=>playHumanReinforcement(t.letter,button,status);playHumanReinforcement(t.letter,button,status,true)}
 function playHumanReinforcement(letter,button,status,automatic=false){const src=window.UKRAINIAN_PRONUNCIATION_AUDIO?.[letter],meta=window.UKRAINIAN_PRONUNCIATION_META?.[letter];if(!src||!meta?.human||!meta?.sourceVerified)return;markHumanAudioButton(button,meta);const tracked=createAlphabetAudio(src),a=tracked.audio;session._humanReinforcementUntil=Date.now()+5000;button.disabled=true;let settled=false;const finish=()=>{if(settled)return;settled=true;tracked.release();if(document.contains(button)){button.disabled=false;button.textContent='🔊 Nochmal anhören'}};a.onplay=()=>{if(document.contains(status))status.firstChild.textContent=`🔊 Originalbeispiel läuft: ${meta.label||C.DATA[letter]?.word||''} `};a.onended=finish;a.onerror=()=>{finish();if(!automatic)toast('Menschliche Originalaufnahme konnte nicht geladen werden. Kein TTS-Ersatz.')};a.play().catch(()=>{finish();if(document.contains(button))button.textContent='🔊 Original anhören'})}
-
 const submitExamAnswerWordExamplesBase=submitExamAnswer;
 submitExamAnswer=function(value,button,extra={}){const t=session&&currentTask(),feedback=session?.feedback;const out=submitExamAnswerWordExamplesBase(value,button,extra);if(feedback==='learning'&&t)attachHumanAnswerReinforcement(t);return out};
 const nextQuestionWordExamplesBase=nextQuestion;
 nextQuestion=function(){if(session?._humanReinforcementUntil&&Date.now()<session._humanReinforcementUntil&&window.AlphabetAudioLifecycle?.hasActive?.()){setTimeout(nextQuestion,120);return}if(session)session._humanReinforcementUntil=0;return nextQuestionWordExamplesBase()};
-
 const wordExampleStyle=document.createElement('style');
 wordExampleStyle.textContent=`.alphabet-word-examples{margin-top:18px;padding-top:16px;border-top:1px solid var(--line,#d7dde7)}.word-example-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.word-example-head b{display:block}.word-example-head small{display:block;margin-top:3px;color:var(--muted,#64748b)}.word-example-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.word-example-card{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line,#d7dde7);border-radius:14px;padding:10px 12px;background:#fff}.interactive-word-card{cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}.interactive-word-card:hover,.interactive-word-card:focus-visible{border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.16);outline:0}.interactive-word-card[aria-expanded="true"]{background:#f8fafc}.word-example-main{display:flex;align-items:center;gap:9px;min-width:0}.word-example-main strong{font-size:1.08rem}.word-example-main small{display:block;color:var(--muted,#64748b);margin-top:2px}.word-example-icon{font-size:1.15rem}.word-example-card mark{background:#fff0a8;color:inherit;border-radius:4px;padding:0 2px}.question-word-examples{margin-top:14px}.human-answer-reinforcement{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;border:1px solid var(--line,#d7dde7);border-radius:12px;background:#f8fafc}.human-answer-reinforcement small{grid-column:1/-1;color:var(--muted,#64748b)}@media(max-width:680px){.word-example-grid{grid-template-columns:1fr}.human-answer-reinforcement{grid-template-columns:1fr}.human-answer-reinforcement .btn{width:100%}}`;
 document.head.append(wordExampleStyle);
 
 /* source: alphabet-app-v6-runtime.js */
 'use strict';
-
 const V6_STORAGE_KEY='uk-alpha-lab-v6',V6_LEGACY_STORAGE_KEYS=['uk-alpha-lab-v3','uk-alpha-lab-v2','uk-alpha-lab-v1'];
 let v6PersistTimer=0,v6PersistPending=null,v6PersistError='';
 function compactV6State(state){
-  state.answerLog=Array.isArray(state.answerLog)?state.answerLog.slice(-1000):[];
-  state.productionHistory=Array.isArray(state.productionHistory)?state.productionHistory.slice(-160):[];
-  state.examHistory=Array.isArray(state.examHistory)?state.examHistory.slice(-60):[];
-  state.sessionSnapshots=Array.isArray(state.sessionSnapshots)?state.sessionSnapshots.slice(-20):[];
-  for(const c of C.ALPHABET){const m=state.letters[c];m.productionHistory=Array.isArray(m.productionHistory)?m.productionHistory.slice(-32):[];m.exposure=m.exposure||{};m.exposure.recentSignatures=Array.isArray(m.exposure.recentSignatures)?m.exposure.recentSignatures.slice(-30):[]}
-  return state
+state.answerLog=Array.isArray(state.answerLog)?state.answerLog.slice(-1000):[];
+state.productionHistory=Array.isArray(state.productionHistory)?state.productionHistory.slice(-160):[];
+state.examHistory=Array.isArray(state.examHistory)?state.examHistory.slice(-60):[];
+state.sessionSnapshots=Array.isArray(state.sessionSnapshots)?state.sessionSnapshots.slice(-20):[];
+for(const c of C.ALPHABET){const m=state.letters[c];m.productionHistory=Array.isArray(m.productionHistory)?m.productionHistory.slice(-32):[];m.exposure=m.exposure||{};m.exposure.recentSignatures=Array.isArray(m.exposure.recentSignatures)?m.exposure.recentSignatures.slice(-30):[]}
+return state
 }
 function setPersistWarning(message=''){
-  v6PersistError=message;
-  let el=document.getElementById('persistWarning');
-  if(!message){el?.remove();return}
-  if(!el){el=document.createElement('div');el.id='persistWarning';el.setAttribute('role','status');el.setAttribute('aria-live','polite');el.style.cssText='position:fixed;left:12px;right:12px;top:10px;z-index:90;max-width:720px;margin:auto;padding:10px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;font-weight:750;box-shadow:0 8px 24px rgba(0,0,0,.08)';document.body.append(el)}
-  el.textContent=message
+v6PersistError=message;
+let el=document.getElementById('persistWarning');
+if(!message){el?.remove();return}
+if(!el){el=document.createElement('div');el.id='persistWarning';el.setAttribute('role','status');el.setAttribute('aria-live','polite');el.style.cssText='position:fixed;left:12px;right:12px;top:10px;z-index:90;max-width:720px;margin:auto;padding:10px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;font-weight:750;box-shadow:0 8px 24px rgba(0,0,0,.08)';document.body.append(el)}
+el.textContent=message
 }
 function cleanupLegacyStorage(){for(const key of V6_LEGACY_STORAGE_KEYS){try{localStorage.removeItem(key)}catch(_){}}}
 function writeCanonicalV6(state){const raw=JSON.stringify(state);localStorage.setItem(V6_STORAGE_KEY,raw);return raw}
 function flushPersist(state=v6PersistPending||S){
-  clearTimeout(v6PersistTimer);v6PersistTimer=0;v6PersistPending=null;if(!state)return false;
-  try{writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err){
-    try{compactV6State(state);writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err2){
-      const code=String(err2?.name||err2||err);console.error('Alphabet Lab persistence failed',err2);setPersistWarning('Lernstand konnte auf diesem Gerät gerade nicht gespeichert werden.');v6PersistError=code;return false
-    }
-  }
+clearTimeout(v6PersistTimer);v6PersistTimer=0;v6PersistPending=null;if(!state)return false;
+try{writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err){
+try{compactV6State(state);writeCanonicalV6(state);cleanupLegacyStorage();setPersistWarning('');return true}catch(err2){
+const code=String(err2?.name||err2||err);console.error('Alphabet Lab persistence failed',err2);setPersistWarning('Lernstand konnte auf diesem Gerät gerade nicht gespeichert werden.');v6PersistError=code;return false
+}
+}
 }
 function flushPendingPersist(){
-  clearTimeout(v6PersistTimer);v6PersistTimer=0;
-  if(!v6PersistPending)return true;
-  return flushPersist(v6PersistPending)
+clearTimeout(v6PersistTimer);v6PersistTimer=0;
+if(!v6PersistPending)return true;
+return flushPersist(v6PersistPending)
 }
 persist=function(state=S,opts={}){v6PersistPending=state;if(opts===true||opts?.immediate)return flushPersist(state);clearTimeout(v6PersistTimer);v6PersistTimer=setTimeout(()=>flushPersist(),160);return true};
 function readStored(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
 function bootstrapV6Storage(){
-  let raw=readStored(V6_STORAGE_KEY),source=raw?V6_STORAGE_KEY:'';
-  if(!raw){for(const key of V6_LEGACY_STORAGE_KEYS){raw=readStored(key);if(raw){source=key;break}}}
-  S=C.migrate(raw||S);window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh';flushPersist(S)
+let raw=readStored(V6_STORAGE_KEY),source=raw?V6_STORAGE_KEY:'';
+if(!raw){for(const key of V6_LEGACY_STORAGE_KEYS){raw=readStored(key);if(raw){source=key;break}}}
+S=C.migrate(raw||S);window.__ALPHABET_BOOTSTRAP_SOURCE=source||'fresh';flushPersist(S)
 }
 bootstrapV6Storage();
 addEventListener('pagehide',()=>flushPendingPersist(),{capture:true});
 addEventListener('beforeunload',()=>flushPendingPersist(),{capture:true});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushPendingPersist()});
-
 const finishExamV6PersistBase=finishExam;
 finishExam=function(){const out=finishExamV6PersistBase();flushPersist();return out};
-
 const renderExamMenuV6Base=renderExamMenu;
 renderExamMenu=function(){renderExamMenuV6Base();const button=app.querySelector('[data-prod-test="33"]');if(button){button.textContent='Großer Produktionscheck';button.insertAdjacentHTML('afterend','<small class="muted production-check-note">20 repräsentative freie Produktionsaufgaben · Coverage wird über mehrere Durchgänge gespeichert.</small>')}const card=button?.closest('.production-tests');if(card){const cov=C.productionCoverageSummary(S);const line=document.createElement('p');line.className='muted';line.textContent=`Langzeit-Coverage: ${cov.totalLetters}/33 Buchstaben bereits ausprobiert.`;card.append(line)}};
-
 window.AlphabetLabV6Runtime=Object.freeze({APP_VERSION:'6.1.0',STATE_SCHEMA_VERSION:6,storageKey:V6_STORAGE_KEY,legacyKeys:[...V6_LEGACY_STORAGE_KEYS],flushPersist,flushPendingPersist,compactV6State,persistError:()=>v6PersistError,stateBytes:()=>{try{return new Blob([JSON.stringify(S)]).size}catch(_){return 0}},resetStorage(){for(const key of [V6_STORAGE_KEY,...V6_LEGACY_STORAGE_KEYS]){try{localStorage.removeItem(key)}catch(_){}}}});
 
 /* source: alphabet-app-v62-pwa.js */
 'use strict';
-
-// V6.2 · Home-Screen-App-Verhalten.
-//
-// Eine installierte PWA wird auf dem iPhone praktisch nie „geschlossen“. Der
-// Service Worker übernahm bisher zwar sofort (skipWaiting + clients.claim),
-// die bereits offene Seite lief aber unbemerkt mit dem alten HTML und den alten
-// Bundles weiter. Deshalb:
-//   1. Der Client fragt den aktiven Service Worker nach seiner Build-ID.
-//   2. Weicht sie vom HTML ab, erscheint ein unaufdringliches Update-Banner.
-//   3. Beim Zurückkehren in die App wird höchstens alle 15 Minuten nach einer
-//      neuen Version gesucht – genug für eine App, die tagelang offen bleibt.
-// Es wird nie automatisch neu geladen: ein Reload mitten in einer Prüfung wäre
-// schlimmer als eine Version Verzögerung.
-
 const PWA_UPDATE_CHECK_INTERVAL=15*60*1000;
 let pwaRegistration=null,pwaLastCheck=0,pwaBannerShown=false,pwaServiceWorkerBuildId='';
-
 const pwaStandalone=()=>{
-  try{
-    return window.matchMedia?.('(display-mode: standalone)')?.matches===true
-      ||window.matchMedia?.('(display-mode: fullscreen)')?.matches===true
-      ||window.navigator?.standalone===true;
-  }catch(_){return false}
+try{
+return window.matchMedia?.('(display-mode: standalone)')?.matches===true
+||window.matchMedia?.('(display-mode: fullscreen)')?.matches===true
+||window.navigator?.standalone===true;
+}catch(_){return false}
 };
-
 function pwaMarkDisplayMode(){
-  try{document.documentElement.dataset.displayMode=pwaStandalone()?'standalone':'browser'}catch(_){}
+try{document.documentElement.dataset.displayMode=pwaStandalone()?'standalone':'browser'}catch(_){}
 }
-
 function pwaAskBuildId(worker,timeoutMs=1500){
-  return new Promise(resolve=>{
-    if(!worker)return resolve('');
-    let done=false;
-    const finish=value=>{if(done)return;done=true;navigator.serviceWorker.removeEventListener('message',onMessage);resolve(value||'')};
-    const onMessage=event=>{if(event.data?.type==='ALPHABET_BUILD_ID')finish(event.data.buildId)};
-    try{
-      navigator.serviceWorker.addEventListener('message',onMessage);
-      worker.postMessage({type:'ALPHABET_BUILD_ID'});
-      setTimeout(()=>finish(''),timeoutMs);
-    }catch(_){finish('')}
-  });
-}
-
-function pwaShowUpdateBanner(){
-  if(pwaBannerShown||document.getElementById('pwaUpdateBanner'))return;
-  pwaBannerShown=true;
-  const bar=document.createElement('div');
-  bar.id='pwaUpdateBanner';
-  bar.className='pwa-update-banner';
-  bar.setAttribute('role','status');
-  bar.setAttribute('aria-live','polite');
-  bar.innerHTML='<span>Neue Version installiert.</span><button class="btn small primary" type="button" id="pwaUpdateReload">Jetzt aktualisieren</button><button class="btn small" type="button" id="pwaUpdateLater" aria-label="Update-Hinweis ausblenden">Später</button>';
-  document.body.appendChild(bar);
-  bar.querySelector('#pwaUpdateReload').onclick=()=>{try{location.reload()}catch(_){}};
-  bar.querySelector('#pwaUpdateLater').onclick=()=>{bar.remove()};
-}
-
-async function pwaSyncBuildId(){
-  const controller=navigator.serviceWorker?.controller;
-  if(!controller)return '';
-  pwaServiceWorkerBuildId=await pwaAskBuildId(controller);
-  const html=window.__ALPHABET_BUILD_ID__||'';
-  if(pwaServiceWorkerBuildId&&html&&pwaServiceWorkerBuildId!==html)pwaShowUpdateBanner();
-  return pwaServiceWorkerBuildId;
-}
-
-async function pwaCheckForUpdate({force=false}={}){
-  const now=Date.now();
-  if(!force&&now-pwaLastCheck<PWA_UPDATE_CHECK_INTERVAL)return false;
-  pwaLastCheck=now;
-  try{await pwaRegistration?.update?.()}catch(_){}
-  const waiting=pwaRegistration?.waiting;
-  if(waiting)pwaShowUpdateBanner();
-  await pwaSyncBuildId();
-  return !!document.getElementById('pwaUpdateBanner');
-}
-
-function pwaInit(){
-  pwaMarkDisplayMode();
-  try{
-    window.matchMedia?.('(display-mode: standalone)')?.addEventListener?.('change',pwaMarkDisplayMode);
-  }catch(_){}
-  if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{pwaSyncBuildId()});
-  navigator.serviceWorker.ready.then(registration=>{
-    pwaRegistration=registration;
-    pwaLastCheck=Date.now();
-    registration.addEventListener?.('updatefound',()=>{
-      const installing=registration.installing;
-      if(!installing)return;
-      installing.addEventListener('statechange',()=>{
-        if(installing.state==='installed'&&navigator.serviceWorker.controller)pwaShowUpdateBanner();
-      });
-    });
-    return pwaSyncBuildId();
-  }).catch(()=>{});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pwaCheckForUpdate()});
-}
-
-window.AlphabetLabPWA=Object.freeze({
-  standalone:pwaStandalone,
-  buildId:()=>window.__ALPHABET_BUILD_ID__||'',
-  serviceWorkerBuildId:()=>pwaServiceWorkerBuildId,
-  updateAvailable:()=>!!document.getElementById('pwaUpdateBanner'),
-  checkForUpdate:()=>pwaCheckForUpdate({force:true}),
-  showUpdateBanner:pwaShowUpdateBanner
+return new Promise(resolve=>{
+if(!worker)return resolve('');
+let done=false;
+const finish=value=>{if(done)return;done=true;navigator.serviceWorker.removeEventListener('message',onMessage);resolve(value||'')};
+const onMessage=event=>{if(event.data?.type==='ALPHABET_BUILD_ID')finish(event.data.buildId)};
+try{
+navigator.serviceWorker.addEventListener('message',onMessage);
+worker.postMessage({type:'ALPHABET_BUILD_ID'});
+setTimeout(()=>finish(''),timeoutMs);
+}catch(_){finish('')}
 });
-
+}
+function pwaShowUpdateBanner(){
+if(pwaBannerShown||document.getElementById('pwaUpdateBanner'))return;
+pwaBannerShown=true;
+const bar=document.createElement('div');
+bar.id='pwaUpdateBanner';
+bar.className='pwa-update-banner';
+bar.setAttribute('role','status');
+bar.setAttribute('aria-live','polite');
+bar.innerHTML='<span>Neue Version installiert.</span><button class="btn small primary" type="button" id="pwaUpdateReload">Jetzt aktualisieren</button><button class="btn small" type="button" id="pwaUpdateLater" aria-label="Update-Hinweis ausblenden">Später</button>';
+document.body.appendChild(bar);
+bar.querySelector('#pwaUpdateReload').onclick=()=>{try{location.reload()}catch(_){}};
+bar.querySelector('#pwaUpdateLater').onclick=()=>{bar.remove()};
+}
+async function pwaSyncBuildId(){
+const controller=navigator.serviceWorker?.controller;
+if(!controller)return '';
+pwaServiceWorkerBuildId=await pwaAskBuildId(controller);
+const html=window.__ALPHABET_BUILD_ID__||'';
+if(pwaServiceWorkerBuildId&&html&&pwaServiceWorkerBuildId!==html)pwaShowUpdateBanner();
+return pwaServiceWorkerBuildId;
+}
+async function pwaCheckForUpdate({force=false}={}){
+const now=Date.now();
+if(!force&&now-pwaLastCheck<PWA_UPDATE_CHECK_INTERVAL)return false;
+pwaLastCheck=now;
+try{await pwaRegistration?.update?.()}catch(_){}
+const waiting=pwaRegistration?.waiting;
+if(waiting)pwaShowUpdateBanner();
+await pwaSyncBuildId();
+return !!document.getElementById('pwaUpdateBanner');
+}
+function pwaInit(){
+pwaMarkDisplayMode();
+try{
+window.matchMedia?.('(display-mode: standalone)')?.addEventListener?.('change',pwaMarkDisplayMode);
+}catch(_){}
+if(!('serviceWorker' in navigator))return;
+navigator.serviceWorker.addEventListener('controllerchange',()=>{pwaSyncBuildId()});
+navigator.serviceWorker.ready.then(registration=>{
+pwaRegistration=registration;
+pwaLastCheck=Date.now();
+registration.addEventListener?.('updatefound',()=>{
+const installing=registration.installing;
+if(!installing)return;
+installing.addEventListener('statechange',()=>{
+if(installing.state==='installed'&&navigator.serviceWorker.controller)pwaShowUpdateBanner();
+});
+});
+return pwaSyncBuildId();
+}).catch(()=>{});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pwaCheckForUpdate()});
+}
+window.AlphabetLabPWA=Object.freeze({
+standalone:pwaStandalone,
+buildId:()=>window.__ALPHABET_BUILD_ID__||'',
+serviceWorkerBuildId:()=>pwaServiceWorkerBuildId,
+updateAvailable:()=>!!document.getElementById('pwaUpdateBanner'),
+checkForUpdate:()=>pwaCheckForUpdate({force:true}),
+showUpdateBanner:pwaShowUpdateBanner
+});
 pwaInit();
 
 /* source: alphabet-app-v63-retrieval.js */
 'use strict';
-
-// V6.3 · Darstellung des Vollalphabet-Abrufs.
-//
-// Die Antwortknöpfe tragen bewusst weiterhin data-ans, damit wireAnswers(),
-// die Audio-Freigabe aus alphabet-app-v6-question-fixes.js und die
-// Antwortauswertung unverändert greifen. Nur das Layout ist ein kompaktes
-// Raster statt der zweispaltigen Antwortliste – 33 Optionen in zwei Spalten
-// wären auf einem iPhone eine Bildschirmhöhe an Scrollen.
-
 const taskBodyRetrievalBase=taskBody;
 taskBody=function(t){
-  if(t?.interaction!=='alphabetRecall')return taskBodyRetrievalBase(t);
-  const options=t.options||[];
-  return `${t.display?`<div class="pair">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>`
-    +`<div class="alphabet-grid" role="group" aria-label="Vollständiges ukrainisches Alphabet">`
-    +options.map(letter=>`<button class="answer alphabet-key" data-ans="${esc(letter)}" lang="uk" aria-label="Buchstabe ${esc(letter)}"><strong>${esc(letter)}</strong><small>${esc(C.DATA[letter]?.lower||'')}</small></button>`).join('')
-    +`</div>`
-    +`<p class="micro">Kein engeres Auswahlfeld: Hol den Buchstaben zuerst aus dem Gedächtnis, dann tippe ihn an.</p>`;
+if(t?.interaction!=='alphabetRecall')return taskBodyRetrievalBase(t);
+const options=t.options||[];
+return `${t.display?`<div class="pair">${esc(t.display)}</div>`:''}<div class="prompt">${esc(t.prompt)}</div>`
++`<div class="alphabet-grid" role="group" aria-label="Vollständiges ukrainisches Alphabet">`
++options.map(letter=>`<button class="answer alphabet-key" data-ans="${esc(letter)}" lang="uk" aria-label="Buchstabe ${esc(letter)}"><strong>${esc(letter)}</strong><small>${esc(C.DATA[letter]?.lower||'')}</small></button>`).join('')
++`</div>`
++`<p class="micro">Kein engeres Auswahlfeld: Hol den Buchstaben zuerst aus dem Gedächtnis, dann tippe ihn an.</p>`;
 };
+
+/* source: alphabet-app-v7-path.js */
+'use strict';
+const PATH_API=C.LearningPath||null,PATH_STORAGE='uk-alpha-path-v1';
+let PATH=loadPathProgress(),pathRun=null,pathTimer=0;
+function loadPathProgress(){
+if(!PATH_API)return null;
+try{return PATH_API.normalizeProgress(JSON.parse(localStorage.getItem(PATH_STORAGE)||'null'))}
+catch(_){return PATH_API.freshProgress()}
+}
+function savePathProgress(){
+try{localStorage.setItem(PATH_STORAGE,JSON.stringify(PATH));return true}
+catch(err){console.error('Lernpfad konnte nicht gespeichert werden',err);if(typeof setPersistWarning==='function')setPersistWarning('Lernstand konnte auf diesem Gerät gerade nicht gespeichert werden.');return false}
+}
+function resetPathProgress(){try{localStorage.removeItem(PATH_STORAGE)}catch(_){}PATH=PATH_API?PATH_API.freshProgress():null;pathRun=null}
+function pathWordAudioSource(word){
+const key=alphabetWordNorm(word),meta=window.UKRAINIAN_WORD_AUDIO_META?.[key];
+return meta?.human&&meta?.sourceVerified&&meta?.language==='uk'?(window.UKRAINIAN_WORD_AUDIO?.[key]||''):'';
+}
+function pathLetterAudioSource(letter){
+return window.AlphabetAudioLifecycle?.verifiedHumanSource?.(letter,'letter')?(window.UKRAINIAN_LETTER_AUDIO?.[letter]||''):'';
+}
+function pathPlay(src){
+if(!src)return false;
+try{
+const tracked=createAlphabetAudio(src),audio=tracked.audio;
+audio.onended=()=>tracked.release();
+audio.onerror=()=>tracked.release();
+const started=audio.play();
+if(started&&typeof started.catch==='function')started.catch(()=>tracked.release());
+}catch(_){return false}
+return true;
+}
+function pathLessonState(index){
+const lesson=PATH_API.LESSONS[index],next=PATH_API.nextLessonIndex(PATH);
+if(PATH.done[lesson.id])return 'done';
+return index===next?'current':'locked';
+}
+function startPathLesson(index){
+if(pathLessonState(index)==='locked')return false;
+pathRun={...PATH_API.buildLesson(index,PATH,Math.random),pos:0,results:[],mistakes:0,locked:false};
+screen='path';session=null;render();window.scrollTo?.(0,0);return true;
+}
+function startPathCheck(index){
+if(pathLessonState(index)!=='current')return false;
+const run=PATH_API.buildCheck(index,PATH,Math.random);
+if(!run)return false;
+pathRun={...run,pos:0,results:[],mistakes:0,locked:false};
+screen='path';session=null;render();window.scrollTo?.(0,0);return true;
+}
+function startPathPractice(){
+const run=PATH_API.buildPractice(PATH,Math.random,10);
+if(!run)return false;
+pathRun={...run,pos:0,results:[],mistakes:0,locked:false};
+screen='path';session=null;render();window.scrollTo?.(0,0);return true;
+}
+function pathHighlight(word,letter){
+const lower=C.DATA[letter]?.lower;
+return [...String(word)].map(ch=>ch.toLocaleLowerCase('uk')===lower?`<mark>${esc(ch)}</mark>`:esc(ch)).join('');
+}
+function pathOptionsMarkup(step){
+const letters=step.type==='letter',words=step.type==='find';
+return `<div class="answers path-answers${letters?' letter-answers':''}${words?' path-word-answers':''}">${step.options.map((option,i)=>`<button class="answer" data-path-ans="${i}"${letters||words?' lang="uk"':''}><span class="kbd">${i+1}</span>${letters?`<strong>${esc(option)}</strong>`:esc(option)}</button>`).join('')}</div>`;
+}
+function pathStepMarkup(step){
+if(step.type==='teach'){
+const hasAudio=!!pathLetterAudioSource(step.letter);
+return `<div class="eyebrow center">Neuer Buchstabe · ${step.position} von ${step.total}</div>
+<div class="path-letter" lang="uk"><b>${esc(step.letter)}</b><span>${esc(step.lower)}</span></div>
+<div class="path-say">klingt wie <strong>${esc(step.say)}</strong></div>
+<p class="path-hint">${esc(step.hint)}</p>
+${step.example?`<div class="path-example"><span lang="uk">${pathHighlight(step.example.w,step.letter)}</span><small>${esc(step.example.de)}</small></div>`:''}
+<div class="actions path-actions">${hasAudio?'<button class="btn" id="pathListen" type="button">🔊 Anhören</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
+}
+if(step.type==='sound')return `<div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
+if(step.type==='letter')return `<div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
+if(step.type==='read'||step.type==='say')return `<div class="path-word" lang="uk">${esc(step.display)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
+if(step.type==='find')return `<div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
+if(step.type==='build')return `<div class="prompt">${esc(step.prompt)}</div>
+<div class="path-slots" id="pathSlots" lang="uk" aria-label="Dein Wort">${step.answer.map((_,i)=>`<button class="path-slot" data-path-slot="${i}" type="button" aria-label="Position ${i+1} leeren"></button>`).join('')}</div>
+<div class="path-tiles" id="pathTiles" lang="uk">${step.tiles.map((ch,i)=>`<button class="path-tile" data-path-tile="${i}" type="button">${esc(ch)}</button>`).join('')}</div>`;
+return '';
+}
+function pathBreakdownMarkup(step){
+if(!step.breakdown)return '';
+return `<div class="path-breakdown" lang="uk">${step.breakdown.map(part=>`<span><b>${esc(part.ch)}</b><small lang="de">${esc(part.say||'·')}</small></span>`).join('')}</div>`;
+}
+function renderPathStep(){
+const run=pathRun;
+if(!run){screen='home';return render()}
+const step=run.steps[run.pos];
+if(!step)return finishPathRun();
+run.locked=false;
+const percent=Math.round(run.pos/run.steps.length*100);
+shell(`<div class="lesson path-lesson"><div class="lesson-head"><button class="btn" id="pathQuit" type="button" aria-label="Lektion beenden">✕</button><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="Fortschritt in dieser Lektion"><i style="width:${percent}%"></i></div><button class="btn small" id="pathSound" type="button" aria-pressed="${PATH.sound?'true':'false'}" aria-label="${PATH.sound?'Automatischen Ton ausschalten':'Automatischen Ton einschalten'}">${PATH.sound?'🔊':'🔇'}</button></div>
+<section class="card stage path-stage" data-path-step="${esc(step.type)}">${pathStepMarkup(step)}<div id="pathFeedback" class="path-feedback" role="status" aria-live="polite"></div></section></div>`,{navVisible:false});
+document.getElementById('pathQuit').onclick=()=>{pathRun=null;screen='home';render()};
+document.getElementById('pathSound').onclick=()=>{PATH.sound=!PATH.sound;savePathProgress();renderPathStep()};
+wirePathStep(step);
+}
+function wirePathStep(step){
+if(step.type==='teach'){
+const src=pathLetterAudioSource(step.letter),listen=document.getElementById('pathListen');
+if(listen){const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[step.letter];if(meta)markHumanAudioButton(listen,meta);listen.onclick=()=>pathPlay(src)}
+if(PATH.sound&&src&&!step.played){step.played=true;pathPlay(src)}
+const next=document.getElementById('pathNext');
+next.onclick=()=>{pathRun.results.push({step,good:true});advancePath()};
+next.focus?.({preventScroll:true});
+return;
+}
+if(step.type==='build')return wirePathBuild(step);
+app.querySelectorAll('[data-path-ans]').forEach(button=>button.onclick=()=>answerPathStep(step,step.options[Number(button.dataset.pathAns)],button));
+}
+function wirePathBuild(step){
+const chosen=[];
+const slots=[...app.querySelectorAll('[data-path-slot]')],tiles=[...app.querySelectorAll('[data-path-tile]')];
+const paint=()=>{
+slots.forEach((slot,i)=>{const tile=chosen[i];slot.textContent=tile===undefined?'':step.tiles[tile];slot.classList.toggle('filled',tile!==undefined)});
+tiles.forEach((tile,i)=>{const used=chosen.includes(i);tile.disabled=used;tile.classList.toggle('used',used)});
+};
+tiles.forEach((tile,i)=>tile.onclick=()=>{
+if(pathRun.locked||chosen.length>=step.answer.length)return;
+chosen.push(i);paint();
+if(chosen.length===step.answer.length)answerPathStep(step,chosen.map(index=>step.tiles[index]).join(''),null);
+});
+slots.forEach((slot,i)=>slot.onclick=()=>{if(pathRun.locked||chosen[i]===undefined)return;chosen.splice(i,1);paint()});
+paint();
+}
+function recordPathEvidence(step,good,value){
+if(step.retry||(step.type!=='sound'&&step.type!=='letter'))return;
+try{
+const visual=step.type==='sound';
+C.recordAnswer(S,{attemptId:C.id('path'),letter:step.letter,skill:visual?'visualToSound':'soundToLetter',type:visual?'visual':'reverse',kind:visual?'visual':'reverse',family:`path-${step.type}`,evidenceWeight:.6,firstAttempt:true,isRepair:false,selected:String(value),expected:String(step.correct),good,confusedWith:!good&&!visual&&C.ALPHABET.includes(value)?value:'',latencyMs:0,latencyValid:false,now:Date.now(),source:'path'});
+persist();
+}catch(err){console.error('Lernpfad: Antwort konnte nicht an die Engine übergeben werden',err)}
+}
+function answerPathStep(step,value,button){
+const run=pathRun;
+if(!run||run.locked)return;
+run.locked=true;
+const good=value===step.correct;
+run.results.push({step,good});
+recordPathEvidence(step,good,value);
+if(!good){
+run.mistakes++;
+const retry=run.kind==='check'?null:PATH_API.retryStep(step,run,Math.random);
+if(retry)run.steps.splice(Math.min(run.steps.length,run.pos+4),0,retry);
+}
+app.querySelectorAll('[data-path-ans]').forEach(option=>{
+option.disabled=true;
+const optionValue=step.options[Number(option.dataset.pathAns)];
+if(optionValue===step.correct)option.classList.add('correct');
+else if(option===button)option.classList.add('wrong');
+});
+app.querySelectorAll('[data-path-tile],[data-path-slot]').forEach(element=>element.disabled=true);
+if(step.type==='build')app.querySelector('#pathSlots')?.classList.add(good?'correct':'wrong');
+const feedback=document.getElementById('pathFeedback'),wordStep=!!step.word;
+const quick=good&&!wordStep;
+if(quick){
+feedback.innerHTML='<strong class="good-text">Richtig!</strong>';
+pathTimer=setTimeout(advancePath,650);
+return;
+}
+const audio=wordStep?pathWordAudioSource(step.word):'';
+const head=good?'<strong class="good-text">Richtig!</strong>':'<strong class="bad-text">Noch nicht ganz.</strong>';
+const body=wordStep
+?`<div class="path-solution"><span lang="uk">${esc(step.word)}</span> = ${esc(step.meaning)}</div>${pathBreakdownMarkup(step)}`
+:`<p>${esc(step.explain||'')}</p>`;
+feedback.innerHTML=`${head}${body}<div class="actions path-actions">${audio?'<button class="btn" id="pathListenWord" type="button">🔊 Original</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
+const listen=document.getElementById('pathListenWord');
+if(listen){const meta=window.UKRAINIAN_WORD_AUDIO_META?.[alphabetWordNorm(step.word)];if(meta)markHumanAudioButton(listen,meta);listen.onclick=()=>pathPlay(audio)}
+if(audio&&PATH.sound)pathPlay(audio);
+const next=document.getElementById('pathNext');
+next.onclick=advancePath;
+next.focus?.({preventScroll:true});
+feedback.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+}
+function advancePath(){
+clearTimeout(pathTimer);pathTimer=0;
+if(!pathRun)return;
+pathRun.pos++;
+if(pathRun.pos>=pathRun.steps.length)return finishPathRun();
+renderPathStep();window.scrollTo?.(0,0);
+}
+function finishPathRun(){
+const run=pathRun;
+if(!run)return;
+run.passed=run.kind==='check'?PATH_API.checkPassed(run,run.results):true;
+PATH_API.applyResult(PATH,run,run.results,Date.now());
+savePathProgress();
+if(run.kind==='lesson'||(run.kind==='check'&&run.passed)){
+try{const lesson=PATH_API.LESSONS[run.index];S.learningPlan.introducedLetters=C.uniq([...(S.learningPlan.introducedLetters||[]),...lesson.letters]);persist()}catch(err){console.error('Lernpfad: Lernfeld konnte nicht erweitert werden',err)}
+}
+run.finished=true;
+screen='pathDone';render();window.scrollTo?.(0,0);
+}
+function renderPathDone(){
+const run=pathRun;
+if(!run||!run.finished){screen='home';return render()}
+stopAlphabetAudio();
+const answered=run.results.filter(result=>result.step.type!=='teach'&&!result.step.retry);
+const firstTry=answered.filter(result=>result.good).length;
+const words=C.uniq(run.results.filter(result=>result.step.word).map(result=>result.step.word)).map(text=>PATH_API.WORDS.find(word=>word.w===text));
+const known=PATH_API.knownLetters(PATH).length,next=PATH_API.nextLessonIndex(PATH);
+const check=run.kind==='check',failed=check&&!run.passed;
+const lesson=run.kind!=='practice'&&!failed?PATH_API.LESSONS[run.index]:null;
+const finale=next<0&&!!lesson&&run.index===PATH_API.LESSONS.length-1;
+const title=run.kind==='practice'?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
+const lead=run.kind==='practice'
+?(run.review?`${words.length} Wörter wiederholt – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`${words.length} neue Wörter gelesen – alle mit Buchstaben, die du schon kennst.`)
+:failed
+?`${answered.length-firstTry} Fehler – einer wäre erlaubt gewesen. Die Lektion dauert fünf Minuten und klärt genau diese Zeichen.`
+:finale
+?'Alle 33 Buchstaben sind eingeführt. Ab jetzt hältst du sie mit kurzen Lesetrainings frisch.'
+:`${check?'Kurztest bestanden. ':''}Du kennst jetzt ${known} von 33 Buchstaben.`;
+const primary=next>=0
+?`<button class="btn primary xl" id="pathContinue" type="button">${failed?`Lektion ${next+1} starten`:`Weiter: Lektion ${next+1}`}</button>`
+:`<button class="btn primary xl" id="pathPracticeAgain" type="button">${PATH_API.freshWords(PATH).length<PATH_API.FRESH_MINIMUM?'Wiederholung':'Lesetraining'}</button>`;
+shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
+${lesson?`<div class="path-new-letters" lang="uk" aria-label="Neue Buchstaben">${lesson.letters.map(letter=>`<span><b>${esc(letter)}</b><small lang="de">${esc(PATH_API.LETTER_INFO[letter].say)}</small></span>`).join('')}</div>`:''}
+<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>Wörter gelesen</span><b>${words.length}</b></div><div><span>Buchstaben</span><b>${known} / 33</b></div></div>
+${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
+<div class="actions path-actions">${primary}<button class="btn" id="pathHome" type="button">Zur Übersicht</button></div></section></div>`,{navVisible:false});
+document.getElementById('pathHome').onclick=()=>{pathRun=null;screen='home';render()};
+document.getElementById('pathContinue')?.addEventListener('click',()=>startPathLesson(next));
+document.getElementById('pathPracticeAgain')?.addEventListener('click',()=>startPathPractice());
+(document.getElementById('pathContinue')||document.getElementById('pathPracticeAgain'))?.focus?.({preventScroll:true});
+}
+function pathHomeMarkup(){
+const done=PATH_API.doneCount(PATH),next=PATH_API.nextLessonIndex(PATH),known=PATH_API.knownLetters(PATH).length,read=PATH_API.wordsRead(PATH);
+const lesson=next>=0?PATH_API.LESSONS[next]:null;
+const fresh=PATH_API.freshWords(PATH).length,review=fresh<PATH_API.FRESH_MINIMUM;
+const practiceLabel=review?'Wiederholung':`Lesetraining · ${fresh} neue Wörter`;
+const hero=lesson
+?`<section class="card hero path-hero"><div class="eyebrow">Dein Lernpfad · ${done} von ${PATH_API.LESSONS.length} Lektionen</div><h1>${next===0?'Ukrainisch lesen lernen':esc(lesson.title)}</h1><p>${next===0?'Acht kurze Lektionen. Du startest mit sechs Buchstaben, die du schon kennst – und liest nach fünf Minuten deine ersten Wörter.':esc(lesson.tagline)}</p><div class="path-preview" lang="uk" aria-label="Buchstaben dieser Lektion">${lesson.letters.map(letter=>`<span>${esc(letter)}</span>`).join('')}</div><div class="actions"><button class="btn primary xl" id="pathStart" type="button">${next===0?'LOS GEHT’S':`LEKTION ${next+1} STARTEN`}</button>${done?`<button class="btn" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${practiceLabel}</button>`:''}</div><p class="muted path-meta">≈ 5 Minuten · ${known} von 33 Buchstaben${read.length?` · ${read.length} Wörter gelesen`:''}${done&&review?' · neue Wörter gibt es in der nächsten Lektion':''}</p><button class="path-skip" id="pathCheck" type="button">Kenne ich schon – Kurztest statt Lektion</button></section>`
+:`<section class="card hero path-hero"><div class="eyebrow">Lernpfad abgeschlossen</div><h1>Du kannst Ukrainisch lesen.</h1><p>${review?`Du hast alle ${PATH_API.WORDS.length} Wörter gelesen. Die Wiederholung holt die ältesten zurück – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`Halte es frisch: Jedes Lesetraining bringt Wörter, die du noch nie gelesen hast. ${fresh} warten noch.`}</p><div class="actions"><button class="btn primary xl" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${review?'WIEDERHOLUNG STARTEN':'LESETRAINING STARTEN'}</button></div><p class="muted path-meta">33 von 33 Buchstaben · ${read.length} von ${PATH_API.WORDS.length} Wörtern gelesen</p></section>`;
+const list=`<section class="card"><div class="section-title"><h2>Der Weg</h2><small>33 Buchstaben in 8 Lektionen</small></div><ol class="path-list">${PATH_API.LESSONS.map((row,index)=>{const state=pathLessonState(index);return `<li><button class="path-row ${state}" data-path-lesson="${index}" type="button" ${state==='locked'?'disabled':''} aria-label="Lektion ${index+1}: ${esc(row.title)}${state==='done'?', abgeschlossen – nochmal üben':state==='locked'?', noch gesperrt':', jetzt starten'}"><span class="path-badge" aria-hidden="true">${state==='done'?'✓':state==='locked'?'🔒':index+1}</span><span class="path-row-text"><b>${esc(row.title)}</b><small lang="uk">${row.letters.join(' ')}</small></span><span class="path-row-action">${state==='done'?'Nochmal':state==='current'?'Start':''}</span></button></li>`}).join('')}</ol></section>`;
+const recent=read.slice().sort((a,b)=>(PATH.words[b.w]?.last||0)-(PATH.words[a.w]?.last||0)).slice(0,12);
+const trophy=read.length?`<section class="card"><div class="section-title"><h2>Das kannst du schon lesen</h2><small>${read.length} Wörter</small></div><div class="path-chips">${recent.map(word=>`<span><b lang="uk">${esc(word.w)}</b><small>${esc(word.de)}</small></span>`).join('')}</div>${read.length>recent.length?`<p class="muted path-meta">und ${read.length-recent.length} weitere</p>`:''}</section>`:'';
+return hero+list+trophy;
+}
+if(PATH_API)installLearningPath();
+function installLearningPath(){
+const renderHomePathBase=renderHome;
+renderHome=function(){
+renderHomePathBase();
+const topbarEl=app.querySelector('.topbar'),navEl=app.querySelector('.bottom-nav');
+if(!topbarEl)return;
+const details=document.createElement('details');
+details.id='advancedHome';details.className='path-advanced';
+details.innerHTML='<summary><span>Vertiefen &amp; Prüfen</span><small>Adaptives Training, Prüfungen, Statistik</small></summary>';
+[...app.children].filter(node=>node!==topbarEl&&node!==navEl).forEach(node=>details.appendChild(node));
+const engineHistory=(S.answerLog?.length||0)>0||!!S.diagnostic;
+details.open=PATH.advancedOpen??(PATH_API.doneCount(PATH)===0&&engineHistory);
+details.querySelector('summary').addEventListener('click',()=>setTimeout(()=>{PATH.advancedOpen=details.open;savePathProgress()},0));
+const holder=document.createElement('div');
+holder.innerHTML=pathHomeMarkup();
+const fragment=document.createDocumentFragment();
+[...holder.children].forEach(node=>fragment.appendChild(node));
+fragment.appendChild(details);
+topbarEl.after(fragment);
+document.getElementById('pathStart')?.addEventListener('click',()=>startPathLesson(PATH_API.nextLessonIndex(PATH)));
+document.getElementById('pathPractice')?.addEventListener('click',()=>startPathPractice());
+document.getElementById('pathCheck')?.addEventListener('click',()=>startPathCheck(PATH_API.nextLessonIndex(PATH)));
+app.querySelectorAll('[data-path-lesson]').forEach(button=>button.onclick=()=>startPathLesson(Number(button.dataset.pathLesson)));
+};
+const renderPathBase=render;
+render=function(){
+clearTimeout(pathTimer);pathTimer=0;
+if(screen==='path'){stopAlphabetAudio();return renderPathStep()}
+if(screen==='pathDone')return renderPathDone();
+if(pathRun)pathRun=null;
+return renderPathBase();
+};
+document.addEventListener('keydown',event=>{
+if(screen!=='path'||!pathRun||event.metaKey||event.ctrlKey||event.altKey)return;
+if(event.key==='Enter'){const next=document.getElementById('pathNext');if(next&&document.activeElement!==next){event.preventDefault();next.click()}return}
+const number=Number(event.key);
+if(!Number.isInteger(number)||number<1)return;
+const option=app.querySelectorAll('[data-path-ans]')[number-1];
+if(option&&!option.disabled){event.preventDefault();option.click()}
+});
+window.AlphabetLabPath=Object.freeze({
+progress:()=>structuredClone(PATH),
+startLesson:startPathLesson,
+startPractice:startPathPractice,
+startCheck:startPathCheck,
+currentStep:()=>DEBUG_LEARNING&&pathRun?structuredClone(pathRun.steps[pathRun.pos]||null):null,
+runLength:()=>pathRun?pathRun.steps.length:0,
+freshWords:()=>PATH_API.freshWords(PATH).length
+});
+}
 
 /* source: alphabet-app-v4-init.js */
 'use strict';
-const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,typeof LEGACY3!=='undefined'?LEGACY3:null,LEGACY2,LEGACY1].filter(Boolean).forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();screen='home';render()}},startExam,startMyTraining};
+const alphabetLabApi={version:C.SCHEMA_VERSION||C.VERSION,state:()=>structuredClone(S),export:()=>JSON.stringify(S,null,2),reset(){if(confirm('Alphabet-Lernstand wirklich löschen?')){[STORAGE,typeof LEGACY3!=='undefined'?LEGACY3:null,LEGACY2,LEGACY1].filter(Boolean).forEach(k=>localStorage.removeItem(k));S=C.freshState();persist();if(typeof resetPathProgress==='function')resetPathProgress();screen='home';render()}},startExam,startMyTraining};
 if(typeof DEBUG_LEARNING!=='undefined'&&DEBUG_LEARNING){
-  alphabetLabApi.debugCurrentTask=()=>session?structuredClone(currentTask()):null;
-  alphabetLabApi.debugSession=()=>session?structuredClone(session):null;
-  alphabetLabApi.debugInfo=async()=>{
-    const current=session?currentTask():null;let swBuildId='';
-    try{const controller=navigator.serviceWorker?.controller;if(controller){swBuildId=await new Promise(resolve=>{const timer=setTimeout(()=>resolve(''),500);const onMessage=e=>{if(e.data?.type==='ALPHABET_BUILD_ID'){clearTimeout(timer);navigator.serviceWorker.removeEventListener('message',onMessage);resolve(e.data.buildId||'')}};navigator.serviceWorker.addEventListener('message',onMessage);controller.postMessage({type:'ALPHABET_BUILD_ID'})})}}catch(_){swBuildId=''}
-    return {appVersion:C.APP_VERSION||window.AlphabetLabV6Runtime?.APP_VERSION||'',schemaVersion:C.SCHEMA_VERSION||C.VERSION,buildId:window.__ALPHABET_BUILD_ID__||'',storageKey:window.AlphabetLabV6Runtime?.storageKey||STORAGE,stateBytes:window.AlphabetLabV6Runtime?.stateBytes?.()||0,persistError:window.AlphabetLabV6Runtime?.persistError?.()||'',aggregateRevision:S.metrics?.revision??null,productionReadinessRevision:S.metrics?.readinessRevision??null,activeLearningSet:[...(S.learningPlan?.activeLetters||[])],selectionReason:current?.selectionReason||current?.scheduledReason||'',serviceWorkerBuildId:swBuildId}
-  };
-  alphabetLabApi.debugStartFamily=(letter,family,{size=1}={})=>{
-    if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
-    const meta=C.QUESTION_FAMILIES[family];if(!meta)throw new Error('Unknown family '+family);
-    session=C.createFocusedSession(S,letter,{size:Math.max(1,Number(size)||1)});session.title='E2E Debug';session.preset='debug-e2e';session.scope='focused';session.targetMainCount=Math.max(1,Number(size)||1);
-    const skill=meta.skill||'visualToSound',difficulty=Math.max(meta.min??0,Math.min(meta.max??5,C.difficultyFor(S,letter,skill)));
-    const task=C.buildV4Task(S,letter,skill,difficulty,family,session,()=>.371,{scheduledReason:'debug-e2e'});session.mainTasks[0]=task;screen='exam';renderExam();return structuredClone(task)
-  };
-  alphabetLabApi.debugPrimeProductionLetter=(letter,{ratio=1}={})=>{
-    if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
-    const m=S.letters[letter],day=C.localDateKey(Date.now()-2*C.DAY);m.writeDays=[day];
-    for(const k of C.CORE_SKILLS){const s=m.skills[k];s.attempts=s.independentAttempts=10;s.correct=s.independentCorrect=Math.max(0,Math.min(10,Math.round(10*ratio)));s.wrong=s.independentWrong=10-s.independentCorrect;s.evidenceWeightSum=10;s.evidenceCorrectSum=s.independentCorrect;s.confidenceEvidence=10;s.recentResults=Array.from({length:10},(_,i)=>({good:i<s.independentCorrect,independent:true,weight:1}));s.successDays=[3,2,1,0].map(n=>C.localDateKey(Date.now()-n*C.DAY));s.dueAt=Date.now()+7*C.DAY;s.repairPending=false}
-    S.answerLog.push({letter,type:'visual',correct:true,firstAttempt:true,isRepair:false},{letter,type:'reverse',correct:true,firstAttempt:true,isRepair:false});
-    S.learningPlan.introducedLetters=C.uniq([...(S.learningPlan.introducedLetters||[]),letter]);S.learningPlan.activeLetters=C.uniq([letter,...(S.learningPlan.activeLetters||[])]).slice(0,8);persist();return C.summaryForLetter(S,letter)
-  };
-  alphabetLabApi.debugStartProductionFamily=(letter,family)=>{
-    if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
-    if(!C.PRODUCTION_FAMILIES?.[family])throw new Error('Unknown production family '+family);
-    session=C.createAdaptiveSession(S,{targetMainCount:1,title:'Production E2E',preset:'debug-production',scope:'focused',feedback:'learning',fixedLetters:[letter],focused:true});C.initProductionSession(session,S,()=>.371);session.productionCurrent=C.productionTask(S,letter,family,session,()=>.371,{scheduledReason:'debug-e2e-production'});screen='exam';renderExam();return structuredClone(session.productionCurrent)
-  };
-  alphabetLabApi.debugShowDueRepair=()=>{
-    const repair=session?.pendingRepairs?.find(x=>!x.done);if(!repair)return false;repair.dueAfterMainIndex=session.mainIndex;session.repairCurrent=null;session.locked=false;renderExam();return true
-  };
-  alphabetLabApi.debugHome=()=>{session=null;screen='home';render()};
+alphabetLabApi.debugCurrentTask=()=>session?structuredClone(currentTask()):null;
+alphabetLabApi.debugSession=()=>session?structuredClone(session):null;
+alphabetLabApi.debugInfo=async()=>{
+const current=session?currentTask():null;let swBuildId='';
+try{const controller=navigator.serviceWorker?.controller;if(controller){swBuildId=await new Promise(resolve=>{const timer=setTimeout(()=>resolve(''),500);const onMessage=e=>{if(e.data?.type==='ALPHABET_BUILD_ID'){clearTimeout(timer);navigator.serviceWorker.removeEventListener('message',onMessage);resolve(e.data.buildId||'')}};navigator.serviceWorker.addEventListener('message',onMessage);controller.postMessage({type:'ALPHABET_BUILD_ID'})})}}catch(_){swBuildId=''}
+return {appVersion:C.APP_VERSION||window.AlphabetLabV6Runtime?.APP_VERSION||'',schemaVersion:C.SCHEMA_VERSION||C.VERSION,buildId:window.__ALPHABET_BUILD_ID__||'',storageKey:window.AlphabetLabV6Runtime?.storageKey||STORAGE,stateBytes:window.AlphabetLabV6Runtime?.stateBytes?.()||0,persistError:window.AlphabetLabV6Runtime?.persistError?.()||'',aggregateRevision:S.metrics?.revision??null,productionReadinessRevision:S.metrics?.readinessRevision??null,activeLearningSet:[...(S.learningPlan?.activeLetters||[])],selectionReason:current?.selectionReason||current?.scheduledReason||'',serviceWorkerBuildId:swBuildId}
+};
+alphabetLabApi.debugStartFamily=(letter,family,{size=1}={})=>{
+if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
+const meta=C.QUESTION_FAMILIES[family];if(!meta)throw new Error('Unknown family '+family);
+session=C.createFocusedSession(S,letter,{size:Math.max(1,Number(size)||1)});session.title='E2E Debug';session.preset='debug-e2e';session.scope='focused';session.targetMainCount=Math.max(1,Number(size)||1);
+const skill=meta.skill||'visualToSound',difficulty=Math.max(meta.min??0,Math.min(meta.max??5,C.difficultyFor(S,letter,skill)));
+const task=C.buildV4Task(S,letter,skill,difficulty,family,session,()=>.371,{scheduledReason:'debug-e2e'});session.mainTasks[0]=task;screen='exam';renderExam();return structuredClone(task)
+};
+alphabetLabApi.debugPrimeProductionLetter=(letter,{ratio=1}={})=>{
+if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
+const m=S.letters[letter],day=C.localDateKey(Date.now()-2*C.DAY);m.writeDays=[day];
+for(const k of C.CORE_SKILLS){const s=m.skills[k];s.attempts=s.independentAttempts=10;s.correct=s.independentCorrect=Math.max(0,Math.min(10,Math.round(10*ratio)));s.wrong=s.independentWrong=10-s.independentCorrect;s.evidenceWeightSum=10;s.evidenceCorrectSum=s.independentCorrect;s.confidenceEvidence=10;s.recentResults=Array.from({length:10},(_,i)=>({good:i<s.independentCorrect,independent:true,weight:1}));s.successDays=[3,2,1,0].map(n=>C.localDateKey(Date.now()-n*C.DAY));s.dueAt=Date.now()+7*C.DAY;s.repairPending=false}
+S.answerLog.push({letter,type:'visual',correct:true,firstAttempt:true,isRepair:false},{letter,type:'reverse',correct:true,firstAttempt:true,isRepair:false});
+S.learningPlan.introducedLetters=C.uniq([...(S.learningPlan.introducedLetters||[]),letter]);S.learningPlan.activeLetters=C.uniq([letter,...(S.learningPlan.activeLetters||[])]).slice(0,8);persist();return C.summaryForLetter(S,letter)
+};
+alphabetLabApi.debugStartProductionFamily=(letter,family)=>{
+if(!C.ALPHABET.includes(letter))throw new Error('Unknown letter '+letter);
+if(!C.PRODUCTION_FAMILIES?.[family])throw new Error('Unknown production family '+family);
+session=C.createAdaptiveSession(S,{targetMainCount:1,title:'Production E2E',preset:'debug-production',scope:'focused',feedback:'learning',fixedLetters:[letter],focused:true});C.initProductionSession(session,S,()=>.371);session.productionCurrent=C.productionTask(S,letter,family,session,()=>.371,{scheduledReason:'debug-e2e-production'});screen='exam';renderExam();return structuredClone(session.productionCurrent)
+};
+alphabetLabApi.debugShowDueRepair=()=>{
+const repair=session?.pendingRepairs?.find(x=>!x.done);if(!repair)return false;repair.dueAfterMainIndex=session.mainIndex;session.repairCurrent=null;session.locked=false;renderExam();return true
+};
+alphabetLabApi.debugHome=()=>{session=null;screen='home';render()};
 }
 window.AlphabetLab=alphabetLabApi;
 render();

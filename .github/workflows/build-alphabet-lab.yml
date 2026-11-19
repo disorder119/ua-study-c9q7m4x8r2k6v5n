@@ -12,6 +12,7 @@ on:
       - 'alphabet-lab.webmanifest'
       - 'ukrainisch-icon-*.png'
       - 'ukrainischkurs-native-audio.js'
+      - 'alphabet-path-data.js'
       - 'scripts/build-alphabet-lab.mjs'
       - '.github/workflows/build-alphabet-lab.yml'
   workflow_dispatch:
