@@ -30,6 +30,36 @@ wirklich zu hören war. Ist keine Aufnahme erreichbar, der Ton ausgeschaltet ode
 kommt fünf Sekunden lang nichts, wird derselbe Abruf ohne Ton gestellt; „Ohne
 Ton antworten“ steht immer zur Verfügung. `Ь` wird nie über das Ohr abgefragt.
 
+### Schreiben mit der ukrainischen Handy-Tastatur
+
+Freiwillig und erst nach einem bestandenen Tastaturtest: Die Karte „Auf
+Ukrainisch tippen“ auf der Startseite erklärt, wie man die ukrainische Tastatur
+auf iPhone und Android hinzufügt, zeigt die Tastenbelegung und verlangt einmal
+`так`. Danach kommen Schreibaufgaben dazu:
+
+- **Buchstabe tippen** („Tippe den Buchstaben für ‚sch‘“) – in Lektionen und in
+  der Auffrischung.
+- **Wort abtippen**: Ein noch nie gelesenes Wort steht da und wird getippt – man
+  lernt, wo die Tasten liegen.
+- **Wort aus dem Gedächtnis schreiben**: Ein schon gelesenes Wort wird nur über
+  Lesung oder Bedeutung genannt („restoran“ · Restaurant) und muss ukrainisch
+  geschrieben werden. In Lektionen ersetzt das die Plättchen-Aufgabe.
+- **Diktat**: Laut hören (menschliche Aufnahme), Buchstaben tippen.
+- **Tastaturtraining**: ein eigener Durchgang nur mit Schreiben – die
+  schwächsten Buchstaben, dann Wörter.
+
+Eine falsche Tastatur ist kein Wissensfehler: Lateinische Eingaben (auch ein
+einzelnes lateinisches „a“, das wie „а“ aussieht) und russische Zeichen (ы э ё ъ)
+werden erkannt, benannt und nicht gewertet. Groß-/Kleinschreibung ist egal.
+Wörter mit Apostroph bleiben außen vor, weil er auf jeder Tastatur woanders
+liegt; ґ erreicht man über langes Drücken auf г. Jede Schreibaufgabe hat einen
+Weg ohne Tastatur („Ohne ukrainische Tastatur antworten“), und die Einstellung
+lässt sich jederzeit ausschalten.
+
+Nicht geprüft werden kann, ob die Bildschirmtastatur eines echten Telefons sich
+dabei gut bedienen lässt: Die Tests schreiben die kyrillischen Zeichen direkt
+ins Feld.
+
 Mehr Lesestoff: 446 Wörter (vorher 323), darunter ukrainische Städte, Länder
 und Alltagswörter. Wörter, deren Bedeutung sich nicht aus dem Klang erschließt
 (так, вода, вхід), werden nicht geraten, sondern gelesen und getippt; die
@@ -345,7 +375,11 @@ Nachschreibens, Vortest und Schreibfläche in den Lektionen – und im Browser:
 Vortest ohne Wertung, Tippen mit Falle und Schreibvarianten, Nachschreiben mit
 Überspringen, Auffrischung über Tage, Selbstkontrolle, Hören mit und ohne
 erreichbare Aufnahme (die Wiedergabe selbst nur in Chromium), alles auch auf
-320 px. Die Pfad-Tests laufen ohne Service Worker, damit externe Aufnahmen nicht
+320 px. Für die Tastatur: Einrichtung mit lateinischer, russischer und richtiger
+Eingabe, Schreibaufgaben nur bei eingeschalteter Tastatur, falsche Tastatur ohne
+Wertung, echter Schreibfehler mit Wiederholung in anderer Form, Tastaturtraining
+(Abtippen und Schreiben aus dem Gedächtnis), Diktat mit und ohne Ton. Die
+Pfad-Tests laufen ohne Service Worker, damit externe Aufnahmen nicht
 am Test vorbei aus dem echten Netz geladen werden.
 
 Der Readiness-Cache ist seit V7 zusätzlich an den Tag gebunden. Vorher galt er

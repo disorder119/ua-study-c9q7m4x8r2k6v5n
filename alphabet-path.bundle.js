@@ -91,6 +91,16 @@ const typed=pathTypeNormalize(input);
 if(!typed)return false;
 return new RegExp(`^${pathChars(word).map(ch=>`(?:${PATH_TYPE_ALT[ch].join('|')})`).join('')}$`).test(typed);
 }
+const PATH_KBD_LAYOUT=['йцукенгшщзхї','фівапролджє','ячсмитьбю'];
+function pathKbdNormalize(input){return String(input??'').normalize('NFC').trim().toLocaleLowerCase('uk').replace(/[ʼ‘'`]/g,'’').replace(/\s+/g,'')}
+function pathKbdDiagnose(input){
+const text=pathKbdNormalize(input);
+if(/[a-zäöüß]/.test(text))return 'latin';
+if(/[ыэёъ]/.test(text))return 'russian';
+return '';
+}
+function pathKbdMatch(target,input){const typed=pathKbdNormalize(input);return !!typed&&typed===pathKbdNormalize(target)}
+const pathKbdWordOk=word=>{const chars=pathChars(word.w);return chars.length>=2&&chars.length<=10&&chars.every(ch=>ALPHABET.includes(pathUpper(ch)))};
 const PATH_FAMILIAR_SHAPES=new Set([...'АОКМТЕНРСВУХІ']);
 function pathTranslit(word,override=null){return pathChars(word).map(ch=>(override&&override[ch]!==undefined?override[ch]:PATH_TRANSLIT[ch])??'').join('')}
 const PATH_WORDS=PATH_WORD_ROWS.map(([w,de,flag])=>{
@@ -102,7 +112,7 @@ return {w,de,cog:flag!=='x',lesson,letters,sayable:pathSayable(w),buildable:plai
 const PATH_WORD_BY_TEXT=new Map(PATH_WORDS.map(word=>[word.w,word]));
 const pathUsable=word=>[...word.w].length>=2&&(word.cog||pathTypeable(word.w));
 function pathLettersUpTo(index){return PATH_LESSONS.slice(0,Math.max(0,index+1)).flatMap(lesson=>lesson.letters)}
-function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},srs:{},sound:true,practiceRuns:0,reviewRuns:0,advancedOpen:null}}
+function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},srs:{},sound:true,keyboard:null,practiceRuns:0,reviewRuns:0,typingRuns:0,advancedOpen:null}}
 function pathNormalizeProgress(raw){
 const fresh=pathFreshProgress();
 if(!raw||typeof raw!=='object')return fresh;
@@ -114,6 +124,8 @@ out.srs=pathSrsNormalize(raw.srs);
 out.sound=raw.sound!==false;
 out.practiceRuns=Math.max(0,Number(raw.practiceRuns)||0);
 out.reviewRuns=Math.max(0,Number(raw.reviewRuns)||0);
+out.typingRuns=Math.max(0,Number(raw.typingRuns)||0);
+out.keyboard=raw.keyboard===true?true:raw.keyboard===false?false:null;
 out.advancedOpen=raw.advancedOpen===true?true:raw.advancedOpen===false?false:null;
 return out;
 }
@@ -178,9 +190,28 @@ function pathStepType(word){
 if(!pathTypeable(word.w)||[...word.w].length<2)return null;
 return {id:`type:${word.w}`,type:'type',word:word.w,display:word.w,prompt:'Tippe, wie man das liest.',correct:pathTypePrimary(word.w),meaning:word.de,breakdown:pathBreakdown(word)};
 }
+function pathStepKbd(word,progress){
+if(!pathKbdWordOk(word))return null;
+const recall=pathSeen(progress,word)>0&&(word.sayable||word.cog);
+const reading=word.sayable?pathTranslit(word.w):'';
+return {id:`kbd:${word.w}`,type:'kbd',mode:recall?'recall':'copy',word:word.w,
+display:recall?(reading||word.de):word.w,note:recall&&reading&&word.cog?word.de:'',
+prompt:recall?'Schreibe das Wort mit der ukrainischen Tastatur.':'Tippe das Wort mit der ukrainischen Tastatur ab.',
+correct:word.w,meaning:word.de,breakdown:pathBreakdown(word),fallback:pathStepType(word)};
+}
+function pathStepKbdLetter(letter,known,rng){
+const say=PATH_LETTER_INFO[letter].say;
+return {id:`kbdletter:${letter}`,type:'kbdletter',letter,lower:DATA[letter].lower,prompt:letter==='Ь'?'Tippe das Weichheitszeichen.':`Tippe den Buchstaben für „${say}“.`,correct:DATA[letter].lower,explain:`${letter} klingt wie „${say}“. ${PATH_LETTER_INFO[letter].hint}`,fallback:pathStepLetter(letter,known,rng)};
+}
+function pathStepDictate(letter,known,rng){
+if(!HUMAN_LETTER_AUDIO_LETTERS.includes(letter))return null;
+const base=pathStepKbdLetter(letter,known,rng);
+return {...base,id:`dictate:${letter}`,type:'dictate',prompt:'Hör zu und tippe den Buchstaben.',fallback:base};
+}
 function pathIsCorrect(step,value){
 if(!step)return false;
 if(step.type==='type')return pathTypeMatch(step.word,value);
+if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate')return pathKbdMatch(step.correct,value);
 return value===step.correct;
 }
 function pathMeaningDistractors(word,pool,rng,count){
@@ -227,6 +258,7 @@ if(kind==='read'&&word.cog)step=pathStepRead(word,ctx.pool,rng);
 else if(kind==='find'&&word.cog&&ctx.pool.length>=4)step=pathStepFind(word,ctx.pool,rng);
 else if(kind==='say')step=pathStepSay(word,rng);
 else if(kind==='type')step=pathStepType(word);
+else if(kind==='kbd')step=ctx.keyboard?pathStepKbd(word,ctx.progress):null;
 else if(kind==='build'&&word.cog)step=pathStepBuild(word,ctx.known,rng);
 if(step)return step;
 }
@@ -239,7 +271,7 @@ const lesson=PATH_LESSONS[index];
 if(!lesson)return null;
 const known=pathLettersUpTo(index),steps=[],usedWords=new Set();
 const pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word));
-const ctx={pool,known};
+const keyboard=progress?.keyboard===true,ctx={pool,known,progress,keyboard};
 const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id)){steps.push(step);if(step.word)usedWords.add(step.word)}};
 if(index>0)for(const word of pathPickFresh(pool.filter(w=>w.lesson<index&&w.cog),progress,rng,2))push(pathStepRead(word,pool,rng));
 const taught=new Set(pathLettersUpTo(index-1));
@@ -250,9 +282,9 @@ taught.add(letter);
 const shown=known.filter(c=>taught.has(c));
 push(pathStepTrace(letter));
 if(!lesson.light||i%3===2)push(pathStepSound(letter,shown,rng));
-if(!lesson.light&&i%2===1)push((i%4===1?pathStepListen(lesson.letters[i-1],shown,rng):null)||pathStepLetter(lesson.letters[i-1],shown,rng));
+if(!lesson.light&&i%2===1)push((i%4===1?pathStepListen(lesson.letters[i-1],shown,rng):keyboard?pathStepKbdLetter(lesson.letters[i-1],shown,rng):null)||pathStepLetter(lesson.letters[i-1],shown,rng));
 });
-if(lesson.light)push(pathStepLetter(lesson.letters[lesson.letters.length-1],known,rng));
+if(lesson.light){const last=lesson.letters[lesson.letters.length-1];push(keyboard?pathStepKbdLetter(last,known,rng):pathStepLetter(last,known,rng))}
 const own=pool.filter(word=>word.lesson===index&&!usedWords.has(word.w));
 const picked=[];
 for(const letter of lesson.letters){
@@ -261,14 +293,21 @@ const candidate=pathPickFresh(own.filter(word=>word.letters.includes(letter)&&!p
 if(candidate)picked.push(candidate);
 }
 for(const word of pathPickFresh(own.filter(word=>!picked.includes(word)),progress,rng,Math.max(0,6-picked.length)))picked.push(word);
-shuffle(picked,rng).forEach((word,i)=>push(pathWordStep(word,PATH_WORD_ROTATION[i%PATH_WORD_ROTATION.length],ctx,rng)));
+const rotation=keyboard?PATH_WORD_ROTATION.map(form=>form==='build'?'kbd':form):PATH_WORD_ROTATION;
+const ordered=shuffle(picked,rng),forms=ordered.map((_,i)=>rotation[i%rotation.length]);
+if(keyboard&&!ordered.some((word,i)=>forms[i]==='kbd'&&pathKbdWordOk(word))){
+let at=-1;ordered.forEach((word,i)=>{if(pathKbdWordOk(word))at=i});
+if(at>=0)forms[at]='kbd';
+}
+ordered.forEach((word,i)=>push(pathWordStep(word,forms[i],ctx,rng)));
 if(index>0){const older=pathPickFresh(pool.filter(w=>w.lesson<index&&w.cog&&!usedWords.has(w.w)),progress,rng,1)[0];if(older)push(pathWordStep(older,'find',ctx,rng))}
 return {kind:'lesson',index,lessonId:lesson.id,steps};
 }
 function buildPathPractice(progress,rng=Math.random,size=10){
 const highest=pathHighestDoneIndex(progress);
 if(highest<0)return null;
-const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),ctx={pool,known},steps=[];
+const keyboard=progress?.keyboard===true,practiceRotation=keyboard?['type','read','kbd','say','find','kbd']:PATH_PRACTICE_ROTATION;
+const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),ctx={pool,known,progress,keyboard},steps=[];
 const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
 const weak=shuffle(known,rng).sort((a,b)=>((progress.letters?.[b]?.bad||0)-(progress.letters?.[b]?.ok||0))-((progress.letters?.[a]?.bad||0)-(progress.letters?.[a]?.ok||0))).slice(0,2);
 const fresh=pathFreshWords(progress),review=fresh.length<PATH_FRESH_MINIMUM;
@@ -276,8 +315,8 @@ const words=pathPickFresh(review?pool:fresh,progress,rng,size+4);
 let rotation=0;
 for(const word of words){
 if(steps.length>=size-weak.length)break;
-let type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
-if(type===progress.words?.[word.w]?.type)type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
+let type=practiceRotation[rotation++%practiceRotation.length];
+if(type===progress.words?.[word.w]?.type)type=practiceRotation[rotation++%practiceRotation.length];
 push(pathWordStep(word,type,ctx,rng));
 }
 weak.forEach((letter,i)=>{const step=i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng);steps.splice(Math.min(steps.length,2+i*3),0,step)});
@@ -287,7 +326,7 @@ const PATH_CHECK_ALLOWED_MISTAKES=1;
 function buildPathCheck(index,progress,rng=Math.random){
 const lesson=PATH_LESSONS[index];
 if(!lesson)return null;
-const known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known},steps=[];
+const known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known,progress,keyboard:false},steps=[];
 const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
 shuffle(lesson.letters,rng).forEach((letter,i)=>push(i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng)));
 const own=pool.filter(word=>word.lesson===index);
@@ -301,14 +340,14 @@ return answered.length>=run.steps.length&&answered.filter(result=>!result.good).
 }
 function pathRetryStep(step,run,rng=Math.random){
 if(!step||step.retry||step.ungraded||step.type==='teach')return null;
-const index=run.index,known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known};
+const index=run.index,known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known,progress:null,keyboard:false};
 const taken=new Set(run.steps.map(existing=>existing.id));
 let next=null;
 if(step.type==='sound')next=pathStepLetter(step.letter,known,rng);
-else if(step.type==='letter'||step.type==='listen'||step.type==='write')next=pathStepSound(step.letter,known,rng);
+else if(['letter','listen','write','kbdletter','dictate'].includes(step.type))next=pathStepSound(step.letter,known,rng);
 else{
 const word=PATH_WORD_BY_TEXT.get(step.word);
-const alternatives={read:['say','find','type','build'],say:['read','find','type','build'],find:['read','say','type','build'],build:['read','say','find','type'],type:['read','say','find','build']}[step.type]||['read'];
+const alternatives={read:['say','find','type','build'],say:['read','find','type','build'],find:['read','say','type','build'],build:['read','say','find','type'],type:['read','say','find','build'],kbd:['read','say','type','find','build']}[step.type]||['read'];
 for(const kind of alternatives){const candidate=pathWordStep(word,kind,ctx,rng);if(candidate&&candidate.type!==step.type&&!taken.has(candidate.id)){next=candidate;break}}
 if(!next)next=pathWordStep(word,step.type,ctx,rng);
 }
@@ -327,8 +366,22 @@ else if(step.letter){const row=progress.letters[step.letter]||(progress.letters[
 if((run?.kind==='lesson'||pathCheckPassed(run,results))&&run.lessonId){const row=progress.done[run.lessonId]||(progress.done[run.lessonId]={at:now,runs:0});row.runs++;row.at=row.at||now}
 if(run?.kind==='practice')progress.practiceRuns=(Number(progress.practiceRuns)||0)+1;
 if(run?.kind==='review')progress.reviewRuns=(Number(progress.reviewRuns)||0)+1;
+if(run?.kind==='typing')progress.typingRuns=(Number(progress.typingRuns)||0)+1;
 pathSrsApply(progress,run,results,now);
 return progress;
+}
+function buildPathTyping(progress,rng=Math.random,size=10){
+const highest=pathHighestDoneIndex(progress);
+if(highest<0)return null;
+const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathKbdWordOk(word)),steps=[];
+const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
+const weak=shuffle(known,rng).sort((a,b)=>((progress.letters?.[b]?.bad||0)-(progress.letters?.[b]?.ok||0))-((progress.letters?.[a]?.bad||0)-(progress.letters?.[a]?.ok||0))).slice(0,3);
+weak.forEach((letter,i)=>push((i===1?pathStepDictate(letter,known,rng):null)||pathStepKbdLetter(letter,known,rng)));
+const typedLast=word=>progress.words?.[word.w]?.type==='kbd'?1:0;
+const readBefore=shuffle(pool.filter(word=>pathSeen(progress,word)>0),rng).sort((a,b)=>typedLast(a)-typedLast(b)).slice(0,Math.ceil((size-steps.length)/2));
+const rest=pathPickFresh(pool.filter(word=>!readBefore.includes(word)),progress,rng,size);
+for(const word of [...readBefore,...rest]){if(steps.length>=size)break;push(pathStepKbd(word,progress))}
+return {kind:'typing',index:highest,lessonId:'',steps};
 }
 
 /* source: alphabet-core-v7-review.js */
@@ -403,7 +456,10 @@ function buildPathReview(progress,rng=Math.random,now=Date.now(),limit=PATH_REVI
 const due=pathDueLetters(progress,now).slice(0,limit);
 if(!due.length)return null;
 const highest=pathHighestDoneIndex(progress),known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),steps=[],usedWords=new Set();
-const forms=[null,['sound','listen','letter'],['listen','letter','word'],['word','write','listen']];
+const keyboard=progress?.keyboard===true;
+const forms=keyboard
+?[null,['sound','listen','letter'],['listen','kbdletter','word'],['word','write','dictate','kbdletter']]
+:[null,['sound','listen','letter'],['listen','letter','word'],['word','write','listen']];
 pathInterleave(due,rng).forEach(letter=>{
 const row=progress.srs[letter],menu=forms[Math.min(3,row.box)];
 let step=null;
@@ -413,6 +469,8 @@ if(form==='sound')step=pathStepSound(letter,known,rng);
 else if(form==='letter')step=pathStepLetter(letter,known,rng);
 else if(form==='listen')step=pathStepListen(letter,known,rng);
 else if(form==='write')step=pathStepWrite(letter,known,rng);
+else if(form==='kbdletter')step=pathStepKbdLetter(letter,known,rng);
+else if(form==='dictate')step=pathStepDictate(letter,known,rng);
 else if(form==='word'){
 const word=pathPickFresh(pool.filter(candidate=>candidate.letters.includes(letter)&&!usedWords.has(candidate.w)),progress,rng,1)[0];
 step=word?pathStepType(word):null;
@@ -422,7 +480,7 @@ if(step&&steps.some(existing=>existing.id===step.id))step=null;
 }
 if(!step)step=pathStepLetter(letter,known,rng);
 step.srsLetter=letter;
-if(step.fallback)step.fallback.srsLetter=letter;
+for(let alternative=step.fallback;alternative;alternative=alternative.fallback)alternative.srsLetter=letter;
 steps.push(step);
 });
 return {kind:'review',index:highest,lessonId:'',steps};
@@ -433,7 +491,8 @@ lettersUpTo:pathLettersUpTo,freshProgress:pathFreshProgress,normalizeProgress:pa
 doneCount:pathDoneCount,nextLessonIndex:pathNextLessonIndex,highestDoneIndex:pathHighestDoneIndex,knownLetters:pathKnownLetters,wordsRead:pathWordsRead,freshWords:pathFreshWords,FRESH_MINIMUM:PATH_FRESH_MINIMUM,
 translit:pathTranslit,typeMatch:pathTypeMatch,typePrimary:pathTypePrimary,isCorrect:pathIsCorrect,needsTrace:letter=>!PATH_FAMILIAR_SHAPES.has(letter),
 buildLesson:buildPathLesson,buildPractice:buildPathPractice,buildCheck:buildPathCheck,checkPassed:pathCheckPassed,retryStep:pathRetryStep,applyResult:pathApplyResult,
-SRS_INTERVALS:PATH_SRS_INTERVALS,SRS_SECURE_BOX:PATH_SRS_SECURE_BOX,REVIEW_LIMIT:PATH_REVIEW_LIMIT,day:pathDay,ensureSchedule:pathSrsEnsure,dueLetters:pathDueLetters,srsSummary:pathSrsSummary,buildReview:buildPathReview
+SRS_INTERVALS:PATH_SRS_INTERVALS,SRS_SECURE_BOX:PATH_SRS_SECURE_BOX,REVIEW_LIMIT:PATH_REVIEW_LIMIT,day:pathDay,ensureSchedule:pathSrsEnsure,dueLetters:pathDueLetters,srsSummary:pathSrsSummary,buildReview:buildPathReview,
+KBD_LAYOUT:PATH_KBD_LAYOUT,kbdMatch:pathKbdMatch,kbdDiagnose:pathKbdDiagnose,kbdWordOk:pathKbdWordOk,buildTyping:buildPathTyping
 });
 globalThis.AlphabetLearningPath=LEARNING_PATH_API;
 
@@ -556,6 +615,7 @@ function startPathLesson(index){return pathLessonState(index)==='locked'?false:s
 function startPathCheck(index){return pathLessonState(index)!=='current'?false:startPathRun(PATH_API.buildCheck(index,PATH,Math.random))}
 function startPathPractice(){return startPathRun(PATH_API.buildPractice(PATH,Math.random,10))}
 function startPathReview(){return startPathRun(PATH_API.buildReview(PATH,Math.random,Date.now()))}
+function startPathTyping(){return PATH.keyboard===true?startPathRun(PATH_API.buildTyping(PATH,Math.random,10)):false}
 function pathUseFallback(step,rerender=true){
 const run=pathRun,at=run?run.steps.indexOf(step):-1;
 if(at<0||!step.fallback)return step;
@@ -586,6 +646,13 @@ ${step.example?`<div class="path-example"><span lang="uk">${pathHighlight(step.e
 if(step.type==='guess')return `<div class="eyebrow center">Rate mal · zählt nicht</div><div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
 if(step.type==='trace'||step.type==='write')return pathTraceMarkup(step);
 if(step.type==='listen')return `<div class="eyebrow center">Hören</div><div class="prompt">${esc(step.prompt)}</div><div class="actions path-actions"><button class="btn primary xl" id="pathPlay" type="button">🔊 Abspielen</button></div>${pathOptionsMarkup(step)}<button class="path-skip" id="pathNoSound" type="button">Ohne Ton antworten</button>`;
+if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate'){
+const dictate=step.type==='dictate';
+const head=step.type==='kbd'
+?`<div class="path-word"${step.mode==='copy'?' lang="uk"':''}>${esc(step.mode==='recall'?`„${step.display}“`:step.display)}</div>${step.note?`<div class="path-note">${esc(step.note)}</div>`:''}`
+:dictate?'<div class="actions path-actions"><button class="btn primary xl" id="pathPlay" type="button">🔊 Abspielen</button></div>':'';
+return `<div class="eyebrow center">Ukrainische Tastatur${dictate?' · Diktat':''}</div>${head}<div class="prompt">${esc(step.prompt)}</div><form class="path-type" id="pathKbdForm" autocomplete="off"><input id="pathKbdInput" type="text" lang="uk" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="24" aria-label="Eingabe mit der ukrainischen Tastatur" placeholder="hier tippen"><button class="btn primary" id="pathKbdSubmit" type="submit">Prüfen</button></form><div class="path-kbd-hint" id="pathKbdHint" role="status" aria-live="polite"></div><button class="path-skip" id="${dictate?'pathNoSound':'pathKbdSkip'}" type="button">${dictate?'Ohne Ton antworten':'Ohne ukrainische Tastatur antworten'}</button>`;
+}
 if(step.type==='type')return `<div class="path-word" lang="uk">${esc(step.display)}</div><div class="prompt">${esc(step.prompt)}</div><form class="path-type" id="pathTypeForm" autocomplete="off"><input id="pathTypeInput" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="40" aria-label="Lesung in lateinischen Buchstaben" placeholder="lateinische Buchstaben"><button class="btn primary" id="pathTypeSubmit" type="submit">Prüfen</button></form>`;
 if(step.type==='sound')return `<div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
 if(step.type==='letter')return `<div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
@@ -605,7 +672,7 @@ const run=pathRun;
 if(!run){screen='home';return render()}
 let step=run.steps[run.pos];
 if(!step)return finishPathRun();
-if(step.type==='listen'&&(!PATH.sound||!pathLetterAudioSource(step.letter)))step=pathUseFallback(step,false);
+if((step.type==='listen'||step.type==='dictate')&&(!PATH.sound||!pathLetterAudioSource(step.letter)))step=pathUseFallback(step,false);
 run.locked=false;
 const percent=Math.round(run.pos/run.steps.length*100);
 shell(`<div class="lesson path-lesson"><div class="lesson-head"><button class="btn" id="pathQuit" type="button" aria-label="Lektion beenden">✕</button><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="Fortschritt in dieser Lektion"><i style="width:${percent}%"></i></div><button class="btn small" id="pathSound" type="button" aria-pressed="${PATH.sound?'true':'false'}" aria-label="${PATH.sound?'Automatischen Ton ausschalten':'Automatischen Ton einschalten'}">${PATH.sound?'🔊':'🔇'}</button></div>
@@ -643,23 +710,47 @@ form.onsubmit=event=>{event.preventDefault();if(pathRun.locked||!input.value.tri
 input.focus?.({preventScroll:true});
 return;
 }
+if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate'){
+const form=document.getElementById('pathKbdForm'),input=document.getElementById('pathKbdInput'),hint=document.getElementById('pathKbdHint');
+form.onsubmit=event=>{
+event.preventDefault();
+if(pathRun.locked||!input.value.trim())return;
+const problem=PATH_API.kbdDiagnose(input.value);
+if(problem){hint.textContent=pathKeyboardProblem(problem);input.select?.();return}
+hint.textContent='';input.disabled=true;document.getElementById('pathKbdSubmit').disabled=true;
+answerPathStep(step,input.value,null);
+};
+document.getElementById('pathKbdSkip')?.addEventListener('click',()=>pathUseFallback(step));
+if(step.type==='dictate'){input.disabled=!step.heard;wirePathListening(step,()=>{input.disabled=false;input.focus?.({preventScroll:true})})}
+else input.focus?.({preventScroll:true});
+return;
+}
 if(step.type==='listen'){
-const src=pathLetterAudioSource(step.letter),options=[...app.querySelectorAll('[data-path-ans]')],playButton=document.getElementById('pathPlay');
+const options=[...app.querySelectorAll('[data-path-ans]')];
+options.forEach(option=>option.disabled=!step.heard);
+wirePathListening(step,()=>options.forEach(option=>option.disabled=false));
+}
+app.querySelectorAll('[data-path-ans]').forEach(button=>button.onclick=()=>answerPathStep(step,step.options[Number(button.dataset.pathAns)],button));
+}
+function pathKeyboardProblem(problem){
+return problem==='latin'
+?'Das waren lateinische Buchstaben. Schalte auf die ukrainische Tastatur um (🌐 antippen oder die Leertaste gedrückt halten) und tippe noch einmal.'
+:'Das war die russische Tastatur: ы, э, ё und ъ gibt es im Ukrainischen nicht. Schalte auf Ukrainisch um und tippe noch einmal.';
+}
+function wirePathListening(step,unlock){
+const src=pathLetterAudioSource(step.letter),playButton=document.getElementById('pathPlay');
 const current=()=>!!pathRun&&pathRun.steps[pathRun.pos]===step;
 const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[step.letter];if(meta)markHumanAudioButton(playButton,meta);
-options.forEach(option=>option.disabled=!step.heard);
 let attempt=0;
 const giveUp=mine=>{if(mine===attempt&&current()&&!step.heard&&!pathRun.locked)pathUseFallback(step)};
 const play=()=>{
 const mine=++attempt;let blocked=false;
-pathPlay(src,{playing:()=>{step.heard=true;if(current()&&!pathRun.locked)options.forEach(option=>option.disabled=false)},error:()=>giveUp(mine),blocked:()=>{blocked=true}});
+pathPlay(src,{playing:()=>{step.heard=true;if(current()&&!pathRun.locked)unlock()},error:()=>giveUp(mine),blocked:()=>{blocked=true}});
 setTimeout(()=>{if(!blocked)giveUp(mine)},5000);
 };
 playButton.onclick=play;
 document.getElementById('pathNoSound').onclick=()=>pathUseFallback(step);
 if(!step.played){step.played=true;play()}
-}
-app.querySelectorAll('[data-path-ans]').forEach(button=>button.onclick=()=>answerPathStep(step,step.options[Number(button.dataset.pathAns)],button));
 }
 function wirePathBuild(step){
 const chosen=[];
@@ -704,9 +795,11 @@ const optionValue=step.options[Number(option.dataset.pathAns)];
 if(optionValue===step.correct)option.classList.add('correct');
 else if(option===button)option.classList.add('wrong');
 });
-app.querySelectorAll('[data-path-tile],[data-path-slot],#pathPlay,#pathNoSound,#pathSelfGood,#pathSelfBad').forEach(element=>element.disabled=true);
+app.querySelectorAll('[data-path-tile],[data-path-slot],#pathPlay,#pathNoSound,#pathKbdSkip,#pathSelfGood,#pathSelfBad').forEach(element=>element.disabled=true);
 if(step.type==='build')app.querySelector('#pathSlots')?.classList.add(good?'correct':'wrong');
 if(step.type==='type')document.getElementById('pathTypeInput')?.classList.add(good?'correct':'wrong');
+document.getElementById('pathKbdInput')?.classList.add(good?'correct':'wrong');
+const keyboardStep=step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate';
 const feedback=document.getElementById('pathFeedback'),wordStep=!!step.word;
 if(good&&graded&&!wordStep){
 feedback.innerHTML='<strong class="good-text">Richtig!</strong>';
@@ -719,9 +812,10 @@ if(step.type==='guess'){
 head=good?'<strong class="good-text">Stark – du lässt dich nicht täuschen.</strong>':'<strong class="bad-text">Genau die Falle.</strong>';
 body=`<p><span lang="uk">${esc(step.letter)}</span> klingt wie „${esc(step.correct)}“ – nicht wie „${esc(step.trap)}“. ${esc(step.hint)}</p>`;
 }else if(wordStep){
-const typed=step.type==='type'?`<p>${good?'Gelesen':`Du hast „${esc(String(value).trim())}“ getippt – gelesen`} wird es etwa „${esc(step.correct)}“.</p>`:'';
+const typed=step.type==='type'?`<p>${good?'Gelesen':`Du hast „${esc(String(value).trim())}“ getippt – gelesen`} wird es etwa „${esc(step.correct)}“.</p>`
+:keyboardStep&&!good?`<p>Du hast „<span lang="uk">${esc(String(value).trim())}</span>“ getippt.</p>`:'';
 body=`<div class="path-solution"><span lang="uk">${esc(step.word)}</span> = ${esc(step.meaning)}</div>${typed}${pathBreakdownMarkup(step)}`;
-}else body=`<p>${esc(step.explain||'')}</p>`;
+}else body=`<p>${keyboardStep?`Du hast „<span lang="uk">${esc(String(value).trim())}</span>“ getippt. `:''}${esc(step.explain||'')}</p>`;
 feedback.innerHTML=`${head}${body}<div class="actions path-actions">${audio?'<button class="btn" id="pathListenWord" type="button">🔊 Original</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
 const listen=document.getElementById('pathListenWord');
 if(listen){const meta=window.UKRAINIAN_WORD_AUDIO_META?.[alphabetWordNorm(step.word)];if(meta)markHumanAudioButton(listen,meta);listen.onclick=()=>pathPlay(audio)}
@@ -763,11 +857,13 @@ const now=Date.now(),answered=run.results.filter(result=>!result.ungraded&&resul
 const firstTry=answered.filter(result=>result.good).length;
 const words=C.uniq(run.results.filter(result=>result.step.word).map(result=>result.step.word)).map(text=>PATH_API.WORDS.find(word=>word.w===text));
 const known=PATH_API.knownLetters(PATH).length,next=PATH_API.nextLessonIndex(PATH),summary=PATH_API.srsSummary(PATH,now);
-const check=run.kind==='check',failed=check&&!run.passed,review=run.kind==='review',practice=run.kind==='practice';
-const lesson=!practice&&!review&&!failed?PATH_API.LESSONS[run.index]:null;
+const check=run.kind==='check',failed=check&&!run.passed,review=run.kind==='review',practice=run.kind==='practice',typing=run.kind==='typing';
+const lesson=!practice&&!review&&!typing&&!failed?PATH_API.LESSONS[run.index]:null;
 const finale=next<0&&!!lesson&&run.index===PATH_API.LESSONS.length-1;
-const title=review?'Auffrischung geschafft':practice?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
-const lead=review
+const title=typing?'Tastaturtraining geschafft':review?'Auffrischung geschafft':practice?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
+const lead=typing
+?`${answered.length} Eingaben mit der ukrainischen Tastatur, ${firstTry} auf Anhieb richtig.`
+:review
 ?`${answered.length} ${answered.length===1?'Buchstabe':'Buchstaben'} aus dem Gedächtnis geholt, ${firstTry} auf Anhieb. Was saß, kommt mit größerem Abstand wieder; was nicht saß, schon morgen.`
 :practice
 ?(run.review?`${words.length} Wörter wiederholt – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`${words.length} neue Wörter gelesen – alle mit Buchstaben, die du schon kennst.`)
@@ -783,11 +879,11 @@ const spacing=lesson
 const primary=next>=0
 ?`<button class="btn primary xl" id="pathContinue" type="button">${failed?`Lektion ${next+1} starten`:`Weiter: Lektion ${next+1}`}</button>`
 :`<button class="btn primary xl" id="pathPracticeAgain" type="button">${PATH_API.freshWords(PATH).length<PATH_API.FRESH_MINIMUM?'Wiederholung':'Lesetraining'}</button>`;
-shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}" data-path-kind="${esc(run.kind)}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':review?'🧠':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
+shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}" data-path-kind="${esc(run.kind)}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':review?'🧠':typing?'⌨️':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
 ${lesson?`<div class="path-new-letters" lang="uk" aria-label="Neue Buchstaben">${lesson.letters.map(letter=>`<span><b>${esc(letter)}</b><small lang="de">${esc(PATH_API.LETTER_INFO[letter].say)}</small></span>`).join('')}</div>`:''}
-<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>Wörter gelesen</span><b>${words.length}</b></div><div><span>${review?'gefestigt':'Buchstaben'}</span><b>${review?summary.secure:known} / 33</b></div></div>
+<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>${typing?'Wörter geschrieben':'Wörter gelesen'}</span><b>${words.length}</b></div><div><span>${review?'gefestigt':'Buchstaben'}</span><b>${review?summary.secure:known} / 33</b></div></div>
 ${spacing}
-${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
+${words.length?`<h2>${typing?'Das hast du gerade geschrieben':'Das hast du gerade gelesen'}</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
 <div class="actions path-actions">${primary}<button class="btn" id="pathHome" type="button">Zur Übersicht</button></div></section></div>`,{navVisible:false});
 document.getElementById('pathHome').onclick=()=>{pathRun=null;screen='home';render()};
 document.getElementById('pathContinue')?.addEventListener('click',()=>startPathLesson(next));
@@ -795,7 +891,7 @@ document.getElementById('pathPracticeAgain')?.addEventListener('click',()=>start
 (document.getElementById('pathContinue')||document.getElementById('pathPracticeAgain'))?.focus?.({preventScroll:true});
 }
 const PATH_SCIENCE=[
-['Abrufen statt wiedererkennen','Du tippst die Lesung selbst, statt nur auszuwählen. Was man aus dem Gedächtnis holt, hält deutlich länger als das, was man nur wiedererkennt oder erneut liest.','Roediger & Karpicke 2006; Kang, McDermott & Roediger 2007'],
+['Abrufen statt wiedererkennen','Du tippst die Lesung selbst – und mit eingerichteter ukrainischer Tastatur auch Buchstaben und Wörter –, statt nur auszuwählen. Was man aus dem Gedächtnis holt, hält deutlich länger als das, was man nur wiedererkennt oder erneut liest.','Roediger & Karpicke 2006; Kang, McDermott & Roediger 2007'],
 ['Verteilt wiederholen','Jeder Buchstabe kommt nach 1, 3, 7, 14, 30 und 60 Tagen wieder. Ein Fehler setzt ihn auf morgen zurück. Verteilte Abrufe schlagen gehäuftes Üben am selben Tag.','Cepeda et al. 2006; Rawson & Dunlosky 2011'],
 ['Mit der Hand schreiben','Neue Zeichen fährst du mit dem Finger nach und schreibst sie später aus dem Gedächtnis. Wer Zeichen schreibt, erkennt sie sicherer als wer sie nur ansieht oder tippt.','Longcamp et al. 2005, 2008; Wiley & Rapp 2021'],
 ['Erst raten, dann lernen','Bei den „falschen Freunden“ rätst du zuerst. Ein Irrtum, der sofort korrigiert wird, bleibt besonders gut haften.','Richland, Kornell & Kao 2009; Butterfield & Metcalfe 2001'],
@@ -804,6 +900,26 @@ const PATH_SCIENCE=[
 ];
 function pathScienceMarkup(){
 return `<details class="card path-science" id="pathScience"><summary><span>So lernst du hier – und warum</span><small>Sechs Methoden aus der Lernforschung</small></summary><ol>${PATH_SCIENCE.map(([title,text,source])=>`<li><b>${esc(title)}</b><p>${esc(text)}</p><cite>${esc(source)}</cite></li>`).join('')}</ol><p class="muted path-meta">Belegt ist die Wirkung dieser Methoden allgemein – nicht die dieser App im Besonderen. Die vollständigen Quellen stehen im README des Projekts.</p></details>`;
+}
+function pathKeyboardMarkup(){
+const layout=`<div class="path-kbd-layout" lang="uk" aria-label="Tastenbelegung der ukrainischen Tastatur">${PATH_API.KBD_LAYOUT.map(row=>`<span>${[...row].map(key=>`<i>${esc(key)}</i>`).join('')}</span>`).join('')}</div><p class="muted path-meta">ґ: г gedrückt halten.</p>`;
+if(PATH.keyboard===true)return `<section class="card path-keyboard" id="pathKeyboard" data-path-keyboard="on"><div class="section-title"><h2>Ukrainische Tastatur</h2><small>eingeschaltet</small></div><p class="muted">In Lektionen, Lesetraining und Auffrischung schreibst du jetzt auch selbst: Buchstaben, Wörter und Diktat.</p><div class="actions">${PATH_API.doneCount(PATH)?'<button class="btn primary" id="pathTyping" type="button">Tastaturtraining</button>':''}<button class="btn" id="pathKbdOff" type="button">Ausschalten</button></div>${layout}</section>`;
+return `<section class="card path-keyboard" id="pathKeyboard" data-path-keyboard="off"><div class="section-title"><h2>Auf Ukrainisch tippen</h2><small>freiwillig</small></div><p class="muted">Mit der ukrainischen Tastatur deines Handys schreibst du Buchstaben und Wörter selbst. Füge sie hinzu und teste sie hier – dann kommen Schreibaufgaben dazu.</p><details class="path-kbd-help"><summary>Tastatur hinzufügen: so geht’s</summary><p><b>iPhone:</b> Einstellungen → Allgemein → Tastatur → Tastaturen → Tastatur hinzufügen → Ukrainisch. Beim Tippen mit 🌐 umschalten.</p><p><b>Android (Gboard):</b> Einstellungen → System → Sprachen und Eingabe → Bildschirmtastatur → Gboard → Sprachen → Tastatur hinzufügen → Ukrainisch. Beim Tippen 🌐 antippen oder die Leertaste gedrückt halten. Je nach Gerät heißen die Menüs etwas anders.</p></details><form class="path-type" id="pathKbdSetup" autocomplete="off"><input id="pathKbdTest" type="text" lang="uk" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="12" aria-label="Tastaturtest: tippe так" placeholder="tippe: так"><button class="btn primary" id="pathKbdTestSubmit" type="submit">Testen</button></form><div class="path-kbd-hint" id="pathKbdStatus" role="status" aria-live="polite"></div>${layout}</section>`;
+}
+function wirePathKeyboard(){
+document.getElementById('pathTyping')?.addEventListener('click',()=>startPathTyping());
+document.getElementById('pathKbdOff')?.addEventListener('click',()=>{PATH.keyboard=false;savePathProgress();render()});
+const form=document.getElementById('pathKbdSetup');
+if(!form)return;
+form.onsubmit=event=>{
+event.preventDefault();
+const input=document.getElementById('pathKbdTest'),status=document.getElementById('pathKbdStatus'),problem=PATH_API.kbdDiagnose(input.value);
+if(!input.value.trim())return;
+if(problem){status.textContent=pathKeyboardProblem(problem);return}
+if(!PATH_API.kbdMatch('так',input.value)){status.textContent='Die Tastatur stimmt – tippe jetzt genau так (t, a, k = „ja“).';return}
+PATH.keyboard=true;savePathProgress();render();
+if(typeof toast==='function')toast('Ukrainische Tastatur erkannt – Schreibaufgaben sind eingeschaltet.');
+};
 }
 function pathHomeMarkup(){
 const now=Date.now(),done=PATH_API.doneCount(PATH),next=PATH_API.nextLessonIndex(PATH),known=PATH_API.knownLetters(PATH).length,read=PATH_API.wordsRead(PATH);
@@ -824,7 +940,7 @@ hero=`<section class="card hero path-hero" data-path-hero="complete"><div class=
 const list=`<section class="card"><div class="section-title"><h2>Der Weg</h2><small>33 Buchstaben in 8 Lektionen</small></div><ol class="path-list">${PATH_API.LESSONS.map((row,index)=>{const state=pathLessonState(index);return `<li><button class="path-row ${state}" data-path-lesson="${index}" type="button" ${state==='locked'?'disabled':''} aria-label="Lektion ${index+1}: ${esc(row.title)}${state==='done'?', abgeschlossen – nochmal üben':state==='locked'?', noch gesperrt':', jetzt starten'}"><span class="path-badge" aria-hidden="true">${state==='done'?'✓':state==='locked'?'🔒':index+1}</span><span class="path-row-text"><b>${esc(row.title)}</b><small lang="uk">${row.letters.join(' ')}</small></span><span class="path-row-action">${state==='done'?'Nochmal':state==='current'?'Start':''}</span></button></li>`}).join('')}</ol></section>`;
 const recent=read.slice().sort((a,b)=>(PATH.words[b.w]?.last||0)-(PATH.words[a.w]?.last||0)).slice(0,12);
 const trophy=read.length?`<section class="card"><div class="section-title"><h2>Das kannst du schon lesen</h2><small>${read.length} Wörter</small></div><div class="path-chips">${recent.map(word=>`<span><b lang="uk">${esc(word.w)}</b><small>${esc(word.de)}</small></span>`).join('')}</div>${read.length>recent.length?`<p class="muted path-meta">und ${read.length-recent.length} weitere</p>`:''}</section>`:'';
-return hero+list+trophy+pathScienceMarkup();
+return hero+list+pathKeyboardMarkup()+trophy+pathScienceMarkup();
 }
 function installLearningPath(){
 const renderHomePathBase=renderHome;
@@ -846,6 +962,7 @@ const fragment=document.createDocumentFragment();
 fragment.appendChild(details);
 topbarEl.after(fragment);
 document.getElementById('pathReview')?.addEventListener('click',()=>startPathReview());
+wirePathKeyboard();
 document.getElementById('pathStart')?.addEventListener('click',()=>startPathLesson(PATH_API.nextLessonIndex(PATH)));
 document.getElementById('pathPractice')?.addEventListener('click',()=>startPathPractice());
 document.getElementById('pathCheck')?.addEventListener('click',()=>startPathCheck(PATH_API.nextLessonIndex(PATH)));
@@ -874,6 +991,7 @@ startLesson:startPathLesson,
 startPractice:startPathPractice,
 startCheck:startPathCheck,
 startReview:startPathReview,
+startTyping:startPathTyping,
 currentStep:()=>DEBUG_LEARNING&&pathRun?structuredClone(pathRun.steps[pathRun.pos]||null):null,
 runLength:()=>pathRun?pathRun.steps.length:0,
 freshWords:()=>PATH_API.freshWords(PATH).length,

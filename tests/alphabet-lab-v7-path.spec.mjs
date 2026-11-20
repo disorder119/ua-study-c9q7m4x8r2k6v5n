@@ -45,6 +45,20 @@ async function answerStep(page,{wrong=false}={}){
     await page.waitForFunction(()=>window.AlphabetLabPath.currentStep()?.type!=='listen');
     return answerStep(page,{wrong});
   }
+  if(step.type==='dictate'){
+    // Wie beim Hören: ohne Ton wird daraus die Tippaufgabe mit Lautangabe.
+    await page.locator('#pathNoSound').click({timeout:2000}).catch(()=>{});
+    await page.waitForFunction(()=>window.AlphabetLabPath.currentStep()?.type!=='dictate');
+    return answerStep(page,{wrong});
+  }
+  if(step.type==='kbd'||step.type==='kbdletter'){
+    // Ein echter Fehler ist ein anderes ukrainisches Zeichen – keine falsche Tastatur.
+    const other=step.correct.includes('щ')?'ю':'щ';
+    await page.locator('#pathKbdInput').fill(wrong?(step.word?other+other+other:other):step.correct);
+    await page.locator('#pathKbdSubmit').click();
+    if(wrong||step.word)await page.locator('#pathFeedback #pathNext').click();else await stepChanged(page,step.id);
+    return step;
+  }
   if(step.type==='trace'){
     await drawStroke(page);
     await page.locator('#pathTraceDone').click();
@@ -98,20 +112,20 @@ async function finishRun(page,{wrongAt=[]}={}){
 }
 // Legt einen Lernstand an: n abgeschlossene Lektionen und – wenn angegeben – den
 // Wiederholungsplan. due ist relativ zu heute (0 = heute fällig, 5 = in fünf Tagen).
-async function seedProgress(page,{lessons,srs}){
+async function seedProgress(page,{lessons,srs,keyboard=null,words=[]}){
   await openLab(page);
-  await page.evaluate(([key,ids,plan])=>{
+  await page.evaluate(([key,ids,plan,keyboard,words])=>{
     const today=Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/86400000),done={};
     for(const id of ids)done[id]={at:Date.now()-3*86400000,runs:1};
-    const progress={v:1,done,words:{},letters:{},sound:true};
+    const progress={v:1,done,words:Object.fromEntries(words.map(word=>[word,{seen:1,ok:1,last:Date.now()-86400000,type:'read'}])),letters:{},sound:true,keyboard};
     if(plan)progress.srs=Object.fromEntries(Object.entries(plan).map(([letter,row])=>[letter,{box:row.box,due:today+row.due,lapses:0,reviews:row.reviews||0}]));
     localStorage.setItem(key,JSON.stringify(progress));
-  },[PATH_KEY,PATH_DATA.lessons.slice(0,lessons).map(lesson=>lesson.id),srs||null]);
+  },[PATH_KEY,PATH_DATA.lessons.slice(0,lessons).map(lesson=>lesson.id),srs||null,keyboard,words]);
   await page.reload();
   await page.waitForFunction(()=>window.AlphabetLab?.version===6&&!!window.AlphabetLabPath);
 }
 const planFor=(letters,row)=>Object.fromEntries(letters.map(letter=>[letter,row]));
-const smallTargets=page=>page.evaluate(()=>[...document.querySelectorAll('#pathStart,#pathCheck,#pathPractice,#pathReview,#pathNext,#pathQuit,#pathSound,#pathListen,#pathContinue,#pathHome,#pathPlay,#pathNoSound,#pathTypeInput,#pathTypeSubmit,#pathTraceClear,#pathTraceDone,#pathTraceSkip,#pathSelfGood,#pathSelfBad,[data-path-lesson],[data-path-ans],[data-path-tile],[data-path-slot],#advancedHome>summary,#pathScience>summary')]
+const smallTargets=page=>page.evaluate(()=>[...document.querySelectorAll('#pathStart,#pathCheck,#pathPractice,#pathReview,#pathNext,#pathQuit,#pathSound,#pathListen,#pathContinue,#pathHome,#pathPlay,#pathNoSound,#pathTypeInput,#pathTypeSubmit,#pathTraceClear,#pathTraceDone,#pathTraceSkip,#pathSelfGood,#pathSelfBad,#pathKbdInput,#pathKbdSubmit,#pathKbdSkip,#pathKbdTest,#pathKbdTestSubmit,#pathTyping,#pathKbdOff,.path-kbd-help>summary,[data-path-lesson],[data-path-ans],[data-path-tile],[data-path-slot],#advancedHome>summary,#pathScience>summary')]
   .filter(node=>node.offsetParent!==null).map(node=>{const r=node.getBoundingClientRect();return {id:node.id||node.className,w:Math.round(r.width),h:Math.round(r.height)}}).filter(box=>box.w<38||box.h<44));
 
 // Ohne Service Worker: Sonst holt er externe Aufnahmen am Test vorbei aus dem
@@ -655,3 +669,226 @@ test('320 px: writing, typing and review screens fit and stay tappable',async({p
   const box=await page.locator('#pathTraceCanvas').boundingBox();
   expect(box.width).toBeGreaterThanOrEqual(240);expect(box.height).toBeGreaterThanOrEqual(170);
 });
+
+// ------------------------------------------------- Ukrainische Tastatur
+// Schreiben mit der Tastatur des Geräts. Playwright tippt die kyrillischen
+// Zeichen direkt ins Feld; ob die Bildschirmtastatur eines echten Telefons
+// bequem bedienbar ist, kann dieser Test nicht zeigen.
+
+test('keyboard setup: wrong keyboards are named, the right one switches writing tasks on',async({page})=>{
+  await openLab(page);
+  await expect(page.locator('#pathKeyboard')).toHaveAttribute('data-path-keyboard','off');
+  await expect(page.locator('#pathTyping')).toHaveCount(0);
+  // Die Anleitung ist da und lässt sich aufklappen.
+  await page.locator('.path-kbd-help>summary').click();
+  await expect(page.locator('.path-kbd-help')).toContainText('iPhone');
+  await expect(page.locator('.path-kbd-help')).toContainText('Android');
+  // Die Tastenbelegung zeigt 32 Tasten; ґ liegt auf г.
+  await expect(page.locator('.path-kbd-layout i')).toHaveCount(32);
+  // Lateinische Tastatur.
+  await page.locator('#pathKbdTest').fill('tak');
+  await page.locator('#pathKbdTestSubmit').click();
+  await expect(page.locator('#pathKbdStatus')).toContainText('lateinische Buchstaben');
+  await expect(page.locator('#pathKeyboard')).toHaveAttribute('data-path-keyboard','off');
+  // Russische Tastatur.
+  await page.locator('#pathKbdTest').fill('тык');
+  await page.locator('#pathKbdTest').press('Enter');
+  await expect(page.locator('#pathKbdStatus')).toContainText('russische Tastatur');
+  // Richtige Tastatur, aber anderes Wort.
+  await page.locator('#pathKbdTest').fill('мама');
+  await page.locator('#pathKbdTestSubmit').click();
+  await expect(page.locator('#pathKbdStatus')).toContainText('genau так');
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().keyboard)).toBe(null);
+  // Richtig – Großschreibung ist egal.
+  await page.locator('#pathKbdTest').fill('Так');
+  await page.locator('#pathKbdTestSubmit').click();
+  await expect(page.locator('#pathKeyboard')).toHaveAttribute('data-path-keyboard','on');
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().keyboard)).toBe(true);
+  // Vor der ersten Lektion gibt es noch nichts zu schreiben.
+  await expect(page.locator('#pathTyping')).toHaveCount(0);
+  expect(await page.evaluate(()=>window.AlphabetLabPath.startTyping())).toBe(false);
+  await page.reload();
+  await page.waitForFunction(()=>!!window.AlphabetLabPath);
+  await expect(page.locator('#pathKeyboard')).toHaveAttribute('data-path-keyboard','on');
+  // Ausschalten geht jederzeit und bleibt gespeichert.
+  await page.locator('#pathKbdOff').click();
+  await expect(page.locator('#pathKeyboard')).toHaveAttribute('data-path-keyboard','off');
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().keyboard)).toBe(false);
+});
+
+test('without the keyboard switched on no lesson asks for Cyrillic typing; with it, lesson 1 does',async({page})=>{
+  await openLab(page);
+  await page.locator('#pathStart').click();
+  const plain=await finishRun(page);
+  expect(plain.some(step=>['kbd','kbdletter','dictate'].includes(step.type))).toBeFalsy();
+
+  await page.evaluate(key=>localStorage.removeItem(key),PATH_KEY);
+  await seedProgress(page,{lessons:0,keyboard:true});
+  await page.locator('#pathStart').click();
+  let step=await currentStep(page);
+  const before=[];
+  for(let guard=0;guard<40&&step.type!=='kbd';guard++){before.push(await answerStep(page));step=await currentStep(page)}
+  expect(step.type).toBe('kbd');
+  // Nach den Lernkarten wurde ein Buchstabe getippt statt ausgewählt.
+  expect(before.some(earlier=>earlier.type==='kbdletter')).toBeTruthy();
+  expect(before.some(earlier=>earlier.type==='letter')).toBeFalsy();
+  // Ein noch nie gelesenes Wort wird abgetippt: Es steht sichtbar da.
+  expect(step.mode).toBe('copy');
+  await expect(page.locator('.path-word')).toHaveText(step.word);
+  expect(await page.locator('#pathKbdInput').getAttribute('lang')).toBe('uk');
+  expect(await page.locator('#pathKbdInput').getAttribute('autocapitalize')).toBe('none');
+  // Mit lateinischer Tastatur getippt: Hinweis, aber kein Fehler und keine Wiederholung.
+  const length=await page.evaluate(()=>window.AlphabetLabPath.runLength());
+  const latin=step.breakdown.map(part=>part.say[0]).join('');
+  await page.locator('#pathKbdInput').fill(latin);
+  await page.locator('#pathKbdSubmit').click();
+  await expect(page.locator('#pathKbdHint')).toContainText('lateinische Buchstaben');
+  await expect(page.locator('#pathKbdInput')).toBeEnabled();
+  await expect(page.locator('#pathFeedback #pathNext')).toHaveCount(0);
+  expect(await page.evaluate(()=>window.AlphabetLabPath.runLength())).toBe(length);
+  // Ein einzelnes lateinisches Zeichen, das genauso aussieht, fällt ebenfalls auf.
+  await page.locator('#pathKbdInput').fill(step.word.replace('а','a').replace('о','o'));
+  await page.locator('#pathKbdInput').press('Enter');
+  await expect(page.locator('#pathKbdHint')).toContainText('lateinische Buchstaben');
+  // Jetzt richtig – in Großbuchstaben, das ist egal.
+  await page.locator('#pathKbdInput').fill(step.word.toLocaleUpperCase('uk'));
+  await page.locator('#pathKbdSubmit').click();
+  await expect(page.locator('#pathFeedback')).toContainText('Richtig');
+  await expect(page.locator('#pathKbdInput')).toHaveClass(/correct/);
+  await page.locator('#pathFeedback #pathNext').click();
+  const rest=await finishRun(page);
+  expect([...before,...rest].some(later=>later.type==='build'),'mit Tastatur ersetzt Schreiben die Plättchen').toBeFalsy();
+  const [right,total]=(await page.locator('.path-result-grid b').first().textContent()).split(' von ').map(Number);
+  expect(right).toBe(total);
+});
+
+test('a real spelling mistake is explained and returns in another form; the task works without the keyboard too',async({page})=>{
+  await seedProgress(page,{lessons:0,keyboard:true});
+  await page.locator('#pathStart').click();
+  // Zuerst die Buchstaben-Tippaufgabe: dort ohne Tastatur antworten.
+  let step=await currentStep(page);
+  for(let guard=0;guard<40&&step.type!=='kbdletter';guard++){expect(step.type).not.toBe('kbd');await answerStep(page);step=await currentStep(page)}
+  expect(step.type).toBe('kbdletter');
+  await expect(page.locator('.path-stage .prompt')).not.toContainText(step.letter);
+  await page.locator('#pathKbdSkip').click();
+  const fallback=await currentStep(page);
+  expect(fallback.type).toBe('letter');expect(fallback.letter).toBe(step.letter);
+  // Dann das erste Wort: ein ukrainisches Wort tippen, aber das falsche.
+  step=fallback;
+  for(let guard=0;guard<40&&step.type!=='kbd';guard++){await answerStep(page);step=await currentStep(page)}
+  const length=await page.evaluate(()=>window.AlphabetLabPath.runLength());
+  const wrong=step.word==='мама'?'тато':'мама';
+  await page.locator('#pathKbdInput').fill(wrong);
+  await page.locator('#pathKbdSubmit').click();
+  await expect(page.locator('#pathFeedback')).toContainText('Noch nicht ganz');
+  await expect(page.locator('#pathFeedback')).toContainText(wrong);
+  await expect(page.locator('#pathFeedback .path-solution')).toContainText(step.word);
+  await expect(page.locator('#pathKbdInput')).toHaveClass(/wrong/);
+  expect(await page.evaluate(()=>window.AlphabetLabPath.runLength())).toBe(length+1);
+  await page.locator('#pathFeedback #pathNext').click();
+  const rest=await finishRun(page);
+  const retry=rest.find(later=>later.retry&&later.word===step.word);
+  expect(retry,'der Schreibfehler kommt noch einmal dran').toBeTruthy();
+  expect(retry.type,'aber in anderer Form').not.toBe('kbd');
+  await expect(page.locator('.path-done h1')).toHaveText('Lektion 1 geschafft');
+  const [right,total]=(await page.locator('.path-result-grid b').first().textContent()).split(' von ').map(Number);
+  expect(total-right).toBe(1);
+});
+
+test('keyboard training: letters and words are written, known words from memory, new ones by copying',async({page})=>{
+  const known=wordsUpTo(1).map(([word])=>word).filter(word=>!word.includes('’')).slice(0,5);
+  await seedProgress(page,{lessons:1,srs:planFor(lettersOf(1),{box:2,due:5}),keyboard:true,words:known});
+  await expect(page.locator('#pathTyping')).toBeVisible();
+  await page.locator('#pathTyping').click();
+  const steps=[];
+  let recallChecked=false;
+  for(let guard=0;guard<20;guard++){
+    if(await page.locator('.path-done').isVisible())break;
+    const step=await currentStep(page);
+    if(step.type==='kbd'&&step.mode==='recall'&&!recallChecked){
+      // Das Wort selbst steht nirgends auf dem Bildschirm – nur Lesung oder Bedeutung.
+      expect(known).toContain(step.word);
+      expect(await page.locator('.path-stage').innerText()).not.toContain(step.word);
+      await expect(page.locator('.path-word')).toContainText(step.display);
+      recallChecked=true;
+    }
+    steps.push(await answerStep(page));
+  }
+  expect(recallChecked,'mindestens ein Wort wird aus dem Gedächtnis geschrieben').toBeTruthy();
+  for(const step of steps)expect(['kbd','kbdletter'],`unerwartete Aufgabenform ${step.type}`).toContain(step.type);
+  expect(steps.filter(step=>step.word).length).toBeGreaterThanOrEqual(4);
+  expect(steps.some(step=>step.mode==='copy')).toBeTruthy();
+  expect(steps.some(step=>!step.word)).toBeTruthy();
+  await expect(page.locator('.path-done h1')).toHaveText('Tastaturtraining geschafft');
+  await expect(page.locator('.path-done')).toHaveAttribute('data-path-kind','typing');
+  await expect(page.locator('.path-done')).toContainText('mit der ukrainischen Tastatur');
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().typingRuns)).toBe(1);
+  expect(await page.evaluate(()=>window.__ttsCalls)).toBe(0);
+});
+
+test('dictation: hear a human recording, then type the letter',async({page,browserName})=>{
+  test.skip(browserName!=='chromium','Wiedergabe einer eingespielten WAV-Datei wird nur in Chromium geprüft');
+  const samples=2400,wav=Buffer.alloc(44+samples*2);
+  wav.write('RIFF',0);wav.writeUInt32LE(36+samples*2,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(8000,24);wav.writeUInt32LE(16000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(samples*2,40);
+  await page.route(url=>!/^https?:\/\/127\.0\.0\.1/.test(url.href),route=>route.fulfill({status:200,contentType:'audio/wav',body:wav}));
+  // Fach 3, reviews 2 → Diktat (mit Tastatur).
+  await seedProgress(page,{lessons:1,srs:{...planFor(lettersOf(1),{box:2,due:5}),'М':{box:3,due:0,reviews:2}},keyboard:true});
+  await page.locator('#pathReview').click();
+  const step=await currentStep(page);
+  expect(step.type).toBe('dictate');
+  await expect(page.locator('.path-stage .prompt')).toHaveText('Hör zu und tippe den Buchstaben.');
+  await page.locator('#pathPlay').click();
+  await expect(page.locator('#pathKbdInput')).toBeEnabled();
+  // Der falsche Buchstabe: echter Fehler, zurück in Fach 1.
+  await page.locator('#pathKbdInput').fill('к');
+  await page.locator('#pathKbdSubmit').click();
+  await expect(page.locator('#pathFeedback')).toContainText('Noch nicht ganz');
+  await expect(page.locator('#pathFeedback')).toContainText('М');
+  await page.locator('#pathFeedback #pathNext').click();
+  await finishRun(page);
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().srs['М'].box)).toBe(1);
+});
+
+test('dictation without sound becomes typing by sound label and still counts for the review plan',async({page})=>{
+  await seedProgress(page,{lessons:1,srs:{...planFor(lettersOf(1),{box:2,due:5}),'М':{box:3,due:0,reviews:2}},keyboard:true});
+  await page.evaluate(key=>{const progress=JSON.parse(localStorage.getItem(key));progress.sound=false;localStorage.setItem(key,JSON.stringify(progress))},PATH_KEY);
+  await page.reload();
+  await page.waitForFunction(()=>!!window.AlphabetLabPath);
+  await page.locator('#pathReview').click();
+  const step=await currentStep(page);
+  expect(step.type).toBe('kbdletter');expect(step.srsLetter).toBe('М');
+  await expect(page.locator('#pathPlay')).toHaveCount(0);
+  await page.locator('#pathKbdInput').fill('М');
+  await page.locator('#pathKbdInput').press('Enter');
+  await expect(page.locator('.path-done h1')).toHaveText('Auffrischung geschafft');
+  expect(await page.evaluate(()=>window.AlphabetLabPath.progress().srs['М'].box)).toBe(4);
+});
+
+test('320 px: keyboard card and Cyrillic typing screens fit and stay tappable',async({page})=>{
+  await page.setViewportSize({width:320,height:568});
+  await openLab(page);
+  await page.locator('.path-kbd-help>summary').click();
+  expect(await noOverflow(page)).toBeTruthy();
+  expect(await smallTargets(page)).toEqual([]);
+  // Die Tastenbelegung passt in die Karte.
+  const fits=await page.evaluate(()=>{const card=document.getElementById('pathKeyboard').getBoundingClientRect();return [...document.querySelectorAll('.path-kbd-layout span')].every(row=>{const r=row.getBoundingClientRect();return r.left>=card.left&&r.right<=card.right})});
+  expect(fits).toBeTruthy();
+  const known=wordsUpTo(2).map(([word])=>word).filter(word=>!word.includes('’')).slice(0,6);
+  await seedProgress(page,{lessons:2,srs:planFor(lettersOf(2),{box:2,due:5}),keyboard:true,words:known});
+  expect(await noOverflow(page)).toBeTruthy();
+  expect(await smallTargets(page)).toEqual([]);
+  await page.locator('#pathTyping').click();
+  const types=new Set();
+  for(let guard=0;guard<20;guard++){
+    if(await page.locator('.path-done').isVisible())break;
+    const step=await currentStep(page);
+    types.add(`${step.type}${step.mode?`:${step.mode}`:''}`);
+    expect(await noOverflow(page),`Überlauf im Schritt ${step.id}`).toBeTruthy();
+    expect(await smallTargets(page),`zu kleine Touchfläche im Schritt ${step.id}`).toEqual([]);
+    await answerStep(page);
+  }
+  for(const type of ['kbdletter','kbd:copy','kbd:recall'])expect(types.has(type),`Schrittart ${type} wurde nicht geprüft`).toBeTruthy();
+  expect(await noOverflow(page)).toBeTruthy();
+  expect(await smallTargets(page)).toEqual([]);
+});
+

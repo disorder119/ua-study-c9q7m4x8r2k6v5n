@@ -71,6 +71,20 @@ function auditRun(run,label,{progress}){
       assert(P.needsTrace(step.letter),`${label}: ${step.letter} hat eine vertraute Form und muss nicht nachgeschrieben werden`);
       continue;
     }
+    const keyboardStep=['kbd','kbdletter','dictate'].includes(step.type);
+    // Ohne eingerichtete Tastatur darf niemand eine Tastaturaufgabe bekommen.
+    if(keyboardStep)assert.equal(progress.keyboard,true,`${label}: ${step.id} ohne eingerichtete Tastatur`);
+    if(step.type==='kbdletter'||step.type==='dictate'){
+      assert(taught.has(step.letter),`${label}: ${step.id} für ein noch nicht gezeigtes Zeichen`);
+      assert(!step.prompt.includes(step.letter)&&!step.prompt.includes(step.lower),`${label}: ${step.id} verrät das Zeichen im Prompt`);
+      assert(P.isCorrect(step,step.lower)&&P.isCorrect(step,step.letter)&&P.isCorrect(step,` ${step.letter} `),`${label}: ${step.id} akzeptiert das eigene Zeichen nicht`);
+      assert(!P.isCorrect(step,'')&&!P.isCorrect(step,step.lower+step.lower),`${label}: ${step.id} akzeptiert Unsinn`);
+      // Immer ein Weg ohne Tastatur – und beim Diktat zuerst einer ohne Ton.
+      const typed=step.type==='dictate'?step.fallback:step;
+      if(step.type==='dictate'){assert.notEqual(step.letter,'Ь',`${label}: Ь hat keine isolierte Aufnahme`);assert.equal(typed?.type,'kbdletter',`${label}: Diktat braucht die Tippaufgabe ohne Ton`)}
+      assert.equal(typed.fallback?.type,'letter',`${label}: ${step.id} braucht einen Abruf ohne Tastatur`);
+      continue;
+    }
     if(step.type==='write'){
       assert(taught.has(step.letter),`${label}: ${step.id} für ein noch nicht gezeigtes Zeichen`);
       assert(!step.prompt.includes(step.letter)&&!step.prompt.includes(step.lower),`${label}: ${step.id} verrät die Form im Prompt`);
@@ -86,6 +100,23 @@ function auditRun(run,label,{progress}){
     if(step.type==='build'){
       assert.equal(step.answer.join(''),step.correct,`${label}: Bauaufgabe ${step.word} inkonsistent`);
       const tiles=[...step.tiles];for(const ch of step.answer){const at=tiles.indexOf(ch);assert(at>=0,`${label}: Plättchen ${ch} fehlt für ${step.word}`);tiles.splice(at,1)}
+      continue;
+    }
+    if(step.type==='kbd'){
+      const word=P.WORDS.find(w=>w.w===step.word);
+      assert(P.kbdWordOk(word),`${label}: ${step.word} taugt nicht für die Tastatur`);
+      assert(!step.options,`${label}: ${step.id} darf keine Optionen anbieten`);
+      assert(P.isCorrect(step,step.word)&&P.isCorrect(step,step.word.toLocaleUpperCase('uk'))&&P.isCorrect(step,`  ${step.word} `),`${label}: ${step.word} wird nicht als richtig erkannt`);
+      assert(!P.isCorrect(step,P.typePrimary(step.word)),`${label}: die lateinische Lesung darf nicht als ukrainisches Wort gelten`);
+      if(step.mode==='copy')assert.equal(step.display,step.word,`${label}: Abtippen zeigt das Wort`);
+      else{
+        // Schreiben aus Lesung oder Bedeutung: Das Wort selbst steht nirgends.
+        assert.equal(step.mode,'recall');
+        assert(progress.words[step.word]?.seen>0,`${label}: ${step.word} soll geschrieben werden, wurde aber nie gelesen`);
+        for(const text of [step.display,step.note,step.prompt])assert(!String(text).toLocaleLowerCase('uk').includes(step.word.toLocaleLowerCase('uk')),`${label}: ${step.id} verrät die Schreibweise`);
+        assert(/^[a-zA-ZäöüÄÖÜß ()\/-]+$/.test(step.display),`${label}: ${step.id} zeigt „${step.display}“ statt Lesung oder Bedeutung`);
+      }
+      assert(step.fallback&&step.fallback.type==='type'&&step.fallback.word===step.word,`${label}: ${step.id} braucht einen Abruf ohne Tastatur`);
       continue;
     }
     if(step.type==='type'){
@@ -244,9 +275,97 @@ assert.equal(P.freshWords(P.freshProgress()).length,0,'vor der ersten Lektion gi
   assert(traps>300,`zu wenige Fallen geprüft: ${traps}`);
 }
 
-// ------------------------------------------------------ Verteiltes Wiederholen
 const DAYMS=86400000,T0=Date.UTC(2026,10,20,12);
 function finishLesson(progress,index,rng,now){const run=P.buildLesson(index,progress,rng);return P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),now)}
+// ------------------------------------------------- Ukrainische Tastatur
+{
+  // Bewertung: Groß/klein, Leerzeichen und Apostrophformen sind egal – Buchstaben nicht.
+  for(const [target,input] of [['мама','мама'],['мама','Мама '],['Київ','київ'],['Київ','КИЇВ'],['ґудзик','ҐУДЗИК']])assert(P.kbdMatch(target,input),`„${input}“ muss als ${target} gelten`);
+  for(const [target,input] of [['мама','мамa'],['мама','mama'],['мама','маа'],['мама',''],['мама','мамаа'],['кіт','кит'],['Київ','Киев'],['гол','ґол']])assert(!P.kbdMatch(target,input),`„${input}“ darf nicht als ${target} gelten`);
+  // Falsche Tastatur wird erkannt – auch ein einzelnes lateinisches Zeichen, das gleich aussieht.
+  assert.equal(P.kbdDiagnose('pectopah'),'latin');assert.equal(P.kbdDiagnose('мамa'),'latin');assert.equal(P.kbdDiagnose('Tak'),'latin');
+  assert.equal(P.kbdDiagnose('рэсторан'),'russian');assert.equal(P.kbdDiagnose('ёж'),'russian');assert.equal(P.kbdDiagnose('объект'),'russian');
+  for(const word of P.WORDS)assert.equal(P.kbdDiagnose(word.w),'',`${word.w} darf nicht als falsche Tastatur gelten`);
+  // Die abgebildete Tastenbelegung enthält genau die Tasten der ukrainischen Tastatur (ґ liegt auf г).
+  assert.equal([...P.KBD_LAYOUT.join('')].sort().join(''),C.ALPHABET.map(c=>C.DATA[c].lower).filter(c=>c!=='ґ').sort().join(''));
+  let usable=0;
+  for(const word of P.WORDS){if(!P.kbdWordOk(word))continue;usable++;assert(!word.w.includes('’'),`${word.w}: Apostroph liegt auf jeder Tastatur woanders`);assert(P.kbdMatch(word.w,word.w))}
+  assert(usable>=400,`zu wenige Wörter für die Tastatur: ${usable}`);
+  // Die Einstellung übersteht Speichern und Laden; Unsinn wird zu „nicht eingerichtet“.
+  for(const [raw,expected] of [[true,true],[false,false],[null,null],['ja',null],[1,null],[undefined,null]])assert.equal(P.normalizeProgress({keyboard:raw}).keyboard,expected);
+}
+// Lektionen, Lesetraining und Auffrischung mit eingerichteter Tastatur.
+{
+  const forms=new Set();
+  for(let seed=1;seed<=20;seed++){
+    const rng=rngFor(seed*5381);
+    let progress=P.freshProgress();progress.keyboard=true;
+    for(let index=0;index<P.LESSONS.length;index++){
+      const run=auditRun(P.buildLesson(index,progress,rng),`Tastatur seed ${seed} Lektion ${index+1}`,{progress});
+      assert(run.steps.some(step=>step.type==='kbd'),`Lektion ${index+1}: mit Tastatur wird kein Wort geschrieben`);
+      assert(!run.steps.some(step=>step.type==='build'),`Lektion ${index+1}: mit Tastatur ersetzt echtes Schreiben die Plättchen`);
+      assert(run.steps.length<=26,`Lektion ${index+1} ist mit Tastatur zu lang: ${run.steps.length}`);
+      run.steps.forEach(step=>forms.add(step.type));
+      // Ein Schreibfehler kommt in anderer Form wieder – nicht noch einmal als Tippaufgabe.
+      const typed=run.steps.find(step=>step.type==='kbd'),retry=P.retryStep(typed,run,rng);
+      assert(retry&&retry.word===typed.word&&retry.type!=='kbd');
+      const letterStep=run.steps.find(step=>step.type==='kbdletter');
+      if(letterStep){const again=P.retryStep(letterStep,run,rng);assert(again&&again.letter===letterStep.letter&&again.type==='sound')}
+      progress=P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),T0+index*DAYMS);
+      assert.equal(P.normalizeProgress(JSON.parse(JSON.stringify(progress))).keyboard,true);
+    }
+    for(let round=0;round<3;round++){
+      const run=auditRun(P.buildPractice(progress,rng,10),`Tastatur seed ${seed} Training ${round+1}`,{progress});
+      assert(run.steps.some(step=>step.type==='kbd'),'Lesetraining mit Tastatur enthält Schreiben');
+      progress=P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),T0+(20+round)*DAYMS);
+    }
+    // Auffrischung: Fach 2 und 3 nutzen Tippen und Diktat.
+    for(const letter of C.ALPHABET){progress.srs[letter].box=2+seed%2;progress.srs[letter].reviews=Math.floor(seed/2)%4;progress.srs[letter].lapses=0;progress.srs[letter].due=P.day(T0)}
+    const review=P.buildReview(progress,rng,T0);
+    const known=new Set(P.knownLetters(progress));
+    for(const step of review.steps){
+      forms.add(step.type);
+      assert(known.has(step.srsLetter));
+      for(let alternative=step.fallback;alternative;alternative=alternative.fallback)assert.equal(alternative.srsLetter,step.srsLetter,'jeder Ersatzabruf zählt für denselben Buchstaben');
+    }
+  }
+  for(const form of ['kbd','kbdletter','dictate'])assert(forms.has(form),`mit Tastatur kommt die Form ${form} nie vor`);
+}
+// Tastaturtraining.
+{
+  assert.equal(P.buildTyping(P.freshProgress(),rngFor(1)),null,'Tastaturtraining gibt es erst nach der ersten Lektion');
+  let copies=0,recalls=0;
+  for(let seed=1;seed<=30;seed++){
+    const rng=rngFor(seed*6151);
+    let progress=P.freshProgress();progress.keyboard=true;
+    const count=1+seed%8;
+    for(let index=0;index<count;index++)progress=finishLesson(progress,index,rng,T0+index*DAYMS);
+    // Ein Buchstabe mit Fehlern muss im Training vorkommen.
+    const weak=P.LESSONS[0].letters[seed%6];progress.letters[weak]=P.normalizeProgress({letters:{[weak]:{ok:0,bad:5}}}).letters[weak];
+    const run=P.buildTyping(progress,rng,10);
+    assert.equal(run.kind,'typing');
+    assert(run.steps.length>=7&&run.steps.length<=10,`Tastaturtraining hat ${run.steps.length} Schritte`);
+    assert.equal(new Set(run.steps.map(step=>step.id)).size,run.steps.length);
+    const allowed=new Set(P.lettersUpTo(count-1));
+    for(const step of run.steps){
+      assert(['kbd','kbdletter','dictate'].includes(step.type),`Tastaturtraining enthält ${step.type}`);
+      if(step.word){
+        for(const letter of P.WORDS.find(w=>w.w===step.word).letters)assert(allowed.has(letter),`${step.word} enthält ${letter} aus einer späteren Lektion`);
+        const seen=(progress.words[step.word]?.seen||0)>0;
+        if(step.mode==='recall'){assert(seen,`${step.word} wird aus dem Gedächtnis verlangt, ohne je gelesen zu sein`);recalls++}
+        else{assert(!seen||!(P.WORDS.find(w=>w.w===step.word).sayable||P.WORDS.find(w=>w.w===step.word).cog));copies++}
+      }else assert(allowed.has(step.letter));
+    }
+    assert(run.steps.some(step=>!step.word&&step.letter===weak),`der schwache Buchstabe ${weak} fehlt im Tastaturtraining`);
+    assert(run.steps.filter(step=>step.word).length>=4,'zu wenige Wörter im Tastaturtraining');
+    const after=P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),T0+30*DAYMS);
+    assert.equal(after.typingRuns,1);
+    assert.deepEqual(P.normalizeProgress(JSON.parse(JSON.stringify(after))),after);
+  }
+  assert(copies>20&&recalls>20,`Abtippen (${copies}) und Schreiben aus dem Gedächtnis (${recalls}) müssen beide vorkommen`);
+}
+
+// ------------------------------------------------------ Verteiltes Wiederholen
 {
   const rng=rngFor(4711);
   let progress=finishLesson(P.freshProgress(),0,rng,T0);

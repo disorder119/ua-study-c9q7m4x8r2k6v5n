@@ -100,7 +100,11 @@ function buildPathReview(progress,rng=Math.random,now=Date.now(),limit=PATH_REVI
   const due=pathDueLetters(progress,now).slice(0,limit);
   if(!due.length)return null;
   const highest=pathHighestDoneIndex(progress),known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),steps=[],usedWords=new Set();
-  const forms=[null,['sound','listen','letter'],['listen','letter','word'],['word','write','listen']];
+  // Mit eingerichteter Tastatur kommen Tippen und Diktat als Abrufformen dazu.
+  const keyboard=progress?.keyboard===true;
+  const forms=keyboard
+    ?[null,['sound','listen','letter'],['listen','kbdletter','word'],['word','write','dictate','kbdletter']]
+    :[null,['sound','listen','letter'],['listen','letter','word'],['word','write','listen']];
   pathInterleave(due,rng).forEach(letter=>{
     const row=progress.srs[letter],menu=forms[Math.min(3,row.box)];
     let step=null;
@@ -110,6 +114,8 @@ function buildPathReview(progress,rng=Math.random,now=Date.now(),limit=PATH_REVI
       else if(form==='letter')step=pathStepLetter(letter,known,rng);
       else if(form==='listen')step=pathStepListen(letter,known,rng);
       else if(form==='write')step=pathStepWrite(letter,known,rng);
+      else if(form==='kbdletter')step=pathStepKbdLetter(letter,known,rng);
+      else if(form==='dictate')step=pathStepDictate(letter,known,rng);
       else if(form==='word'){
         const word=pathPickFresh(pool.filter(candidate=>candidate.letters.includes(letter)&&!usedWords.has(candidate.w)),progress,rng,1)[0];
         step=word?pathStepType(word):null;
@@ -119,7 +125,8 @@ function buildPathReview(progress,rng=Math.random,now=Date.now(),limit=PATH_REVI
     }
     if(!step)step=pathStepLetter(letter,known,rng);
     step.srsLetter=letter;
-    if(step.fallback)step.fallback.srsLetter=letter;
+    // Auch jeder Ersatzabruf (ohne Ton, ohne Tastatur) zählt für denselben Buchstaben.
+    for(let alternative=step.fallback;alternative;alternative=alternative.fallback)alternative.srsLetter=letter;
     steps.push(step);
   });
   return {kind:'review',index:highest,lessonId:'',steps};
@@ -131,7 +138,8 @@ const LEARNING_PATH_API=!PATH_AVAILABLE?null:Object.freeze({
   doneCount:pathDoneCount,nextLessonIndex:pathNextLessonIndex,highestDoneIndex:pathHighestDoneIndex,knownLetters:pathKnownLetters,wordsRead:pathWordsRead,freshWords:pathFreshWords,FRESH_MINIMUM:PATH_FRESH_MINIMUM,
   translit:pathTranslit,typeMatch:pathTypeMatch,typePrimary:pathTypePrimary,isCorrect:pathIsCorrect,needsTrace:letter=>!PATH_FAMILIAR_SHAPES.has(letter),
   buildLesson:buildPathLesson,buildPractice:buildPathPractice,buildCheck:buildPathCheck,checkPassed:pathCheckPassed,retryStep:pathRetryStep,applyResult:pathApplyResult,
-  SRS_INTERVALS:PATH_SRS_INTERVALS,SRS_SECURE_BOX:PATH_SRS_SECURE_BOX,REVIEW_LIMIT:PATH_REVIEW_LIMIT,day:pathDay,ensureSchedule:pathSrsEnsure,dueLetters:pathDueLetters,srsSummary:pathSrsSummary,buildReview:buildPathReview
+  SRS_INTERVALS:PATH_SRS_INTERVALS,SRS_SECURE_BOX:PATH_SRS_SECURE_BOX,REVIEW_LIMIT:PATH_REVIEW_LIMIT,day:pathDay,ensureSchedule:pathSrsEnsure,dueLetters:pathDueLetters,srsSummary:pathSrsSummary,buildReview:buildPathReview,
+  KBD_LAYOUT:PATH_KBD_LAYOUT,kbdMatch:pathKbdMatch,kbdDiagnose:pathKbdDiagnose,kbdWordOk:pathKbdWordOk,buildTyping:buildPathTyping
 });
 // Eigener Name statt AlphabetCoreV2.LearningPath: Der Lernpfad wird als eigenes
 // Bundle nach dem Core geladen.

@@ -59,6 +59,22 @@ function pathTypeMatch(word,input){
   if(!typed)return false;
   return new RegExp(`^${pathChars(word).map(ch=>`(?:${PATH_TYPE_ALT[ch].join('|')})`).join('')}$`).test(typed);
 }
+// Schreiben mit der ukrainischen Tastatur des Geräts: der anspruchsvollste Abruf,
+// weil Form, Laut UND Tastenlage gebraucht werden. Nur wenn die Tastatur
+// eingerichtet ist (progress.keyboard === true); jeder Schritt hat einen Ersatz ohne.
+const PATH_KBD_LAYOUT=['йцукенгшщзхї','фівапролджє','ячсмитьбю'];
+function pathKbdNormalize(input){return String(input??'').normalize('NFC').trim().toLocaleLowerCase('uk').replace(/[ʼ‘'`]/g,'’').replace(/\s+/g,'')}
+// Woran eine Eingabe scheitert, bevor sie überhaupt bewertet wird: an der
+// lateinischen Tastatur oder an der russischen (ы э ё ъ gibt es im Ukrainischen nicht).
+function pathKbdDiagnose(input){
+  const text=pathKbdNormalize(input);
+  if(/[a-zäöüß]/.test(text))return 'latin';
+  if(/[ыэёъ]/.test(text))return 'russian';
+  return '';
+}
+function pathKbdMatch(target,input){const typed=pathKbdNormalize(input);return !!typed&&typed===pathKbdNormalize(target)}
+// Wörter mit Apostroph bleiben außen vor: Er liegt auf jeder Tastatur woanders.
+const pathKbdWordOk=word=>{const chars=pathChars(word.w);return chars.length>=2&&chars.length<=10&&chars.every(ch=>ALPHABET.includes(pathUpper(ch)))};
 // Zeichen, deren FORM ein Deutscher schon kennt – alle anderen werden nachgeschrieben.
 const PATH_FAMILIAR_SHAPES=new Set([...'АОКМТЕНРСВУХІ']);
 function pathTranslit(word,override=null){return pathChars(word).map(ch=>(override&&override[ch]!==undefined?override[ch]:PATH_TRANSLIT[ch])??'').join('')}
@@ -77,7 +93,8 @@ const pathUsable=word=>[...word.w].length>=2&&(word.cog||pathTypeable(word.w));
 function pathLettersUpTo(index){return PATH_LESSONS.slice(0,Math.max(0,index+1)).flatMap(lesson=>lesson.letters)}
 // advancedOpen: null = noch nie entschieden, sonst die Wahl des Nutzers.
 // srs: Wiederholungsfach und Fälligkeit je Buchstabe (alphabet-core-v7-review.js).
-function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},srs:{},sound:true,practiceRuns:0,reviewRuns:0,advancedOpen:null}}
+// keyboard: null = noch nicht eingerichtet, true/false = Wahl des Nutzers.
+function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},srs:{},sound:true,keyboard:null,practiceRuns:0,reviewRuns:0,typingRuns:0,advancedOpen:null}}
 function pathNormalizeProgress(raw){
   const fresh=pathFreshProgress();
   if(!raw||typeof raw!=='object')return fresh;
@@ -89,6 +106,8 @@ function pathNormalizeProgress(raw){
   out.sound=raw.sound!==false;
   out.practiceRuns=Math.max(0,Number(raw.practiceRuns)||0);
   out.reviewRuns=Math.max(0,Number(raw.reviewRuns)||0);
+  out.typingRuns=Math.max(0,Number(raw.typingRuns)||0);
+  out.keyboard=raw.keyboard===true?true:raw.keyboard===false?false:null;
   out.advancedOpen=raw.advancedOpen===true?true:raw.advancedOpen===false?false:null;
   return out;
 }
@@ -169,10 +188,33 @@ function pathStepType(word){
   if(!pathTypeable(word.w)||[...word.w].length<2)return null;
   return {id:`type:${word.w}`,type:'type',word:word.w,display:word.w,prompt:'Tippe, wie man das liest.',correct:pathTypePrimary(word.w),meaning:word.de,breakdown:pathBreakdown(word)};
 }
+// Ein Wort mit der ukrainischen Tastatur schreiben. Ein noch nie gelesenes Wort
+// wird abgetippt (Tasten finden); ein schon gelesenes aus Lesung oder Bedeutung
+// geschrieben (Schreibweise abrufen).
+function pathStepKbd(word,progress){
+  if(!pathKbdWordOk(word))return null;
+  const recall=pathSeen(progress,word)>0&&(word.sayable||word.cog);
+  const reading=word.sayable?pathTranslit(word.w):'';
+  return {id:`kbd:${word.w}`,type:'kbd',mode:recall?'recall':'copy',word:word.w,
+    display:recall?(reading||word.de):word.w,note:recall&&reading&&word.cog?word.de:'',
+    prompt:recall?'Schreibe das Wort mit der ukrainischen Tastatur.':'Tippe das Wort mit der ukrainischen Tastatur ab.',
+    correct:word.w,meaning:word.de,breakdown:pathBreakdown(word),fallback:pathStepType(word)};
+}
+function pathStepKbdLetter(letter,known,rng){
+  const say=PATH_LETTER_INFO[letter].say;
+  return {id:`kbdletter:${letter}`,type:'kbdletter',letter,lower:DATA[letter].lower,prompt:letter==='Ь'?'Tippe das Weichheitszeichen.':`Tippe den Buchstaben für „${say}“.`,correct:DATA[letter].lower,explain:`${letter} klingt wie „${say}“. ${PATH_LETTER_INFO[letter].hint}`,fallback:pathStepLetter(letter,known,rng)};
+}
+// Diktat: Laut hören, Buchstaben tippen. Ohne Ton wird daraus die Tippaufgabe mit Lautangabe.
+function pathStepDictate(letter,known,rng){
+  if(!HUMAN_LETTER_AUDIO_LETTERS.includes(letter))return null;
+  const base=pathStepKbdLetter(letter,known,rng);
+  return {...base,id:`dictate:${letter}`,type:'dictate',prompt:'Hör zu und tippe den Buchstaben.',fallback:base};
+}
 // Eine Stelle für die Bewertung – getippte Lesungen haben mehrere gültige Formen.
 function pathIsCorrect(step,value){
   if(!step)return false;
   if(step.type==='type')return pathTypeMatch(step.word,value);
+  if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate')return pathKbdMatch(step.correct,value);
   return value===step.correct;
 }
 
@@ -221,6 +263,7 @@ function pathWordStep(word,type,ctx,rng){
     else if(kind==='find'&&word.cog&&ctx.pool.length>=4)step=pathStepFind(word,ctx.pool,rng);
     else if(kind==='say')step=pathStepSay(word,rng);
     else if(kind==='type')step=pathStepType(word);
+    else if(kind==='kbd')step=ctx.keyboard?pathStepKbd(word,ctx.progress):null;
     else if(kind==='build'&&word.cog)step=pathStepBuild(word,ctx.known,rng);
     if(step)return step;
   }
@@ -236,7 +279,7 @@ function buildPathLesson(index,progress,rng=Math.random){
   if(!lesson)return null;
   const known=pathLettersUpTo(index),steps=[],usedWords=new Set();
   const pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word));
-  const ctx={pool,known};
+  const keyboard=progress?.keyboard===true,ctx={pool,known,progress,keyboard};
   const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id)){steps.push(step);if(step.word)usedWords.add(step.word)}};
 
   // 1 · Aufwärmen mit NEUEN Wörtern aus alten Buchstaben.
@@ -252,9 +295,10 @@ function buildPathLesson(index,progress,rng=Math.random){
     push(pathStepTrace(letter));
     if(!lesson.light||i%3===2)push(pathStepSound(letter,shown,rng));
     // Abwechselnd über das Ohr und über die Lautangabe zurück zum Zeichen.
-    if(!lesson.light&&i%2===1)push((i%4===1?pathStepListen(lesson.letters[i-1],shown,rng):null)||pathStepLetter(lesson.letters[i-1],shown,rng));
+    // Mit eingerichteter Tastatur wird der zweite dieser Abrufe getippt statt ausgewählt.
+    if(!lesson.light&&i%2===1)push((i%4===1?pathStepListen(lesson.letters[i-1],shown,rng):keyboard?pathStepKbdLetter(lesson.letters[i-1],shown,rng):null)||pathStepLetter(lesson.letters[i-1],shown,rng));
   });
-  if(lesson.light)push(pathStepLetter(lesson.letters[lesson.letters.length-1],known,rng));
+  if(lesson.light){const last=lesson.letters[lesson.letters.length-1];push(keyboard?pathStepKbdLetter(last,known,rng):pathStepLetter(last,known,rng))}
 
   // 3 · Wörter lesen: jeder neue Buchstabe kommt mindestens einmal vor.
   const own=pool.filter(word=>word.lesson===index&&!usedWords.has(word.w));
@@ -265,7 +309,16 @@ function buildPathLesson(index,progress,rng=Math.random){
     if(candidate)picked.push(candidate);
   }
   for(const word of pathPickFresh(own.filter(word=>!picked.includes(word)),progress,rng,Math.max(0,6-picked.length)))picked.push(word);
-  shuffle(picked,rng).forEach((word,i)=>push(pathWordStep(word,PATH_WORD_ROTATION[i%PATH_WORD_ROTATION.length],ctx,rng)));
+  // Mit Tastatur ersetzt echtes Schreiben das Legen aus Plättchen.
+  const rotation=keyboard?PATH_WORD_ROTATION.map(form=>form==='build'?'kbd':form):PATH_WORD_ROTATION;
+  const ordered=shuffle(picked,rng),forms=ordered.map((_,i)=>rotation[i%rotation.length]);
+  // Die Schreibaufgabe braucht ein tastaturtaugliches Wort (kein Apostroph, nicht
+  // zu lang). Passt das vorgesehene nicht, schreibt man das letzte, das passt.
+  if(keyboard&&!ordered.some((word,i)=>forms[i]==='kbd'&&pathKbdWordOk(word))){
+    let at=-1;ordered.forEach((word,i)=>{if(pathKbdWordOk(word))at=i});
+    if(at>=0)forms[at]='kbd';
+  }
+  ordered.forEach((word,i)=>push(pathWordStep(word,forms[i],ctx,rng)));
 
   // 4 · Ein letztes altes Wort in neuer Aufgabenform.
   if(index>0){const older=pathPickFresh(pool.filter(w=>w.lesson<index&&w.cog&&!usedWords.has(w.w)),progress,rng,1)[0];if(older)push(pathWordStep(older,'find',ctx,rng))}
@@ -275,7 +328,8 @@ function buildPathLesson(index,progress,rng=Math.random){
 function buildPathPractice(progress,rng=Math.random,size=10){
   const highest=pathHighestDoneIndex(progress);
   if(highest<0)return null;
-  const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),ctx={pool,known},steps=[];
+  const keyboard=progress?.keyboard===true,practiceRotation=keyboard?['type','read','kbd','say','find','kbd']:PATH_PRACTICE_ROTATION;
+  const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathUsable(word)),ctx={pool,known,progress,keyboard},steps=[];
   const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
   // Schwächste Buchstaben zuerst – gemessen an echten Fehlern im Pfad.
   const weak=shuffle(known,rng).sort((a,b)=>((progress.letters?.[b]?.bad||0)-(progress.letters?.[b]?.ok||0))-((progress.letters?.[a]?.bad||0)-(progress.letters?.[a]?.ok||0))).slice(0,2);
@@ -289,8 +343,8 @@ function buildPathPractice(progress,rng=Math.random,size=10){
   for(const word of words){
     if(steps.length>=size-weak.length)break;
     // Nie dieselbe Aufgabenform wie beim letzten Mal für dieses Wort.
-    let type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
-    if(type===progress.words?.[word.w]?.type)type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
+    let type=practiceRotation[rotation++%practiceRotation.length];
+    if(type===progress.words?.[word.w]?.type)type=practiceRotation[rotation++%practiceRotation.length];
     push(pathWordStep(word,type,ctx,rng));
   }
   weak.forEach((letter,i)=>{const step=i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng);steps.splice(Math.min(steps.length,2+i*3),0,step)});
@@ -305,7 +359,7 @@ const PATH_CHECK_ALLOWED_MISTAKES=1;
 function buildPathCheck(index,progress,rng=Math.random){
   const lesson=PATH_LESSONS[index];
   if(!lesson)return null;
-  const known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known},steps=[];
+  const known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known,progress,keyboard:false},steps=[];
   const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
   shuffle(lesson.letters,rng).forEach((letter,i)=>push(i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng)));
   const own=pool.filter(word=>word.lesson===index);
@@ -322,14 +376,14 @@ function pathCheckPassed(run,results){
 // einer ANDEREN Aufgabenform, damit nicht die Antwort von eben wiedererkannt wird.
 function pathRetryStep(step,run,rng=Math.random){
   if(!step||step.retry||step.ungraded||step.type==='teach')return null;
-  const index=run.index,known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known};
+  const index=run.index,known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known,progress:null,keyboard:false};
   const taken=new Set(run.steps.map(existing=>existing.id));
   let next=null;
   if(step.type==='sound')next=pathStepLetter(step.letter,known,rng);
-  else if(step.type==='letter'||step.type==='listen'||step.type==='write')next=pathStepSound(step.letter,known,rng);
+  else if(['letter','listen','write','kbdletter','dictate'].includes(step.type))next=pathStepSound(step.letter,known,rng);
   else{
     const word=PATH_WORD_BY_TEXT.get(step.word);
-    const alternatives={read:['say','find','type','build'],say:['read','find','type','build'],find:['read','say','type','build'],build:['read','say','find','type'],type:['read','say','find','build']}[step.type]||['read'];
+    const alternatives={read:['say','find','type','build'],say:['read','find','type','build'],find:['read','say','type','build'],build:['read','say','find','type'],type:['read','say','find','build'],kbd:['read','say','type','find','build']}[step.type]||['read'];
     for(const kind of alternatives){const candidate=pathWordStep(word,kind,ctx,rng);if(candidate&&candidate.type!==step.type&&!taken.has(candidate.id)){next=candidate;break}}
     if(!next)next=pathWordStep(word,step.type,ctx,rng);
   }
@@ -350,6 +404,24 @@ function pathApplyResult(progress,run,results,now=Date.now()){
   if((run?.kind==='lesson'||pathCheckPassed(run,results))&&run.lessonId){const row=progress.done[run.lessonId]||(progress.done[run.lessonId]={at:now,runs:0});row.runs++;row.at=row.at||now}
   if(run?.kind==='practice')progress.practiceRuns=(Number(progress.practiceRuns)||0)+1;
   if(run?.kind==='review')progress.reviewRuns=(Number(progress.reviewRuns)||0)+1;
+  if(run?.kind==='typing')progress.typingRuns=(Number(progress.typingRuns)||0)+1;
   pathSrsApply(progress,run,results,now);
   return progress;
+}
+
+// Tastaturtraining: nur Schreiben. Drei Buchstaben (die schwächsten, einer als
+// Diktat), dann Wörter – schon gelesene aus der Lesung, neue zum Abtippen.
+function buildPathTyping(progress,rng=Math.random,size=10){
+  const highest=pathHighestDoneIndex(progress);
+  if(highest<0)return null;
+  const known=pathLettersUpTo(highest),pool=PATH_WORDS.filter(word=>word.lesson<=highest&&pathKbdWordOk(word)),steps=[];
+  const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
+  const weak=shuffle(known,rng).sort((a,b)=>((progress.letters?.[b]?.bad||0)-(progress.letters?.[b]?.ok||0))-((progress.letters?.[a]?.bad||0)-(progress.letters?.[a]?.ok||0))).slice(0,3);
+  weak.forEach((letter,i)=>push((i===1?pathStepDictate(letter,known,rng):null)||pathStepKbdLetter(letter,known,rng)));
+  // Zuletzt nicht getippte Wörter zuerst; innerhalb davon erst bekannte, dann neue.
+  const typedLast=word=>progress.words?.[word.w]?.type==='kbd'?1:0;
+  const readBefore=shuffle(pool.filter(word=>pathSeen(progress,word)>0),rng).sort((a,b)=>typedLast(a)-typedLast(b)).slice(0,Math.ceil((size-steps.length)/2));
+  const rest=pathPickFresh(pool.filter(word=>!readBefore.includes(word)),progress,rng,size);
+  for(const word of [...readBefore,...rest]){if(steps.length>=size)break;push(pathStepKbd(word,progress))}
+  return {kind:'typing',index:highest,lessonId:'',steps};
 }

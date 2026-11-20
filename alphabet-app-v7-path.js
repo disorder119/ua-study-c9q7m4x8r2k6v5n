@@ -74,6 +74,8 @@ function startPathCheck(index){return pathLessonState(index)!=='current'?false:s
 function startPathPractice(){return startPathRun(PATH_API.buildPractice(PATH,Math.random,10))}
 // Auffrischung: die heute fälligen Buchstaben aus dem Wiederholungsplan.
 function startPathReview(){return startPathRun(PATH_API.buildReview(PATH,Math.random,Date.now()))}
+// Tastaturtraining: nur Schreiben mit der ukrainischen Tastatur.
+function startPathTyping(){return PATH.keyboard===true?startPathRun(PATH_API.buildTyping(PATH,Math.random,10)):false}
 // Ersetzt einen Schritt, der Ton oder eine Zeichenfläche braucht, durch
 // denselben Abruf ohne diese Voraussetzung.
 function pathUseFallback(step,rerender=true){
@@ -107,6 +109,13 @@ ${step.example?`<div class="path-example"><span lang="uk">${pathHighlight(step.e
   if(step.type==='guess')return `<div class="eyebrow center">Rate mal · zählt nicht</div><div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
   if(step.type==='trace'||step.type==='write')return pathTraceMarkup(step);
   if(step.type==='listen')return `<div class="eyebrow center">Hören</div><div class="prompt">${esc(step.prompt)}</div><div class="actions path-actions"><button class="btn primary xl" id="pathPlay" type="button">🔊 Abspielen</button></div>${pathOptionsMarkup(step)}<button class="path-skip" id="pathNoSound" type="button">Ohne Ton antworten</button>`;
+  if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate'){
+    const dictate=step.type==='dictate';
+    const head=step.type==='kbd'
+      ?`<div class="path-word"${step.mode==='copy'?' lang="uk"':''}>${esc(step.mode==='recall'?`„${step.display}“`:step.display)}</div>${step.note?`<div class="path-note">${esc(step.note)}</div>`:''}`
+      :dictate?'<div class="actions path-actions"><button class="btn primary xl" id="pathPlay" type="button">🔊 Abspielen</button></div>':'';
+    return `<div class="eyebrow center">Ukrainische Tastatur${dictate?' · Diktat':''}</div>${head}<div class="prompt">${esc(step.prompt)}</div><form class="path-type" id="pathKbdForm" autocomplete="off"><input id="pathKbdInput" type="text" lang="uk" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="24" aria-label="Eingabe mit der ukrainischen Tastatur" placeholder="hier tippen"><button class="btn primary" id="pathKbdSubmit" type="submit">Prüfen</button></form><div class="path-kbd-hint" id="pathKbdHint" role="status" aria-live="polite"></div><button class="path-skip" id="${dictate?'pathNoSound':'pathKbdSkip'}" type="button">${dictate?'Ohne Ton antworten':'Ohne ukrainische Tastatur antworten'}</button>`;
+  }
   if(step.type==='type')return `<div class="path-word" lang="uk">${esc(step.display)}</div><div class="prompt">${esc(step.prompt)}</div><form class="path-type" id="pathTypeForm" autocomplete="off"><input id="pathTypeInput" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="40" aria-label="Lesung in lateinischen Buchstaben" placeholder="lateinische Buchstaben"><button class="btn primary" id="pathTypeSubmit" type="submit">Prüfen</button></form>`;
   if(step.type==='sound')return `<div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
   if(step.type==='letter')return `<div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
@@ -128,7 +137,7 @@ function renderPathStep(){
   let step=run.steps[run.pos];
   if(!step)return finishPathRun();
   // Hören braucht Ton: ohne Aufnahme oder bei ausgeschaltetem Ton derselbe Abruf ohne.
-  if(step.type==='listen'&&(!PATH.sound||!pathLetterAudioSource(step.letter)))step=pathUseFallback(step,false);
+  if((step.type==='listen'||step.type==='dictate')&&(!PATH.sound||!pathLetterAudioSource(step.letter)))step=pathUseFallback(step,false);
   run.locked=false;
   const percent=Math.round(run.pos/run.steps.length*100);
   shell(`<div class="lesson path-lesson"><div class="lesson-head"><button class="btn" id="pathQuit" type="button" aria-label="Lektion beenden">✕</button><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="Fortschritt in dieser Lektion"><i style="width:${percent}%"></i></div><button class="btn small" id="pathSound" type="button" aria-pressed="${PATH.sound?'true':'false'}" aria-label="${PATH.sound?'Automatischen Ton ausschalten':'Automatischen Ton einschalten'}">${PATH.sound?'🔊':'🔇'}</button></div>
@@ -167,26 +176,53 @@ function wirePathStep(step){
     input.focus?.({preventScroll:true});
     return;
   }
-  if(step.type==='listen'){
-    const src=pathLetterAudioSource(step.letter),options=[...app.querySelectorAll('[data-path-ans]')],playButton=document.getElementById('pathPlay');
-    const current=()=>!!pathRun&&pathRun.steps[pathRun.pos]===step;
-    const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[step.letter];if(meta)markHumanAudioButton(playButton,meta);
-    // Geantwortet wird erst, wenn der Laut wirklich zu hören war.
-    options.forEach(option=>option.disabled=!step.heard);
-    // Kommt nach einem Versuch weder Ton noch Fehlermeldung (hängendes Netz),
-    // geht es nach fünf Sekunden ohne Ton weiter. Es zählt nur der letzte Versuch.
-    let attempt=0;
-    const giveUp=mine=>{if(mine===attempt&&current()&&!step.heard&&!pathRun.locked)pathUseFallback(step)};
-    const play=()=>{
-      const mine=++attempt;let blocked=false;
-      pathPlay(src,{playing:()=>{step.heard=true;if(current()&&!pathRun.locked)options.forEach(option=>option.disabled=false)},error:()=>giveUp(mine),blocked:()=>{blocked=true}});
-      setTimeout(()=>{if(!blocked)giveUp(mine)},5000);
+  if(step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate'){
+    const form=document.getElementById('pathKbdForm'),input=document.getElementById('pathKbdInput'),hint=document.getElementById('pathKbdHint');
+    form.onsubmit=event=>{
+      event.preventDefault();
+      if(pathRun.locked||!input.value.trim())return;
+      // Falsche Tastatur ist kein Wissensfehler: Hinweis geben, nicht werten.
+      const problem=PATH_API.kbdDiagnose(input.value);
+      if(problem){hint.textContent=pathKeyboardProblem(problem);input.select?.();return}
+      hint.textContent='';input.disabled=true;document.getElementById('pathKbdSubmit').disabled=true;
+      answerPathStep(step,input.value,null);
     };
-    playButton.onclick=play;
-    document.getElementById('pathNoSound').onclick=()=>pathUseFallback(step);
-    if(!step.played){step.played=true;play()}
+    document.getElementById('pathKbdSkip')?.addEventListener('click',()=>pathUseFallback(step));
+    if(step.type==='dictate'){input.disabled=!step.heard;wirePathListening(step,()=>{input.disabled=false;input.focus?.({preventScroll:true})})}
+    else input.focus?.({preventScroll:true});
+    return;
+  }
+  if(step.type==='listen'){
+    const options=[...app.querySelectorAll('[data-path-ans]')];
+    options.forEach(option=>option.disabled=!step.heard);
+    wirePathListening(step,()=>options.forEach(option=>option.disabled=false));
   }
   app.querySelectorAll('[data-path-ans]').forEach(button=>button.onclick=()=>answerPathStep(step,step.options[Number(button.dataset.pathAns)],button));
+}
+
+function pathKeyboardProblem(problem){
+  return problem==='latin'
+    ?'Das waren lateinische Buchstaben. Schalte auf die ukrainische Tastatur um (🌐 antippen oder die Leertaste gedrückt halten) und tippe noch einmal.'
+    :'Das war die russische Tastatur: ы, э, ё und ъ gibt es im Ukrainischen nicht. Schalte auf Ukrainisch um und tippe noch einmal.';
+}
+// Abspielknopf für Hören und Diktat. unlock() gibt die Antwort frei – erst wenn
+// der Laut wirklich zu hören war. Kommt nach einem Versuch weder Ton noch
+// Fehlermeldung (hängendes Netz), geht es nach fünf Sekunden ohne Ton weiter.
+// Es zählt nur der letzte Versuch.
+function wirePathListening(step,unlock){
+  const src=pathLetterAudioSource(step.letter),playButton=document.getElementById('pathPlay');
+  const current=()=>!!pathRun&&pathRun.steps[pathRun.pos]===step;
+  const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[step.letter];if(meta)markHumanAudioButton(playButton,meta);
+  let attempt=0;
+  const giveUp=mine=>{if(mine===attempt&&current()&&!step.heard&&!pathRun.locked)pathUseFallback(step)};
+  const play=()=>{
+    const mine=++attempt;let blocked=false;
+    pathPlay(src,{playing:()=>{step.heard=true;if(current()&&!pathRun.locked)unlock()},error:()=>giveUp(mine),blocked:()=>{blocked=true}});
+    setTimeout(()=>{if(!blocked)giveUp(mine)},5000);
+  };
+  playButton.onclick=play;
+  document.getElementById('pathNoSound').onclick=()=>pathUseFallback(step);
+  if(!step.played){step.played=true;play()}
 }
 
 function wirePathBuild(step){
@@ -236,9 +272,11 @@ function answerPathStep(step,value,button){
     if(optionValue===step.correct)option.classList.add('correct');
     else if(option===button)option.classList.add('wrong');
   });
-  app.querySelectorAll('[data-path-tile],[data-path-slot],#pathPlay,#pathNoSound,#pathSelfGood,#pathSelfBad').forEach(element=>element.disabled=true);
+  app.querySelectorAll('[data-path-tile],[data-path-slot],#pathPlay,#pathNoSound,#pathKbdSkip,#pathSelfGood,#pathSelfBad').forEach(element=>element.disabled=true);
   if(step.type==='build')app.querySelector('#pathSlots')?.classList.add(good?'correct':'wrong');
   if(step.type==='type')document.getElementById('pathTypeInput')?.classList.add(good?'correct':'wrong');
+  document.getElementById('pathKbdInput')?.classList.add(good?'correct':'wrong');
+  const keyboardStep=step.type==='kbd'||step.type==='kbdletter'||step.type==='dictate';
   const feedback=document.getElementById('pathFeedback'),wordStep=!!step.word;
   if(good&&graded&&!wordStep){
     feedback.innerHTML='<strong class="good-text">Richtig!</strong>';
@@ -252,9 +290,10 @@ function answerPathStep(step,value,button){
     head=good?'<strong class="good-text">Stark – du lässt dich nicht täuschen.</strong>':'<strong class="bad-text">Genau die Falle.</strong>';
     body=`<p><span lang="uk">${esc(step.letter)}</span> klingt wie „${esc(step.correct)}“ – nicht wie „${esc(step.trap)}“. ${esc(step.hint)}</p>`;
   }else if(wordStep){
-    const typed=step.type==='type'?`<p>${good?'Gelesen':`Du hast „${esc(String(value).trim())}“ getippt – gelesen`} wird es etwa „${esc(step.correct)}“.</p>`:'';
+    const typed=step.type==='type'?`<p>${good?'Gelesen':`Du hast „${esc(String(value).trim())}“ getippt – gelesen`} wird es etwa „${esc(step.correct)}“.</p>`
+      :keyboardStep&&!good?`<p>Du hast „<span lang="uk">${esc(String(value).trim())}</span>“ getippt.</p>`:'';
     body=`<div class="path-solution"><span lang="uk">${esc(step.word)}</span> = ${esc(step.meaning)}</div>${typed}${pathBreakdownMarkup(step)}`;
-  }else body=`<p>${esc(step.explain||'')}</p>`;
+  }else body=`<p>${keyboardStep?`Du hast „<span lang="uk">${esc(String(value).trim())}</span>“ getippt. `:''}${esc(step.explain||'')}</p>`;
   feedback.innerHTML=`${head}${body}<div class="actions path-actions">${audio?'<button class="btn" id="pathListenWord" type="button">🔊 Original</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
   const listen=document.getElementById('pathListenWord');
   if(listen){const meta=window.UKRAINIAN_WORD_AUDIO_META?.[alphabetWordNorm(step.word)];if(meta)markHumanAudioButton(listen,meta);listen.onclick=()=>pathPlay(audio)}
@@ -301,11 +340,13 @@ function renderPathDone(){
   const firstTry=answered.filter(result=>result.good).length;
   const words=C.uniq(run.results.filter(result=>result.step.word).map(result=>result.step.word)).map(text=>PATH_API.WORDS.find(word=>word.w===text));
   const known=PATH_API.knownLetters(PATH).length,next=PATH_API.nextLessonIndex(PATH),summary=PATH_API.srsSummary(PATH,now);
-  const check=run.kind==='check',failed=check&&!run.passed,review=run.kind==='review',practice=run.kind==='practice';
-  const lesson=!practice&&!review&&!failed?PATH_API.LESSONS[run.index]:null;
+  const check=run.kind==='check',failed=check&&!run.passed,review=run.kind==='review',practice=run.kind==='practice',typing=run.kind==='typing';
+  const lesson=!practice&&!review&&!typing&&!failed?PATH_API.LESSONS[run.index]:null;
   const finale=next<0&&!!lesson&&run.index===PATH_API.LESSONS.length-1;
-  const title=review?'Auffrischung geschafft':practice?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
-  const lead=review
+  const title=typing?'Tastaturtraining geschafft':review?'Auffrischung geschafft':practice?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
+  const lead=typing
+    ?`${answered.length} Eingaben mit der ukrainischen Tastatur, ${firstTry} auf Anhieb richtig.`
+    :review
     ?`${answered.length} ${answered.length===1?'Buchstabe':'Buchstaben'} aus dem Gedächtnis geholt, ${firstTry} auf Anhieb. Was saß, kommt mit größerem Abstand wieder; was nicht saß, schon morgen.`
     :practice
       ?(run.review?`${words.length} Wörter wiederholt – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`${words.length} neue Wörter gelesen – alle mit Buchstaben, die du schon kennst.`)
@@ -323,11 +364,11 @@ function renderPathDone(){
   const primary=next>=0
     ?`<button class="btn primary xl" id="pathContinue" type="button">${failed?`Lektion ${next+1} starten`:`Weiter: Lektion ${next+1}`}</button>`
     :`<button class="btn primary xl" id="pathPracticeAgain" type="button">${PATH_API.freshWords(PATH).length<PATH_API.FRESH_MINIMUM?'Wiederholung':'Lesetraining'}</button>`;
-  shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}" data-path-kind="${esc(run.kind)}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':review?'🧠':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
+  shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}" data-path-kind="${esc(run.kind)}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':review?'🧠':typing?'⌨️':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
 ${lesson?`<div class="path-new-letters" lang="uk" aria-label="Neue Buchstaben">${lesson.letters.map(letter=>`<span><b>${esc(letter)}</b><small lang="de">${esc(PATH_API.LETTER_INFO[letter].say)}</small></span>`).join('')}</div>`:''}
-<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>Wörter gelesen</span><b>${words.length}</b></div><div><span>${review?'gefestigt':'Buchstaben'}</span><b>${review?summary.secure:known} / 33</b></div></div>
+<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>${typing?'Wörter geschrieben':'Wörter gelesen'}</span><b>${words.length}</b></div><div><span>${review?'gefestigt':'Buchstaben'}</span><b>${review?summary.secure:known} / 33</b></div></div>
 ${spacing}
-${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
+${words.length?`<h2>${typing?'Das hast du gerade geschrieben':'Das hast du gerade gelesen'}</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
 <div class="actions path-actions">${primary}<button class="btn" id="pathHome" type="button">Zur Übersicht</button></div></section></div>`,{navVisible:false});
   document.getElementById('pathHome').onclick=()=>{pathRun=null;screen='home';render()};
   document.getElementById('pathContinue')?.addEventListener('click',()=>startPathLesson(next));
@@ -338,7 +379,7 @@ ${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${
 // Die Methoden hinter dem Pfad – sichtbar gemacht, mit Quelle. Belegt ist ihre
 // Wirkung allgemein, nicht die dieser App im Besonderen; das steht auch so da.
 const PATH_SCIENCE=[
-  ['Abrufen statt wiedererkennen','Du tippst die Lesung selbst, statt nur auszuwählen. Was man aus dem Gedächtnis holt, hält deutlich länger als das, was man nur wiedererkennt oder erneut liest.','Roediger & Karpicke 2006; Kang, McDermott & Roediger 2007'],
+  ['Abrufen statt wiedererkennen','Du tippst die Lesung selbst – und mit eingerichteter ukrainischer Tastatur auch Buchstaben und Wörter –, statt nur auszuwählen. Was man aus dem Gedächtnis holt, hält deutlich länger als das, was man nur wiedererkennt oder erneut liest.','Roediger & Karpicke 2006; Kang, McDermott & Roediger 2007'],
   ['Verteilt wiederholen','Jeder Buchstabe kommt nach 1, 3, 7, 14, 30 und 60 Tagen wieder. Ein Fehler setzt ihn auf morgen zurück. Verteilte Abrufe schlagen gehäuftes Üben am selben Tag.','Cepeda et al. 2006; Rawson & Dunlosky 2011'],
   ['Mit der Hand schreiben','Neue Zeichen fährst du mit dem Finger nach und schreibst sie später aus dem Gedächtnis. Wer Zeichen schreibt, erkennt sie sicherer als wer sie nur ansieht oder tippt.','Longcamp et al. 2005, 2008; Wiley & Rapp 2021'],
   ['Erst raten, dann lernen','Bei den „falschen Freunden“ rätst du zuerst. Ein Irrtum, der sofort korrigiert wird, bleibt besonders gut haften.','Richland, Kornell & Kao 2009; Butterfield & Metcalfe 2001'],
@@ -347,6 +388,29 @@ const PATH_SCIENCE=[
 ];
 function pathScienceMarkup(){
   return `<details class="card path-science" id="pathScience"><summary><span>So lernst du hier – und warum</span><small>Sechs Methoden aus der Lernforschung</small></summary><ol>${PATH_SCIENCE.map(([title,text,source])=>`<li><b>${esc(title)}</b><p>${esc(text)}</p><cite>${esc(source)}</cite></li>`).join('')}</ol><p class="muted path-meta">Belegt ist die Wirkung dieser Methoden allgemein – nicht die dieser App im Besonderen. Die vollständigen Quellen stehen im README des Projekts.</p></details>`;
+}
+
+// Schreiben mit der ukrainischen Tastatur des Handys. Freiwillig: Erst wenn der
+// Tastaturtest klappt, kommen Tipp-Aufgaben in die Durchgänge.
+function pathKeyboardMarkup(){
+  const layout=`<div class="path-kbd-layout" lang="uk" aria-label="Tastenbelegung der ukrainischen Tastatur">${PATH_API.KBD_LAYOUT.map(row=>`<span>${[...row].map(key=>`<i>${esc(key)}</i>`).join('')}</span>`).join('')}</div><p class="muted path-meta">ґ: г gedrückt halten.</p>`;
+  if(PATH.keyboard===true)return `<section class="card path-keyboard" id="pathKeyboard" data-path-keyboard="on"><div class="section-title"><h2>Ukrainische Tastatur</h2><small>eingeschaltet</small></div><p class="muted">In Lektionen, Lesetraining und Auffrischung schreibst du jetzt auch selbst: Buchstaben, Wörter und Diktat.</p><div class="actions">${PATH_API.doneCount(PATH)?'<button class="btn primary" id="pathTyping" type="button">Tastaturtraining</button>':''}<button class="btn" id="pathKbdOff" type="button">Ausschalten</button></div>${layout}</section>`;
+  return `<section class="card path-keyboard" id="pathKeyboard" data-path-keyboard="off"><div class="section-title"><h2>Auf Ukrainisch tippen</h2><small>freiwillig</small></div><p class="muted">Mit der ukrainischen Tastatur deines Handys schreibst du Buchstaben und Wörter selbst. Füge sie hinzu und teste sie hier – dann kommen Schreibaufgaben dazu.</p><details class="path-kbd-help"><summary>Tastatur hinzufügen: so geht’s</summary><p><b>iPhone:</b> Einstellungen → Allgemein → Tastatur → Tastaturen → Tastatur hinzufügen → Ukrainisch. Beim Tippen mit 🌐 umschalten.</p><p><b>Android (Gboard):</b> Einstellungen → System → Sprachen und Eingabe → Bildschirmtastatur → Gboard → Sprachen → Tastatur hinzufügen → Ukrainisch. Beim Tippen 🌐 antippen oder die Leertaste gedrückt halten. Je nach Gerät heißen die Menüs etwas anders.</p></details><form class="path-type" id="pathKbdSetup" autocomplete="off"><input id="pathKbdTest" type="text" lang="uk" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="12" aria-label="Tastaturtest: tippe так" placeholder="tippe: так"><button class="btn primary" id="pathKbdTestSubmit" type="submit">Testen</button></form><div class="path-kbd-hint" id="pathKbdStatus" role="status" aria-live="polite"></div>${layout}</section>`;
+}
+function wirePathKeyboard(){
+  document.getElementById('pathTyping')?.addEventListener('click',()=>startPathTyping());
+  document.getElementById('pathKbdOff')?.addEventListener('click',()=>{PATH.keyboard=false;savePathProgress();render()});
+  const form=document.getElementById('pathKbdSetup');
+  if(!form)return;
+  form.onsubmit=event=>{
+    event.preventDefault();
+    const input=document.getElementById('pathKbdTest'),status=document.getElementById('pathKbdStatus'),problem=PATH_API.kbdDiagnose(input.value);
+    if(!input.value.trim())return;
+    if(problem){status.textContent=pathKeyboardProblem(problem);return}
+    if(!PATH_API.kbdMatch('так',input.value)){status.textContent='Die Tastatur stimmt – tippe jetzt genau так (t, a, k = „ja“).';return}
+    PATH.keyboard=true;savePathProgress();render();
+    if(typeof toast==='function')toast('Ukrainische Tastatur erkannt – Schreibaufgaben sind eingeschaltet.');
+  };
 }
 
 function pathHomeMarkup(){
@@ -371,7 +435,7 @@ function pathHomeMarkup(){
   const list=`<section class="card"><div class="section-title"><h2>Der Weg</h2><small>33 Buchstaben in 8 Lektionen</small></div><ol class="path-list">${PATH_API.LESSONS.map((row,index)=>{const state=pathLessonState(index);return `<li><button class="path-row ${state}" data-path-lesson="${index}" type="button" ${state==='locked'?'disabled':''} aria-label="Lektion ${index+1}: ${esc(row.title)}${state==='done'?', abgeschlossen – nochmal üben':state==='locked'?', noch gesperrt':', jetzt starten'}"><span class="path-badge" aria-hidden="true">${state==='done'?'✓':state==='locked'?'🔒':index+1}</span><span class="path-row-text"><b>${esc(row.title)}</b><small lang="uk">${row.letters.join(' ')}</small></span><span class="path-row-action">${state==='done'?'Nochmal':state==='current'?'Start':''}</span></button></li>`}).join('')}</ol></section>`;
   const recent=read.slice().sort((a,b)=>(PATH.words[b.w]?.last||0)-(PATH.words[a.w]?.last||0)).slice(0,12);
   const trophy=read.length?`<section class="card"><div class="section-title"><h2>Das kannst du schon lesen</h2><small>${read.length} Wörter</small></div><div class="path-chips">${recent.map(word=>`<span><b lang="uk">${esc(word.w)}</b><small>${esc(word.de)}</small></span>`).join('')}</div>${read.length>recent.length?`<p class="muted path-meta">und ${read.length-recent.length} weitere</p>`:''}</section>`:'';
-  return hero+list+trophy+pathScienceMarkup();
+  return hero+list+pathKeyboardMarkup()+trophy+pathScienceMarkup();
 }
 
 function installLearningPath(){
@@ -395,6 +459,7 @@ function installLearningPath(){
     fragment.appendChild(details);
     topbarEl.after(fragment);
     document.getElementById('pathReview')?.addEventListener('click',()=>startPathReview());
+    wirePathKeyboard();
     document.getElementById('pathStart')?.addEventListener('click',()=>startPathLesson(PATH_API.nextLessonIndex(PATH)));
     document.getElementById('pathPractice')?.addEventListener('click',()=>startPathPractice());
     document.getElementById('pathCheck')?.addEventListener('click',()=>startPathCheck(PATH_API.nextLessonIndex(PATH)));
@@ -427,6 +492,7 @@ function installLearningPath(){
     startPractice:startPathPractice,
     startCheck:startPathCheck,
     startReview:startPathReview,
+    startTyping:startPathTyping,
     // Nur im Debugmodus: der aktuelle Schritt samt Lösung, für E2E-Tests.
     currentStep:()=>DEBUG_LEARNING&&pathRun?structuredClone(pathRun.steps[pathRun.pos]||null):null,
     runLength:()=>pathRun?pathRun.steps.length:0,
