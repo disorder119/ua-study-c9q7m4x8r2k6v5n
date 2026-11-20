@@ -559,12 +559,20 @@ test('writing from memory uses an honest self-check and offers a way without dra
 test('listening: without a reachable recording or with sound off the same recall works silently',async({page})=>{
   const letters=lettersOf(1);
   // Fach 1, reviews 1 → Hören.
+  // Die Aufnahme ist nicht erreichbar – der Ladeversuch scheitert hier erst nach
+  // anderthalb Sekunden, damit die Hör-Aufgabe sicher zu sehen ist, bevor die App umstellt.
+  let attempts=0;
+  await page.route(url=>!/^https?:\/\/127\.0\.0\.1/.test(url.href),async route=>{attempts++;await new Promise(resolve=>setTimeout(resolve,1500));await route.abort().catch(()=>{})});
   await seedProgress(page,{lessons:1,srs:{...planFor(letters,{box:2,due:5}),'К':{box:1,due:0,reviews:1}}});
   await page.locator('#pathReview').click();
-  // Die Aufnahme ist im Test blockiert: Die App stellt den Schritt von selbst ohne
-  // Ton – sofort bei einem Ladefehler, spätestens nach fünf Sekunden ohne Ton.
   expect((await currentStep(page)).type).toBe('listen');
+  await expect(page.locator('#pathPlay')).toBeVisible();
+  // Solange nichts zu hören war, lässt sich nicht antworten.
+  await expect(page.locator('[data-path-ans="0"]')).toBeDisabled();
+  // Die App stellt den Schritt von selbst ohne Ton – sofort bei einem Ladefehler,
+  // spätestens nach fünf Sekunden Stille.
   await page.waitForFunction(()=>window.AlphabetLabPath.currentStep()?.type==='letter',null,{timeout:12000});
+  expect(attempts,'die Aufnahme wurde wirklich angefragt').toBeGreaterThan(0);
   const step=await currentStep(page);
   expect(step.letter).toBe('К');expect(step.srsLetter).toBe('К');
   await expect(page.locator('#pathPlay')).toHaveCount(0);
