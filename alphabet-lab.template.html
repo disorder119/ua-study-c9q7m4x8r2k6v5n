@@ -46,10 +46,15 @@
     .path-new-letters{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px 0}.path-new-letters span{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:8px 8px;border-radius:14px;border:1px solid #78c591;background:#f0fbf4}.path-new-letters b{font-size:30px;line-height:1.1}.path-new-letters small{font-size:11px;color:var(--muted);max-width:86px;line-height:1.2}
     .path-result-grid{margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.path-result-grid>div{border:1px solid var(--line);border-radius:14px;padding:11px 8px;background:#f8fafc;display:flex;flex-direction:column;gap:3px}.path-result-grid span{font-size:12px;color:var(--muted);line-height:1.25}.path-result-grid b{font-size:18px}
     .path-lesson .btn,.path-hero .btn{min-height:44px}.path-lesson .lesson-head .btn{min-width:44px;padding-left:8px;padding-right:8px;font-size:16px}
+    .path-type{display:flex;gap:8px;justify-content:center;align-items:stretch;margin:16px auto 0;width:100%;max-width:420px}.path-type input{flex:1;min-width:0;min-height:52px;padding:10px 14px;border:2px solid #c3cad6;border-radius:14px;font-size:20px;font-weight:750;text-align:center;color:var(--ink);background:#fff}.path-type input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,111,235,.15)}.path-type input.correct{border-color:#79c793;background:#eaf8ef;color:#105c2b;opacity:1}.path-type input.wrong{border-color:#f1a59c;background:#fff0ee;color:#8f1e15;opacity:1}.path-type .btn{min-height:52px}
+    .path-trace{display:flex;justify-content:center;margin:14px 0 4px}.path-trace-canvas{display:block;width:min(100%,340px);height:210px;border:2px dashed #c3cad6;border-radius:18px;background:#fff;touch-action:none;-webkit-user-select:none;user-select:none;cursor:crosshair}
+    .path-stage>.path-skip{display:flex;margin:6px auto 0}.path-skip[hidden]{display:none}
+    .path-science>summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;font-weight:850;font-size:18px}.path-science>summary::-webkit-details-marker{display:none}.path-science>summary span::after{content:' ▾'}.path-science[open]>summary span::after{content:' ▴'}.path-science>summary small{font-weight:600;color:var(--muted);font-size:13px}
+    .path-science ol{margin:14px 0 0;padding-left:22px;display:grid;gap:12px}.path-science li p{margin:3px 0 2px;color:var(--muted);line-height:1.45}.path-science cite{font-size:12px;color:var(--muted);font-style:normal;opacity:.85}
     .path-answers .answer.correct:disabled,.path-answers .answer.wrong:disabled{opacity:1}
     .path-skip{display:inline-flex;align-items:center;min-height:44px;margin-top:4px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:14px;font-weight:750;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.path-word-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;text-align:left}.path-word-list li{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;padding:8px 11px}.path-word-list span{font-size:19px;font-weight:850}.path-word-list small{color:var(--muted);font-size:12px}
     @media(max-width:760px){.path-stage{min-height:calc(100dvh - 170px)}.path-result-grid>div{padding:9px 6px}.path-result-grid b{font-size:15px}}
-    @media(max-width:340px){.path-slot{width:38px;height:48px;font-size:22px}.path-tile{min-width:44px;height:50px;font-size:22px}.path-word-answers .answer{font-size:20px}.path-say{font-size:20px}}
+    @media(max-width:340px){.path-type input{font-size:18px}.path-trace-canvas{height:190px}.path-slot{width:38px;height:48px;font-size:22px}.path-tile{min-width:44px;height:50px;font-size:22px}.path-word-answers .answer{font-size:20px}.path-say{font-size:20px}}
     .alphabet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:6px;margin-top:16px}
     .alphabet-grid .alphabet-key{min-height:58px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
     .alphabet-grid .alphabet-key strong{font-size:22px;line-height:1}
@@ -68,9 +73,9 @@
   <main class="app" id="app"></main>
   <script>window.__ALPHABET_BUILD_ID__='__BUILD_ID__';window.__ALPHABET_APP_VERSION__='6.1.0';</script>
   <script defer src="ukrainischkurs-native-audio.js?v=__BUILD_ID__"></script>
-  <script defer src="alphabet-path-data.js?v=__BUILD_ID__"></script>
   <script defer src="alphabet-core.bundle.js?v=__BUILD_ID__"></script>
   <script defer src="alphabet-app.bundle.js?v=__BUILD_ID__"></script>
+  <script defer src="alphabet-path.bundle.js?v=__BUILD_ID__"></script>
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./alphabet-lab-sw.js?v=__BUILD_ID__').catch(()=>{});}</script>
 </body>
 </html>

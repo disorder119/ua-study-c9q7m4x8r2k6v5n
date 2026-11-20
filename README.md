@@ -1,4 +1,4 @@
-# Alphabet Lab V7
+# Alphabet Lab V7.1
 
 Dieses Repository enthält zwei getrennte Lernoberflächen:
 
@@ -6,6 +6,74 @@ Dieses Repository enthält zwei getrennte Lernoberflächen:
 - `ukrainischkurs-app.html` – der bestehende vollständige A1-Kurs; er bleibt unabhängig erhalten.
 
 Die Repository-Root führt zum Alphabet Lab.
+
+## V7.1 · Belegte Lernmethoden im Lernpfad
+
+V7 hat die Reihenfolge umgedreht (erst zeigen, dann fragen). V7.1 macht den Pfad
+umfangreicher und richtet ihn an Methoden aus, deren Wirkung in der
+Lernforschung gut belegt ist. Jede Methode ist in der App unter „So lernst du
+hier – und warum“ mit Quelle genannt.
+
+| Methode | Umsetzung im Pfad | Beleg |
+| --- | --- | --- |
+| **Abrufübung** (testing effect): Was man aus dem Gedächtnis holt, hält länger als das, was man erneut liest. | Jeder Schritt nach der Lernkarte ist ein Abruf; es gibt keine reinen Leseschleifen. | Roediger & Karpicke (2006) |
+| **Freier Abruf statt Auswahl**: Anspruchsvollerer Abruf wirkt stärker als Wiedererkennen aus Optionen. | „Tippe, wie man das liest“: Die Lesung wird frei eingetippt. Großzügig bei gleichwertigen Schreibweisen (w/v, sch/sh, ja/ya), streng bei genau den Fallen (Н ist nie „h“, Р nie „p“, Г nie „g“). Ratewahrscheinlichkeit praktisch null. | Kang, McDermott & Roediger (2007); Slamecka & Graf (1978) |
+| **Verteiltes Wiederholen** und **successive relearning**: Abrufe über Tage verteilt schlagen gehäuftes Üben. | Fächersystem je Buchstabe: richtig → nächstes Fach, fällig nach 1, 3, 7, 14, 30, 60 Tagen; falsch → Fach 1, morgen wieder. Die Auffrischung steht auf der Startseite VOR der nächsten Lektion. Gerechnet wird in lokalen Kalendertagen. | Cepeda et al. (2006); Rawson & Dunlosky (2011); Leitner (1972) |
+| **Handschrift**: Wer neue Zeichen schreibt, erkennt sie sicherer als wer sie nur ansieht oder tippt. | Zeichen mit neuer Form werden direkt nach der Lernkarte mit dem Finger nachgefahren; in der Auffrischung werden sie aus dem Gedächtnis geschrieben und an der Vorlage selbst kontrolliert. | Longcamp, Zerbato-Poudou & Velay (2005); Longcamp et al. (2008); Wiley & Rapp (2021) |
+| **Vortest und Hyperkorrektur**: Erst raten, dann die Auflösung – sofort korrigierte Irrtümer haften besonders gut. | Bei den sechs „falschen Freunden“ (Н Р С В У Х) wird vor der Lernkarte geraten. Ausdrücklich unbewertet: kein Fehler, keine Strafwiederholung, kein Eintrag im Wiederholungsplan. | Richland, Kornell & Kao (2009); Butterfield & Metcalfe (2001) |
+| **Interleaving ähnlicher Elemente**: Verwechselbares nebeneinander macht Unterschiede sichtbar. | In der Auffrischung stehen Verwechslungspartner (И/І, Г/Ґ, Ш/Щ, Ц/Ч, Ю/Я) direkt hintereinander und dienen einander als Distraktoren. | Kornell & Bjork (2008); Carvalho & Goldstone (2014) |
+| **Sofortige, erklärende Rückmeldung** | Nach jedem Fehler: Lösung, Begründung, Zerlegung des Wortes; derselbe Inhalt kommt später in anderer Form noch einmal. | Pashler, Cepeda, Wixted & Rohrer (2005) |
+
+Dazu kommen Hör-Aufgaben („Welcher Buchstabe ist das?“) ausschließlich mit
+menschlichen Originalaufnahmen. Antworten werden erst freigegeben, wenn der Laut
+wirklich zu hören war. Ist keine Aufnahme erreichbar, der Ton ausgeschaltet oder
+kommt fünf Sekunden lang nichts, wird derselbe Abruf ohne Ton gestellt; „Ohne
+Ton antworten“ steht immer zur Verfügung. `Ь` wird nie über das Ohr abgefragt.
+
+Mehr Lesestoff: 446 Wörter (vorher 323), darunter ukrainische Städte, Länder
+und Alltagswörter. Wörter, deren Bedeutung sich nicht aus dem Klang erschließt
+(так, вода, вхід), werden nicht geraten, sondern gelesen und getippt; die
+Bedeutung steht in der Auflösung.
+
+### Was davon belegt ist – und was nicht
+
+- Belegt ist die Wirkung dieser Methoden **allgemein**, überwiegend an anderen
+  Lerninhalten und Lernenden. Dass diese App damit zu besserem oder
+  dauerhafterem Lernen führt, ist **nicht gemessen**. Dunlosky et al. (2013)
+  stufen Abrufübung und verteiltes Lernen als die beiden am besten belegten
+  Techniken ein; die übrigen hier haben eine schmalere Datenbasis.
+- Die Handschrift-Studien arbeiten mit Stift und Papier oder Tablet; das
+  Nachfahren mit dem Finger auf dem Telefon ist dem ähnlich, aber nicht
+  dasselbe.
+- Schreiben aus dem Gedächtnis wird per **Selbstkontrolle** bewertet. Eine
+  automatische Bewertung freier Handschrift wäre unzuverlässig; die
+  Selbsteinschätzung kann zu milde ausfallen.
+- Die Merksätze auf den Lernkarten sind sprachliche Eselsbrücken. Gut belegt
+  sind in die Buchstabenform eingebettete Bilder (Ehri, Deffner & Wilce 1984;
+  Shmidman & Ehri 2010); solche Bilder enthält die App nicht. Reine
+  Schlüsselwort-Mnemonik stufen Dunlosky et al. (2013) als wenig nachhaltig ein.
+- Die Abstände 1/3/7/14/30/60 Tage sind eine übliche Faustregel, kein für diese
+  Lernenden optimierter Plan.
+
+### Quellen
+
+- Butterfield, B., & Metcalfe, J. (2001). Errors committed with high confidence are hypercorrected. *Journal of Experimental Psychology: Learning, Memory, and Cognition, 27*(6), 1491–1494.
+- Carvalho, P. F., & Goldstone, R. L. (2014). Putting category learning in order: Category structure and temporal arrangement affect the benefit of interleaved over blocked study. *Memory & Cognition, 42*(3), 481–495.
+- Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. *Psychological Bulletin, 132*(3), 354–380.
+- Dunlosky, J., Rawson, K. A., Marsh, E. J., Nathan, M. J., & Willingham, D. T. (2013). Improving students’ learning with effective learning techniques. *Psychological Science in the Public Interest, 14*(1), 4–58.
+- Ehri, L. C., Deffner, N. D., & Wilce, L. S. (1984). Pictorial mnemonics for phonics. *Journal of Educational Psychology, 76*(5), 880–893.
+- Kang, S. H. K., McDermott, K. B., & Roediger, H. L. (2007). Test format and corrective feedback modify the effect of testing on long-term retention. *European Journal of Cognitive Psychology, 19*(4–5), 528–558.
+- Kornell, N., & Bjork, R. A. (2008). Learning concepts and categories: Is spacing the “enemy of induction”? *Psychological Science, 19*(6), 585–592.
+- Leitner, S. (1972). *So lernt man lernen.* Freiburg: Herder.
+- Longcamp, M., Zerbato-Poudou, M.-T., & Velay, J.-L. (2005). The influence of writing practice on letter recognition in preschool children: A comparison between handwriting and typing. *Acta Psychologica, 119*(1), 67–79.
+- Longcamp, M., Boucard, C., Gilhodes, J.-C., Anton, J.-L., Roth, M., Nazarian, B., & Velay, J.-L. (2008). Learning through hand- or typewriting influences visual recognition of new graphic shapes: Behavioral and functional imaging evidence. *Journal of Cognitive Neuroscience, 20*(5), 802–815.
+- Pashler, H., Cepeda, N. J., Wixted, J. T., & Rohrer, D. (2005). When does feedback facilitate learning of words? *Journal of Experimental Psychology: Learning, Memory, and Cognition, 31*(1), 3–8.
+- Rawson, K. A., & Dunlosky, J. (2011). Optimizing schedules of retrieval practice for durable and efficient learning: How much is enough? *Journal of Experimental Psychology: General, 140*(3), 283–302.
+- Richland, L. E., Kornell, N., & Kao, L. S. (2009). The pretesting effect: Do unsuccessful retrieval attempts enhance learning? *Journal of Experimental Psychology: Applied, 15*(3), 243–257.
+- Roediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. *Psychological Science, 17*(3), 249–255.
+- Shmidman, A., & Ehri, L. (2010). Embedded picture mnemonics to learn letters. *Scientific Studies of Reading, 14*(2), 159–182.
+- Slamecka, N. J., & Graf, P. (1978). The generation effect: Delineation of a phenomenon. *Journal of Experimental Psychology: Human Learning and Memory, 4*(6), 592–604.
+- Wiley, R. W., & Rapp, B. (2021). The effects of handwriting experience on literacy learning. *Psychological Science* (online 29. Juni 2021). https://doi.org/10.1177/0956797621993111
 
 ## V7 · Lernpfad: erst zeigen, dann fragen, dann lesen
 
@@ -15,7 +83,7 @@ Zeichen, das ihm niemand gezeigt hatte, die Startseite war ein Prüfungs-Dashboa
 mit null Prozent überall, und nach hunderten Fragen gab es immer noch nichts zu
 LESEN. Der Lernpfad ist deshalb der neue Haupteinstieg:
 
-**zeigen → sofort ausprobieren → echte Wörter entziffern → fertig (≈ 5 Minuten)**
+**zeigen → sofort ausprobieren → echte Wörter entziffern → fertig (5–8 Minuten)**
 
 - **8 Lektionen, 33 Buchstaben.** Lektion 1 beginnt mit sechs Zeichen, die fast
   wie im Deutschen funktionieren (А О К М Т Е); danach kommen die „falschen
@@ -24,7 +92,7 @@ LESEN. Der Lernpfad ist deshalb der neue Haupteinstieg:
 - **Jeder Buchstabe wird erst erklärt** (Lernkarte mit Lautangabe, Merksatz,
   Beispielwort und – wo vorhanden – menschlicher Originalaufnahme) und erst
   danach gefragt. Kein Distraktor zeigt ein Zeichen, das noch nicht dran war.
-- **323 echte ukrainische Wörter**, fast durchweg Internationalismen (ресторан,
+- **446 echte ukrainische Wörter** (V7: 323), überwiegend Internationalismen (ресторан,
   таксі, шоколад): Wer sie entziffert, versteht sie. Ein Wort erscheint erst,
   wenn JEDER seiner Buchstaben eingeführt ist – die Lektion eines Wortes wird aus
   seinen Buchstaben berechnet, nie von Hand gesetzt.
@@ -36,9 +104,11 @@ LESEN. Der Lernpfad ist deshalb der neue Haupteinstieg:
 - **Fehler werden Lernmaterial:** Die Auflösung erklärt das Zeichen, und derselbe
   Inhalt kommt ein paar Schritte später genau einmal wieder – in ANDERER
   Aufgabenform, damit nicht die Antwort von eben wiedererkannt wird.
-- **Fünf Aufgabenformen** statt einer: Laut zum Zeichen, Zeichen zum Laut, Wort
+- **Viele Aufgabenformen** statt einer: Laut zum Zeichen, Zeichen zum Laut, Wort
   lesen (Bedeutung), Wort aussprechen (mit Fallen wie „pectopah“ für ресторан),
-  Wort finden, Wort aus Plättchen schreiben.
+  Wort finden, Wort aus Plättchen schreiben – seit V7.1 außerdem Lesung frei
+  tippen, Buchstaben nachfahren und aus dem Gedächtnis schreiben, Laut hören
+  und der Vortest bei den falschen Freunden.
 - **Kurztest für Vorwissen:** „Kenne ich schon“ prüft jeden Buchstaben der
   Lektion einmal einzeln und in drei Wörtern. Höchstens ein Fehler – dann zählt
   die Lektion als erledigt; sonst ändert sich nichts.
@@ -53,11 +123,16 @@ dem Pfad also nicht bei null an.
 
 Technik: Der Pfadfortschritt liegt in einem eigenen kleinen Speicherschlüssel
 (`uk-alpha-path-v1`) mit eigener Normalisierung; beschädigte Daten führen zu
-einem sauberen Neustart des Pfads, ohne den Engine-Zustand zu berühren. Die
-Daten (Lektionen, Lautangaben, Wörter) stehen in `alphabet-path-data.js`, die
-Logik in `alphabet-core-v7-path.js`, die Oberfläche in `alphabet-app-v7-path.js`.
-Fehlt die Datendatei, startet die App ohne Lernpfad mit der bisherigen
-Startseite.
+einem sauberen Neustart des Pfads, ohne den Engine-Zustand zu berühren.
+Fortschritt aus V7 (ohne Wiederholungsplan) wird beim ersten Start übernommen:
+Alle schon eingeführten Buchstaben sind dann sofort zur Auffrischung fällig.
+
+Der Lernpfad ist ein eigenes Bundle (`alphabet-path.bundle.js`), das nach dem
+App-Bundle lädt und sich in dessen Startseite einhängt: Daten in
+`alphabet-path-data.js`, Logik in `alphabet-core-v7-path.js`, Wiederholungsplan
+in `alphabet-core-v7-review.js`, Schreibfläche in `alphabet-app-v7-trace.js`,
+Oberfläche in `alphabet-app-v7-path.js`. Fehlt das Bundle, startet die App ohne
+Lernpfad mit der bisherigen Startseite.
 
 Nicht belegt ist, was nur echte Lernende zeigen können: wie viel nach Tagen und
 Wochen hängen bleibt. Die Tests sichern Regeln (Lesbarkeit, keine Wiederholung,
@@ -191,10 +266,10 @@ Die produktive App wird deterministisch aus Source-Dateien erzeugt:
 - `alphabet-lab-sw.template.js` → `alphabet-lab-sw.js`
 - Core-Sources → `alphabet-core.bundle.js`
 - App-Sources → `alphabet-app.bundle.js`
+- Lernpfad-Sources → `alphabet-path.bundle.js`
 - Build-Metadaten → `alphabet-build.json`
 
-Unverändert ausgeliefert, aber Teil der Build-ID: `ukrainischkurs-native-audio.js`
-und `alphabet-path-data.js`.
+Unverändert ausgeliefert, aber Teil der Build-ID: `ukrainischkurs-native-audio.js`.
 
 Die Bundles enthalten seit V7 keine reinen Kommentar- und Leerzeilen und keine
 Code-Einrückung mehr. Der Build erkennt dafür Strings, Regex-Literale,
@@ -259,8 +334,19 @@ ungelesenen Wörtern, Kurztest-Regeln, Speichern/Laden, beschädigte Daten) und
 der ersten Frage, Fehler und spätere Wiederholung, Lesetraining, Kurztest,
 Abbruch, beschädigter Speicher, Tastatur, 320 px ohne Überlauf und mit
 ausreichenden Touchflächen in allen Aufgabenformen, Start ohne Datendatei).
-Die Bundle-Budgets sind unverändert; `alphabet-path-data.js` hat ein eigenes
-zusätzliches Budget.
+Die Budgets für Core- und App-Bundle sind unverändert; das Lernpfad-Bundle hat
+ein eigenes zusätzliches Budget.
+
+V7.1 erweitert beide Dateien: Tipp-Abruf (gültige Schreibweisen, über 300
+automatisch erzeugte Lookalike-Fallen, die alle abgelehnt werden müssen),
+Wiederholungsplan (Abstände, Rückfall bei Fehlern, Kalendertage, Übernahme alten
+Fortschritts, beschädigte Daten), Reihenfolge der Auffrischung, Bewertung des
+Nachschreibens, Vortest und Schreibfläche in den Lektionen – und im Browser:
+Vortest ohne Wertung, Tippen mit Falle und Schreibvarianten, Nachschreiben mit
+Überspringen, Auffrischung über Tage, Selbstkontrolle, Hören mit und ohne
+erreichbare Aufnahme (die Wiedergabe selbst nur in Chromium), alles auch auf
+320 px. Die Pfad-Tests laufen ohne Service Worker, damit externe Aufnahmen nicht
+am Test vorbei aus dem echten Netz geladen werden.
 
 Der Readiness-Cache ist seit V7 zusätzlich an den Tag gebunden. Vorher galt er
 allein über die Revisionsnummer und lieferte nach Tagen ohne neue Antwort einen

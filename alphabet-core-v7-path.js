@@ -46,6 +46,21 @@ const PATH_LOOKALIKE={'н':'h','р':'p','с':'c','в':'b','у':'y','х':'x'};
 // Echte Verwechslungspartner innerhalb der Kyrilliza.
 const PATH_SWAP={'и':'і','і':'и','г':'ґ','ґ':'г','ш':'щ','щ':'ш','ц':'ч','ч':'ц','б':'в','е':'є','є':'е','ю':'я','я':'ю','ї':'і','й':'і'};
 const pathSayable=word=>pathChars(word).every(ch=>PATH_TRANSLIT[ch]!==undefined);
+// Freies Tippen der Lesung (Abruf statt Auswahl). Großzügig bei gleichwertigen
+// Schreibweisen (w/v, sch/sh, ja/ya), streng bei genau den Fallen, um die es
+// geht: Н ist nie „h“, Р nie „p“, С nie „c“, В nie „b“, У nie „y“, Г nie „g“.
+const PATH_TYPE_ALT={'а':['a'],'б':['b'],'в':['w','v'],'г':['h'],'ґ':['g'],'д':['d'],'е':['e'],'є':['je','ye','ie'],'ж':['sch','zh','sh','j'],'з':['s','z'],'и':['y','i'],'і':['i'],'ї':['ji','yi','i'],'й':['j','y','i'],'к':['k'],'л':['l'],'м':['m'],'н':['n'],'о':['o'],'п':['p'],'р':['r'],'с':['s','ss'],'т':['t'],'у':['u'],'ф':['f'],'х':['ch','kh'],'ц':['z','ts','tz'],'ч':['tsch','ch','tch'],'ш':['sch','sh'],'щ':['schtsch','shch','schch','stsch'],'ь':['','j'],'ю':['ju','yu','iu'],'я':['ja','ya','ia'],'’':['']};
+const pathTypeable=word=>pathChars(word).every(ch=>PATH_TYPE_ALT[ch]!==undefined);
+function pathTypePrimary(word){return pathChars(word).map(ch=>PATH_TYPE_ALT[ch]?.[0]??'').join('')}
+function pathTypeNormalize(input){return String(input??'').toLowerCase().replace(/ß/g,'ss').replace(/[^a-z]/g,'')}
+function pathTypeMatch(word,input){
+  if(!pathTypeable(word))return false;
+  const typed=pathTypeNormalize(input);
+  if(!typed)return false;
+  return new RegExp(`^${pathChars(word).map(ch=>`(?:${PATH_TYPE_ALT[ch].join('|')})`).join('')}$`).test(typed);
+}
+// Zeichen, deren FORM ein Deutscher schon kennt – alle anderen werden nachgeschrieben.
+const PATH_FAMILIAR_SHAPES=new Set([...'АОКМТЕНРСВУХІ']);
 function pathTranslit(word,override=null){return pathChars(word).map(ch=>(override&&override[ch]!==undefined?override[ch]:PATH_TRANSLIT[ch])??'').join('')}
 
 const PATH_WORDS=PATH_WORD_ROWS.map(([w,de,flag])=>{
@@ -55,13 +70,14 @@ const PATH_WORDS=PATH_WORD_ROWS.map(([w,de,flag])=>{
   return {w,de,cog:flag!=='x',lesson,letters,sayable:pathSayable(w),buildable:plain&&w===pathLower(w)&&[...w].length>=3&&[...w].length<=8};
 });
 const PATH_WORD_BY_TEXT=new Map(PATH_WORDS.map(word=>[word.w,word]));
-// Ein Wort ohne erschließbare Bedeutung UND ohne eindeutige Lesehilfe (ґудзик)
-// taugt nur als Beispiel auf der Lernkarte, nicht als Aufgabe.
-const pathUsable=word=>word.cog||(word.sayable&&pathSayDistractors(word,()=>.5).length>=2);
+// Jedes Wort ab zwei Buchstaben taugt als Aufgabe: Wo die Bedeutung nicht
+// erschließbar ist, wird die Lesung getippt.
+const pathUsable=word=>[...word.w].length>=2&&(word.cog||pathTypeable(word.w));
 
 function pathLettersUpTo(index){return PATH_LESSONS.slice(0,Math.max(0,index+1)).flatMap(lesson=>lesson.letters)}
 // advancedOpen: null = noch nie entschieden, sonst die Wahl des Nutzers.
-function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},sound:true,practiceRuns:0,advancedOpen:null}}
+// srs: Wiederholungsfach und Fälligkeit je Buchstabe (alphabet-core-v7-review.js).
+function pathFreshProgress(){return {v:PATH_VERSION,done:{},words:{},letters:{},srs:{},sound:true,practiceRuns:0,reviewRuns:0,advancedOpen:null}}
 function pathNormalizeProgress(raw){
   const fresh=pathFreshProgress();
   if(!raw||typeof raw!=='object')return fresh;
@@ -69,8 +85,10 @@ function pathNormalizeProgress(raw){
   for(const lesson of PATH_LESSONS){const row=raw.done?.[lesson.id];if(row&&typeof row==='object')out.done[lesson.id]={at:Number(row.at)||0,runs:Math.max(1,Number(row.runs)||1)}}
   for(const [text,row] of Object.entries(raw.words||{})){if(!PATH_WORD_BY_TEXT.has(text)||!row)continue;out.words[text]={seen:Math.max(0,Number(row.seen)||0),ok:Math.max(0,Number(row.ok)||0),last:Number(row.last)||0,type:typeof row.type==='string'?row.type:''}}
   for(const [letter,row] of Object.entries(raw.letters||{})){if(!ALPHABET.includes(letter)||!row)continue;out.letters[letter]={ok:Math.max(0,Number(row.ok)||0),bad:Math.max(0,Number(row.bad)||0)}}
+  out.srs=pathSrsNormalize(raw.srs);
   out.sound=raw.sound!==false;
   out.practiceRuns=Math.max(0,Number(raw.practiceRuns)||0);
+  out.reviewRuns=Math.max(0,Number(raw.reviewRuns)||0);
   out.advancedOpen=raw.advancedOpen===true?true:raw.advancedOpen===false?false:null;
   return out;
 }
@@ -121,6 +139,43 @@ function pathStepLetter(letter,known,rng){
   return {id:`letter:${letter}`,type:'letter',letter,prompt:cue,options,correct:letter,explain:`${letter} klingt wie „${PATH_LETTER_INFO[letter].say}“. ${PATH_LETTER_INFO[letter].hint}`};
 }
 
+// Vortest für die „falschen Freunde“: erst raten, dann auflösen. Zählt nicht.
+function pathStepGuess(letter,known,rng){
+  const trap=PATH_LOOKALIKE[DATA[letter].lower];
+  if(!trap)return null;
+  const say=PATH_LETTER_INFO[letter].say;
+  const others=shuffle(uniq(known.filter(c=>c!==letter).map(c=>PATH_LETTER_INFO[c].say)).filter(text=>text!==say&&text!==trap),rng).slice(0,2);
+  return {id:`guess:${letter}`,type:'guess',ungraded:true,letter,lower:DATA[letter].lower,prompt:'Rate mal: Wie klingt dieser Buchstabe?',options:shuffle([trap,say,...others],rng),correct:say,trap,hint:PATH_LETTER_INFO[letter].hint};
+}
+// Nachschreiben mit Vorlage. Zählt nicht – es prägt die Form ein.
+function pathStepTrace(letter){
+  if(PATH_FAMILIAR_SHAPES.has(letter))return null;
+  return {id:`trace:${letter}`,type:'trace',ungraded:true,letter,lower:DATA[letter].lower,say:PATH_LETTER_INFO[letter].say};
+}
+// Hören: nur mit menschlicher Originalaufnahme. fallback ist derselbe Abruf ohne
+// Ton – für Geräte ohne Lautsprecher, ohne Netz oder Menschen, die nicht hören.
+function pathStepListen(letter,known,rng){
+  if(!HUMAN_LETTER_AUDIO_LETTERS.includes(letter))return null;
+  const fallback=pathStepLetter(letter,known,rng);
+  return {...fallback,id:`listen:${letter}`,type:'listen',prompt:'Hör zu: Welcher Buchstabe ist das?',fallback};
+}
+// Aus dem Gedächtnis schreiben, danach Selbstkontrolle an der Vorlage.
+function pathStepWrite(letter,known,rng){
+  const say=PATH_LETTER_INFO[letter].say;
+  const prompt=letter==='Ь'?'Schreibe aus dem Gedächtnis: das Weichheitszeichen.':`Schreibe aus dem Gedächtnis: den Buchstaben für „${say}“.`;
+  return {id:`write:${letter}`,type:'write',letter,lower:DATA[letter].lower,say,prompt,correct:'self-good',explain:`${letter} klingt wie „${say}“. ${PATH_LETTER_INFO[letter].hint}`,fallback:pathStepLetter(letter,known,rng)};
+}
+function pathStepType(word){
+  if(!pathTypeable(word.w)||[...word.w].length<2)return null;
+  return {id:`type:${word.w}`,type:'type',word:word.w,display:word.w,prompt:'Tippe, wie man das liest.',correct:pathTypePrimary(word.w),meaning:word.de,breakdown:pathBreakdown(word)};
+}
+// Eine Stelle für die Bewertung – getippte Lesungen haben mehrere gültige Formen.
+function pathIsCorrect(step,value){
+  if(!step)return false;
+  if(step.type==='type')return pathTypeMatch(step.word,value);
+  return value===step.correct;
+}
+
 function pathMeaningDistractors(word,pool,rng,count){
   const first=pathChars(word.w)[0],length=[...word.w].length;
   const scored=shuffle(pool.filter(other=>other.cog&&other.w!==word.w&&other.de!==word.de),rng)
@@ -159,19 +214,22 @@ function pathStepBuild(word,known,rng){
 }
 // Wortschritt in der gewünschten Form, sonst in der nächsten möglichen.
 function pathWordStep(word,type,ctx,rng){
-  const order=uniq([type,'read','say','find','build']);
+  const order=uniq([type,'read','say','type','find','build']);
   for(const kind of order){
     let step=null;
     if(kind==='read'&&word.cog)step=pathStepRead(word,ctx.pool,rng);
     else if(kind==='find'&&word.cog&&ctx.pool.length>=4)step=pathStepFind(word,ctx.pool,rng);
     else if(kind==='say')step=pathStepSay(word,rng);
+    else if(kind==='type')step=pathStepType(word);
     else if(kind==='build'&&word.cog)step=pathStepBuild(word,ctx.known,rng);
     if(step)return step;
   }
   return null;
 }
 
-const PATH_WORD_ROTATION=['read','say','read','find','read','build'];
+// Vom Leichten zum Schweren: erst wiedererkennen, dann frei abrufen.
+const PATH_WORD_ROTATION=['read','say','type','find','read','build'];
+const PATH_PRACTICE_ROTATION=['type','read','say','type','find','build'];
 
 function buildPathLesson(index,progress,rng=Math.random){
   const lesson=PATH_LESSONS[index];
@@ -187,11 +245,14 @@ function buildPathLesson(index,progress,rng=Math.random){
   // 2 · Zeigen, dann sofort ausprobieren.
   const taught=new Set(pathLettersUpTo(index-1));
   lesson.letters.forEach((letter,i)=>{
+    push(pathStepGuess(letter,known.filter(c=>taught.has(c)),rng));
     push(pathStepTeach(letter,index,known,taught,i+1,lesson.letters.length));
     taught.add(letter);
     const shown=known.filter(c=>taught.has(c));
+    push(pathStepTrace(letter));
     if(!lesson.light||i%3===2)push(pathStepSound(letter,shown,rng));
-    if(!lesson.light&&i%2===1)push(pathStepLetter(lesson.letters[i-1],shown,rng));
+    // Abwechselnd über das Ohr und über die Lautangabe zurück zum Zeichen.
+    if(!lesson.light&&i%2===1)push((i%4===1?pathStepListen(lesson.letters[i-1],shown,rng):null)||pathStepLetter(lesson.letters[i-1],shown,rng));
   });
   if(lesson.light)push(pathStepLetter(lesson.letters[lesson.letters.length-1],known,rng));
 
@@ -228,8 +289,8 @@ function buildPathPractice(progress,rng=Math.random,size=10){
   for(const word of words){
     if(steps.length>=size-weak.length)break;
     // Nie dieselbe Aufgabenform wie beim letzten Mal für dieses Wort.
-    let type=PATH_WORD_ROTATION[rotation++%PATH_WORD_ROTATION.length];
-    if(type===progress.words?.[word.w]?.type)type=PATH_WORD_ROTATION[rotation++%PATH_WORD_ROTATION.length];
+    let type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
+    if(type===progress.words?.[word.w]?.type)type=PATH_PRACTICE_ROTATION[rotation++%PATH_PRACTICE_ROTATION.length];
     push(pathWordStep(word,type,ctx,rng));
   }
   weak.forEach((letter,i)=>{const step=i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng);steps.splice(Math.min(steps.length,2+i*3),0,step)});
@@ -248,27 +309,27 @@ function buildPathCheck(index,progress,rng=Math.random){
   const push=step=>{if(step&&!steps.some(existing=>existing.id===step.id))steps.push(step)};
   shuffle(lesson.letters,rng).forEach((letter,i)=>push(i%2?pathStepLetter(letter,known,rng):pathStepSound(letter,known,rng)));
   const own=pool.filter(word=>word.lesson===index);
-  pathPickFresh(own,progress,rng,3).forEach((word,i)=>push(pathWordStep(word,['say','read','find'][i],ctx,rng)));
+  pathPickFresh(own,progress,rng,3).forEach((word,i)=>push(pathWordStep(word,['type','read','find'][i],ctx,rng)));
   return {kind:'check',index,lessonId:lesson.id,steps,allowedMistakes:PATH_CHECK_ALLOWED_MISTAKES};
 }
 function pathCheckPassed(run,results){
   if(run?.kind!=='check')return false;
-  const answered=(results||[]).filter(result=>result.step&&result.step.type!=='teach');
+  const answered=(results||[]).filter(result=>result.step&&result.step.type!=='teach'&&!result.step.ungraded);
   return answered.length>=run.steps.length&&answered.filter(result=>!result.good).length<=(run.allowedMistakes??PATH_CHECK_ALLOWED_MISTAKES);
 }
 
 // Fehler werden Lernmaterial: derselbe Inhalt kommt später noch einmal – aber in
 // einer ANDEREN Aufgabenform, damit nicht die Antwort von eben wiedererkannt wird.
 function pathRetryStep(step,run,rng=Math.random){
-  if(!step||step.retry||step.type==='teach')return null;
+  if(!step||step.retry||step.ungraded||step.type==='teach')return null;
   const index=run.index,known=pathLettersUpTo(index),pool=PATH_WORDS.filter(word=>word.lesson<=index&&pathUsable(word)),ctx={pool,known};
   const taken=new Set(run.steps.map(existing=>existing.id));
   let next=null;
   if(step.type==='sound')next=pathStepLetter(step.letter,known,rng);
-  else if(step.type==='letter')next=pathStepSound(step.letter,known,rng);
+  else if(step.type==='letter'||step.type==='listen'||step.type==='write')next=pathStepSound(step.letter,known,rng);
   else{
     const word=PATH_WORD_BY_TEXT.get(step.word);
-    const alternatives={read:['say','find','build'],say:['read','find','build'],find:['read','say','build'],build:['read','say','find']}[step.type]||['read'];
+    const alternatives={read:['say','find','type','build'],say:['read','find','type','build'],find:['read','say','type','build'],build:['read','say','find','type'],type:['read','say','find','build']}[step.type]||['read'];
     for(const kind of alternatives){const candidate=pathWordStep(word,kind,ctx,rng);if(candidate&&candidate.type!==step.type&&!taken.has(candidate.id)){next=candidate;break}}
     if(!next)next=pathWordStep(word,step.type,ctx,rng);
   }
@@ -281,19 +342,14 @@ function pathRetryStep(step,run,rng=Math.random){
 function pathApplyResult(progress,run,results,now=Date.now()){
   for(const result of results||[]){
     const step=result.step;
-    if(!step||step.type==='teach')continue;
+    if(!step||step.type==='teach'||step.ungraded)continue;
     if(step.word){const row=progress.words[step.word]||(progress.words[step.word]={seen:0,ok:0,last:0,type:''});row.seen++;if(result.good)row.ok++;row.last=now;row.type=step.type}
     else if(step.letter){const row=progress.letters[step.letter]||(progress.letters[step.letter]={ok:0,bad:0});result.good?row.ok++:row.bad++}
   }
   // Ein bestandener Kurztest zählt wie die Lektion; ein nicht bestandener ändert nichts.
   if((run?.kind==='lesson'||pathCheckPassed(run,results))&&run.lessonId){const row=progress.done[run.lessonId]||(progress.done[run.lessonId]={at:now,runs:0});row.runs++;row.at=row.at||now}
   if(run?.kind==='practice')progress.practiceRuns=(Number(progress.practiceRuns)||0)+1;
+  if(run?.kind==='review')progress.reviewRuns=(Number(progress.reviewRuns)||0)+1;
+  pathSrsApply(progress,run,results,now);
   return progress;
 }
-
-const LEARNING_PATH_API=!PATH_AVAILABLE?null:Object.freeze({
-  VERSION:PATH_VERSION,LESSONS:PATH_LESSONS,LETTER_INFO:PATH_LETTER_INFO,WORDS:PATH_WORDS,
-  lettersUpTo:pathLettersUpTo,freshProgress:pathFreshProgress,normalizeProgress:pathNormalizeProgress,
-  doneCount:pathDoneCount,nextLessonIndex:pathNextLessonIndex,highestDoneIndex:pathHighestDoneIndex,knownLetters:pathKnownLetters,wordsRead:pathWordsRead,freshWords:pathFreshWords,FRESH_MINIMUM:PATH_FRESH_MINIMUM,
-  translit:pathTranslit,buildLesson:buildPathLesson,buildPractice:buildPathPractice,buildCheck:buildPathCheck,checkPassed:pathCheckPassed,retryStep:pathRetryStep,applyResult:pathApplyResult
-});

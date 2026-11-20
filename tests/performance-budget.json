@@ -13,6 +13,6 @@
   "appBundleRawBytes": 150000,
   "coreBundleGzipBytes": 85000,
   "appBundleGzipBytes": 55000,
-  "pathDataRawBytes": 16000,
-  "pathDataGzipBytes": 7000
+  "pathBundleRawBytes": 90000,
+  "pathBundleGzipBytes": 30000
 }

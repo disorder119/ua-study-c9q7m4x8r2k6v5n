@@ -53,6 +53,31 @@ function auditRun(run,label,{progress}){
   for(const step of run.steps){
     assert(!ids.has(step.id),`${label}: Schritt ${step.id} kommt doppelt vor`);ids.add(step.id);
     if(step.type==='teach'){taught.add(step.letter);assert(step.say&&step.hint,`${label}: Lernkarte ${step.letter} ohne Inhalt`);continue}
+    if(step.type==='guess'){
+      // Vortest: vor der Lernkarte, ausdrücklich unbewertet, mit genau der Falle als Option.
+      assert(step.ungraded,`${label}: ${step.id} muss unbewertet sein`);
+      assert(!taught.has(step.letter),`${label}: ${step.id} kommt nach der Lernkarte – dann ist es kein Raten mehr`);
+      assert.equal(step.options.filter(o=>o===step.correct).length,1,`${label}: ${step.id} ohne eindeutige Lösung`);
+      assert.equal(step.options.filter(o=>o===step.trap).length,1,`${label}: ${step.id} ohne die Falle`);
+      assert.notEqual(step.trap,step.correct);
+      assert.equal(new Set(step.options).size,step.options.length,`${label}: ${step.id} hat doppelte Optionen`);
+      // Außer der Falle nur Laute von Zeichen, die schon gezeigt wurden.
+      for(const option of step.options)if(option!==step.trap&&option!==step.correct)assert([...taught].some(c=>P.LETTER_INFO[c].say===option),`${label}: ${step.id} bietet den unbekannten Laut „${option}“ an`);
+      continue;
+    }
+    if(step.type==='trace'){
+      assert(step.ungraded,`${label}: ${step.id} muss unbewertet sein`);
+      assert(taught.has(step.letter),`${label}: ${step.id} vor der Lernkarte`);
+      assert(P.needsTrace(step.letter),`${label}: ${step.letter} hat eine vertraute Form und muss nicht nachgeschrieben werden`);
+      continue;
+    }
+    if(step.type==='write'){
+      assert(taught.has(step.letter),`${label}: ${step.id} für ein noch nicht gezeigtes Zeichen`);
+      assert(!step.prompt.includes(step.letter)&&!step.prompt.includes(step.lower),`${label}: ${step.id} verrät die Form im Prompt`);
+      assert.equal(step.fallback?.type,'letter',`${label}: ${step.id} braucht einen Abruf ohne Zeichenfläche`);
+      assert(P.isCorrect(step,'self-good')&&!P.isCorrect(step,'self-bad'));
+      continue;
+    }
     if(step.word){
       assert(!wordTargets.has(step.word),`${label}: Wort ${step.word} ist zweimal Ziel`);wordTargets.add(step.word);
       const word=P.WORDS.find(w=>w.w===step.word);
@@ -63,12 +88,25 @@ function auditRun(run,label,{progress}){
       const tiles=[...step.tiles];for(const ch of step.answer){const at=tiles.indexOf(ch);assert(at>=0,`${label}: Plättchen ${ch} fehlt für ${step.word}`);tiles.splice(at,1)}
       continue;
     }
+    if(step.type==='type'){
+      // Freier Abruf: keine Optionen, die Musterlesung gilt, die Lookalike-Falle nicht.
+      assert(!step.options,`${label}: ${step.id} darf keine Optionen anbieten`);
+      assert(P.isCorrect(step,step.correct),`${label}: Musterlesung von ${step.word} wird nicht akzeptiert`);
+      assert(!P.isCorrect(step,'')&&!P.isCorrect(step,'   '),`${label}: leere Eingabe darf nicht zählen`);
+      continue;
+    }
     assert(step.options.length>=3,`${label}: ${step.id} hat nur ${step.options.length} Optionen`);
     assert.equal(new Set(step.options).size,step.options.length,`${label}: ${step.id} hat doppelte Optionen`);
     assert.equal(step.options.filter(o=>o===step.correct).length,1,`${label}: ${step.id} enthält die richtige Antwort nicht genau einmal`);
-    if(step.type==='sound'||step.type==='letter'){
+    if(step.type==='listen'){
+      assert(P.LETTER_INFO[step.letter]&&step.letter!=='Ь',`${label}: ${step.id} ohne isolierte menschliche Aufnahme`);
+      assert.equal(step.fallback?.type,'letter',`${label}: ${step.id} braucht einen Abruf ohne Ton`);
+      assert.deepEqual([...step.fallback.options],[...step.options]);
+      assert(!step.prompt.includes(step.letter),`${label}: ${step.id} verrät die Lösung im Prompt`);
+    }
+    if(step.type==='sound'||step.type==='letter'||step.type==='listen'){
       // Regel 4: nur Zeichen anbieten, die schon gezeigt wurden.
-      const offered=step.type==='letter'?step.options:step.options.map(say=>C.ALPHABET.find(c=>P.LETTER_INFO[c].say===say));
+      const offered=step.type!=='sound'?step.options:step.options.map(say=>C.ALPHABET.find(c=>P.LETTER_INFO[c].say===say));
       for(const letter of offered)assert(taught.has(letter),`${label}: ${step.id} bietet ${letter} an, bevor es gezeigt wurde`);
       if(step.type==='letter')assert(!step.prompt.includes(step.correct),`${label}: ${step.id} verrät die Lösung im Prompt`);
     }
@@ -83,6 +121,8 @@ function auditRun(run,label,{progress}){
   return run;
 }
 
+const LOOKALIKES=new Set(['Н','Р','С','В','У','Х']);
+assert.equal(C.ALPHABET.filter(c=>!P.needsTrace(c)).sort().join(''),[...'АОКМТЕНРСВУХІ'].sort().join(''),'nachgeschrieben werden genau die Zeichen mit neuer Form');
 let lessons=0,steps=0;
 for(let seed=1;seed<=40;seed++){
   const rng=rngFor(seed*7717);
@@ -95,7 +135,15 @@ for(let seed=1;seed<=40;seed++){
     for(const letter of lesson.letters){
       assert(run.steps.some(s=>s.type==='teach'&&s.letter===letter),`Lektion ${index+1}: ${letter} wird nicht gezeigt`);
       assert(run.steps.some(s=>s.word&&P.WORDS.find(w=>w.w===s.word).letters.includes(letter)),`Lektion ${index+1}: ${letter} kommt in keinem gelesenen Wort vor`);
+      // Falsche Freunde: erst raten, direkt danach die Lernkarte.
+      const teachAt=run.steps.findIndex(s=>s.type==='teach'&&s.letter===letter);
+      if(LOOKALIKES.has(letter))assert.equal(run.steps[teachAt-1]?.id,`guess:${letter}`,`Lektion ${index+1}: ${letter} braucht den Vortest direkt vor der Lernkarte`);
+      else assert(!run.steps.some(s=>s.type==='guess'&&s.letter===letter),`Lektion ${index+1}: ${letter} ist kein falscher Freund`);
+      // Neue Formen werden direkt nach der Lernkarte nachgeschrieben.
+      if(P.needsTrace(letter))assert.equal(run.steps[teachAt+1]?.id,`trace:${letter}`,`Lektion ${index+1}: ${letter} wird nicht nachgeschrieben`);
     }
+    // Jede Lektion verlangt mindestens einmal freien Abruf.
+    assert(run.steps.some(s=>s.type==='type'),`Lektion ${index+1}: kein getipptes Wort`);
     assert(run.steps.length<=26,`Lektion ${index+1} ist mit ${run.steps.length} Schritten zu lang für fünf Minuten`);
     // Fehler: derselbe Inhalt kommt in ANDERER Form zurück, genau einmal.
     const results=[];
@@ -109,7 +157,7 @@ for(let seed=1;seed<=40;seed++){
           assert.equal(P.retryStep(retry,run,rng),null,'eine Wiederholung darf nicht endlos wiederkehren');
           if(step.word)assert.equal(retry.word,step.word,'Wiederholung muss denselben Inhalt prüfen');
           if(step.letter&&!step.word)assert.equal(retry.letter,step.letter,'Wiederholung muss denselben Buchstaben prüfen');
-          const alternatives=step.word?['read','say','find','build'].filter(t=>t!==step.type):['sound','letter'].filter(t=>t!==step.type);
+          const alternatives=step.word?['read','say','find','build','type'].filter(t=>t!==step.type):['sound','letter'].filter(t=>t!==step.type);
           if(alternatives.includes(retry.type))assert.notEqual(retry.type,step.type);
           run.steps.push(retry);results.push({step:retry,good:true});
         }
@@ -169,6 +217,156 @@ for(let seed=1;seed<=30;seed++){
 }
 assert.equal(P.freshWords(P.freshProgress()).length,0,'vor der ersten Lektion gibt es nichts zu trainieren');
 
+// ------------------------------------------------------ Tippen (freier Abruf)
+// Großzügig bei gleichwertigen Schreibweisen, streng bei den Fallen.
+{
+  const yes=[['ресторан','restoran'],['ресторан',' Restoran '],['шоколад','schokolad'],['шоколад','shokolad'],['гітара','hitara'],['Київ','kyjiw'],['Київ','Kyiv'],['чай','tschaj'],['чай','chay'],['каса','kassa'],['каса','kasa'],['вода','woda'],['вода','voda'],['журнал','schurnal'],['журнал','zhurnal'],['Запоріжжя','saporischschja'],['фільм','film'],['комп’ютер','kompjuter'],['борщ','borschtsch'],['центр','zentr'],['Україна','ukrajina'],['Європа','jewropa'],['хліб','chlib']];
+  const no=[['ресторан','pectopah'],['ресторан','restorah'],['ресторан','pestoran'],['ресторан','rectoran'],['гітара','gitara'],['вода','boda'],['курс','kypc'],['курс','kyrs'],['хор','xor'],['хор','hor'],['ресторан',''],['ресторан','restoran1x'],['кіт','kyt-x'],['мама','mam'],['мама','mamaa']];
+  for(const [word,input] of yes)assert(P.typeMatch(word,input),`„${input}“ muss als Lesung von ${word} gelten`);
+  for(const [word,input] of no)assert(!P.typeMatch(word,input),`„${input}“ darf nicht als Lesung von ${word} gelten`);
+  // Jedes Wort ist tippbar, seine Musterlesung gilt, und jede Lookalike-Lesung ist falsch.
+  const latin={'н':'h','р':'p','с':'c','в':'b','у':'y','х':'x'};
+  let traps=0;
+  for(const word of P.WORDS){
+    const primary=P.typePrimary(word.w);
+    assert(primary&&/^[a-z]+$/.test(primary),`${word.w}: keine Musterlesung`);
+    assert(P.typeMatch(word.w,primary),`${word.w}: Musterlesung „${primary}“ wird abgelehnt`);
+    if(word.sayable)assert(P.typeMatch(word.w,P.translit(word.w)),`${word.w}: Lesehilfe „${P.translit(word.w)}“ wird abgelehnt`);
+    const chars=[...word.w.toLocaleLowerCase('uk')];
+    chars.forEach((ch,at)=>{
+      if(!latin[ch])return;
+      const fooled=chars.map((c,i)=>i===at?latin[c]:P.typePrimary(c)).join('');
+      assert(!P.typeMatch(word.w,fooled),`${word.w}: die Falle „${fooled}“ würde als richtig gelten`);traps++;
+    });
+    // Wörter ohne erratbare Bedeutung müssen über das Tippen erreichbar sein.
+    if(!word.cog)assert([...word.w].length>=2,`${word.w}: zu kurz für eine Tippaufgabe`);
+  }
+  assert(traps>300,`zu wenige Fallen geprüft: ${traps}`);
+}
+
+// ------------------------------------------------------ Verteiltes Wiederholen
+const DAYMS=86400000,T0=Date.UTC(2026,10,20,12);
+function finishLesson(progress,index,rng,now){const run=P.buildLesson(index,progress,rng);return P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),now)}
+{
+  const rng=rngFor(4711);
+  let progress=finishLesson(P.freshProgress(),0,rng,T0);
+  const letters=P.LESSONS[0].letters;
+  for(const letter of letters)assert.equal(progress.srs[letter].box,1,`${letter} startet in Fach 1`);
+  assert.equal(P.dueLetters(progress,T0).length,0,'am Lerntag selbst ist nichts fällig');
+  assert.equal(P.buildReview(progress,rng,T0),null,'ohne fällige Buchstaben gibt es keine Auffrischung');
+  assert.equal(P.dueLetters(progress,T0+DAYMS).length,letters.length,'am nächsten Tag ist die Lektion fällig');
+  assert.equal(P.srsSummary(progress,T0).nextInDays,1);
+  // Kalendertage, nicht 24 Stunden: abends gelernt, morgens fällig.
+  assert.equal(P.day(T0+DAYMS)-P.day(T0),1);
+  // Richtige Abrufe: Abstände wachsen genau nach Plan.
+  let now=T0;
+  for(let box=1;box<P.SRS_INTERVALS.length-1;box++){
+    now+=P.SRS_INTERVALS[box]*DAYMS;
+    assert.equal(P.dueLetters(progress,now-DAYMS).length,0,`Fach ${box}: einen Tag vorher darf noch nichts fällig sein`);
+    const run=P.buildReview(progress,rng,now);
+    assert.equal(run.kind,'review');
+    assert.equal(run.steps.length,letters.length,'ein Abruf je fälligem Buchstaben');
+    assert.equal(new Set(run.steps.map(step=>step.srsLetter)).size,letters.length,'jeder fällige Buchstabe genau einmal');
+    assert.equal(new Set(run.steps.map(step=>step.id)).size,run.steps.length);
+    for(const step of run.steps){
+      assert(letters.includes(step.srsLetter));
+      assert(!step.ungraded,'Auffrischung ist immer bewerteter Abruf');
+      if(step.word)assert(P.WORDS.find(w=>w.w===step.word).letters.includes(step.srsLetter),`${step.word} enthält ${step.srsLetter} nicht`);
+      if(step.fallback)assert.equal(step.fallback.srsLetter,step.srsLetter,'auch der Ersatzabruf zählt für denselben Buchstaben');
+    }
+    progress=P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),now);
+    for(const letter of letters){
+      assert.equal(progress.srs[letter].box,box+1);
+      assert.equal(progress.srs[letter].due,P.day(now)+P.SRS_INTERVALS[box+1]);
+    }
+    assert.deepEqual(P.normalizeProgress(JSON.parse(JSON.stringify(progress))),progress,'der Wiederholungsplan übersteht Speichern und Laden');
+  }
+  assert.equal(P.srsSummary(progress,now).secure,letters.length,'nach wachsenden Abständen gelten die Buchstaben als gefestigt');
+  // Über das letzte Fach hinaus geht es nicht.
+  now+=P.SRS_INTERVALS.at(-1)*DAYMS;
+  let run=P.buildReview(progress,rng,now);
+  progress=P.applyResult(progress,run,run.steps.map(step=>({step,good:true})),now);
+  for(const letter of letters)assert.equal(progress.srs[letter].box,P.SRS_INTERVALS.length-1);
+  // Ein Fehler wirft genau diesen Buchstaben zurück – morgen wieder.
+  now+=P.SRS_INTERVALS.at(-1)*DAYMS;
+  run=P.buildReview(progress,rng,now);
+  const failed=run.steps[0].srsLetter;
+  progress=P.applyResult(progress,run,run.steps.map((step,i)=>({step,good:i>0})),now);
+  assert.equal(progress.srs[failed].box,1);assert.equal(progress.srs[failed].lapses,1);
+  assert.equal(P.dueLetters(progress,now+DAYMS).join(''),failed,'nur der vergessene Buchstabe ist morgen fällig');
+  // Die Wiederholung im selben Durchgang ändert das Fach nicht noch einmal.
+  const retry=P.retryStep(run.steps[0],run,rng);
+  if(retry){const before=JSON.stringify(progress.srs[failed]);P.applyResult(progress,{kind:'review',index:0,steps:[retry]},[{step:retry,good:true}],now);assert.equal(JSON.stringify(progress.srs[failed]),before)}
+}
+// Ein Fehler im Lesetraining wirft einen gefestigten Buchstaben ebenfalls zurück.
+{
+  const rng=rngFor(99);
+  let progress=finishLesson(P.freshProgress(),0,rng,T0);
+  progress.srs['К'].box=4;progress.srs['К'].due=P.day(T0)+14;
+  const step={id:'sound:К',type:'sound',letter:'К',options:['k','m'],correct:'k'};
+  progress=P.applyResult(progress,{kind:'practice',index:0,steps:[step]},[{step,good:false}],T0+DAYMS);
+  assert.equal(progress.srs['К'].box,1);assert.equal(progress.srs['К'].due,P.day(T0+DAYMS)+1);
+  // Unbewertetes (Raten, Nachschreiben) berührt den Plan nie.
+  const guess={id:'guess:К',type:'guess',ungraded:true,letter:'К',options:['k','x'],correct:'k'};
+  const before=JSON.stringify(progress);
+  P.applyResult(progress,{kind:'practice',index:0,steps:[guess]},[{step:guess,good:false}],T0+DAYMS);
+  assert.equal(JSON.stringify({...progress,practiceRuns:0}),JSON.stringify({...JSON.parse(before),practiceRuns:0}),'ein falsch geratener Vortest ändert nichts am Lernstand');
+}
+// Alle Buchstaben fällig: höchstens zwölf je Auffrischung, Verwechslungspartner nebeneinander.
+{
+  let adjacent=0,possible=0,forms=new Set();
+  for(let seed=1;seed<=40;seed++){
+    const rng=rngFor(seed*977);
+    const progress=P.freshProgress();
+    P.LESSONS.forEach(lesson=>{progress.done[lesson.id]={at:T0,runs:1}});
+    // Fortschritt aus der Zeit vor dem Plan: alles sofort fällig.
+    assert.equal(P.ensureSchedule(progress,T0),true);
+    assert.equal(P.ensureSchedule(progress,T0),false,'der Plan wird nur einmal angelegt');
+    assert.equal(P.dueLetters(progress,T0).length,33);
+    assert.equal(P.buildReview(progress,rng,T0).steps.length,P.REVIEW_LIMIT,'eine Auffrischung bleibt kurz, auch wenn alles fällig ist');
+    // Zwölf fällige Buchstaben, darunter fünf Verwechslungspaare.
+    const dueNow=new Set(['И','І','Г','Ґ','Ш','Щ','Ц','Ч','Ю','Я','А','Ь']);
+    for(const letter of C.ALPHABET){progress.srs[letter].box=1+seed%3;progress.srs[letter].reviews=seed%4;if(!dueNow.has(letter))progress.srs[letter].due=P.day(T0)+5}
+    const run=P.buildReview(progress,rng,T0);
+    assert.equal(run.steps.length,dueNow.size);
+    assert.equal(new Set(run.steps.map(step=>step.srsLetter)).size,dueNow.size);
+    for(const step of run.steps)assert(dueNow.has(step.srsLetter),`${step.srsLetter} ist nicht fällig`);
+    const order=run.steps.map(step=>step.srsLetter);
+    run.steps.forEach(step=>forms.add(step.type));
+    for(const [a,b] of [['И','І'],['Г','Ґ'],['Ш','Щ'],['Ц','Ч'],['Ю','Я']]){
+      if(!order.includes(a)||!order.includes(b))continue;
+      possible++;if(Math.abs(order.indexOf(a)-order.indexOf(b))===1)adjacent++;
+    }
+    // Ь hat keine isolierte Aufnahme und wird nie über das Ohr abgefragt.
+    assert(!run.steps.some(step=>step.type==='listen'&&step.letter==='Ь'));
+  }
+  assert(possible>=20,`zu wenige Paare gemeinsam fällig: ${possible}`);
+  assert(adjacent/possible>=.7,`Verwechslungspartner stehen nur in ${adjacent} von ${possible} Fällen nebeneinander`);
+  for(const form of ['sound','letter','listen','type','write'])assert(forms.has(form),`Auffrischung nutzt die Form ${form} nie`);
+}
+// Beschädigter Plan wird bereinigt statt übernommen.
+{
+  const progress=P.normalizeProgress({done:{l1:{at:1,runs:1}},srs:{'А':{box:99,due:'x',lapses:-3},'Q':{box:1},'К':null,'М':'kaputt'}});
+  assert.equal(JSON.stringify(Object.keys(progress.srs)),JSON.stringify(['А']));
+  assert.equal(progress.srs['А'].box,P.SRS_INTERVALS.length-1);assert.equal(progress.srs['А'].lapses,0);assert.equal(progress.srs['А'].due,0);
+}
+
+// ------------------------------------------------- Bewertung des Nachschreibens
+{
+  const size=400,mask=new Uint8Array(size),fat=new Uint8Array(size);
+  for(let i=100;i<200;i++)mask[i]=1;
+  for(let i=80;i<220;i++)fat[i]=1;
+  const ink=(from,to)=>{const out=new Uint8Array(size);for(let i=from;i<to;i++)out[i]=1;return out};
+  assert.equal(C.pathTraceVerdict(C.pathTraceScore(mask,fat,ink(95,205))),true,'sauber nachgezogen');
+  assert.equal(C.pathTraceVerdict(C.pathTraceScore(mask,fat,ink(0,0))),false,'ohne Strich ist nichts getroffen');
+  assert.equal(C.pathTraceVerdict(C.pathTraceScore(mask,fat,ink(300,400))),false,'daneben gezeichnet');
+  assert.equal(C.pathTraceVerdict(C.pathTraceScore(mask,fat,ink(100,130))),false,'nur ein Stück der Form');
+  assert.equal(C.pathTraceVerdict(C.pathTraceScore(mask,fat,ink(0,400))),false,'die ganze Fläche vollmalen zählt nicht');
+  const score=C.pathTraceScore(mask,fat,ink(100,150));
+  assert.equal(score.covered,.5);assert.equal(score.outside,0);
+  assert.equal(C.pathTraceVerdict(null),false);
+}
+
 // ---------------------------------------------------------------- Kurztest
 // Wer Vorwissen hat, darf eine Lektion überspringen – aber nur mit Beleg.
 let checks=0;
@@ -223,4 +421,4 @@ assert.equal(P.buildPractice(P.freshProgress(),rngFor(1)),null,'Lesetraining gib
 // Eine Lücke im Verlauf schaltet nichts Späteres frei.
 {const gap=P.freshProgress();gap.done.l3={at:1,runs:1};assert.equal(P.highestDoneIndex(gap),-1);assert.equal(P.knownLetters(gap).length,0)}
 
-console.log('Alphabet Lab V7 Lernpfad: OK',JSON.stringify({wörter:P.WORDS.length,lektionen:lessons,schritte:steps,kurztests:checks}));
+console.log('Alphabet Lab V7.1 Lernpfad: OK',JSON.stringify({wörter:P.WORDS.length,lektionen:lessons,schritte:steps,kurztests:checks}));

@@ -70,7 +70,7 @@ jobs:
         run: node tests/validate-alphabet-lab-v62-progression.mjs
       - name: Alphabet Lab V6.3 Abruf und Optionsleiter
         run: node tests/validate-alphabet-lab-v63-retrieval.mjs
-      - name: Alphabet Lab V7 Lernpfad
+      - name: Alphabet Lab V7.1 Lernpfad, Tipp-Abruf und Wiederholungsplan
         run: node tests/validate-alphabet-lab-v7-path.mjs
       - name: Alphabet Lab V6.1 Node-Performance-Budgets
         run: node tests/measure-alphabet-lab-performance.mjs

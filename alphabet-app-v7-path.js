@@ -1,6 +1,6 @@
 'use strict';
 
-// V7 · Lernpfad – Oberfläche.
+// V7.1 · Lernpfad – Oberfläche.
 //
 // Der Pfad ist der Haupteinstieg: kurze Lektionen, in denen ein Zeichen erst
 // gezeigt, dann sofort ausprobiert und danach in echten Wörtern gelesen wird.
@@ -13,15 +13,19 @@
 // zusätzlich über C.recordAnswer in die Engine, damit „Mein Training“ nach dem
 // Pfad nicht bei null anfängt.
 
-// PATH_API ist null, wenn alphabet-path-data.js nicht geladen werden konnte.
-// Dann wird unten nichts eingehängt und die bisherige Startseite bleibt stehen.
-const PATH_API=C.LearningPath||null,PATH_STORAGE='uk-alpha-path-v1';
+// PATH_API ist null, wenn der Lernpfad nicht verfügbar ist. Dann wird unten
+// nichts eingehängt und die bisherige Startseite bleibt stehen.
+const PATH_API=window.AlphabetLearningPath||null,PATH_STORAGE='uk-alpha-path-v1';
 let PATH=loadPathProgress(),pathRun=null,pathTimer=0;
 
 function loadPathProgress(){
   if(!PATH_API)return null;
-  try{return PATH_API.normalizeProgress(JSON.parse(localStorage.getItem(PATH_STORAGE)||'null'))}
-  catch(_){return PATH_API.freshProgress()}
+  let progress;
+  try{progress=PATH_API.normalizeProgress(JSON.parse(localStorage.getItem(PATH_STORAGE)||'null'))}
+  catch(_){progress=PATH_API.freshProgress()}
+  // Fortschritt aus der Zeit vor dem Wiederholungsplan bekommt hier seine Fächer.
+  PATH_API.ensureSchedule(progress,Date.now());
+  return progress;
 }
 function savePathProgress(){
   try{localStorage.setItem(PATH_STORAGE,JSON.stringify(PATH));return true}
@@ -37,16 +41,20 @@ function pathLetterAudioSource(letter){
   return window.AlphabetAudioLifecycle?.verifiedHumanSource?.(letter,'letter')?(window.UKRAINIAN_LETTER_AUDIO?.[letter]||''):'';
 }
 // Nur menschliche Originalaufnahmen. Schlägt das Laden fehl, bleibt es still –
-// im Pfad ist Ton eine Hilfe, keine Sperre, und nie ein TTS-Ersatz.
-function pathPlay(src){
-  if(!src)return false;
+// nie ein TTS-Ersatz. hooks.playing meldet hörbaren Ton, hooks.error einen
+// Ladefehler, hooks.blocked eine vom Browser verweigerte Autowiedergabe (dann
+// hilft ein Tipp auf „Abspielen“). Ein Abbruch durch einen neuen Versuch ist
+// weder das eine noch das andere.
+function pathPlay(src,hooks={}){
+  if(!src){hooks.error?.();return false}
   try{
     const tracked=createAlphabetAudio(src),audio=tracked.audio;
+    audio.onplaying=()=>hooks.playing?.();
     audio.onended=()=>tracked.release();
-    audio.onerror=()=>tracked.release();
+    audio.onerror=()=>{tracked.release();hooks.error?.()};
     const started=audio.play();
-    if(started&&typeof started.catch==='function')started.catch(()=>tracked.release());
-  }catch(_){return false}
+    if(started&&typeof started.catch==='function')started.catch(err=>{if(err?.name==='NotAllowedError')hooks.blocked?.();else if(err?.name==='NotSupportedError')hooks.error?.()});
+  }catch(_){hooks.error?.();return false}
   return true;
 }
 
@@ -55,24 +63,27 @@ function pathLessonState(index){
   if(PATH.done[lesson.id])return 'done';
   return index===next?'current':'locked';
 }
-function startPathLesson(index){
-  if(pathLessonState(index)==='locked')return false;
-  pathRun={...PATH_API.buildLesson(index,PATH,Math.random),pos:0,results:[],mistakes:0,locked:false};
+function startPathRun(run){
+  if(!run||!run.steps?.length)return false;
+  pathRun={...run,pos:0,results:[],mistakes:0,locked:false};
   screen='path';session=null;render();window.scrollTo?.(0,0);return true;
 }
+function startPathLesson(index){return pathLessonState(index)==='locked'?false:startPathRun(PATH_API.buildLesson(index,PATH,Math.random))}
 // Kurztest: nur für die nächste offene Lektion – wer besteht, überspringt sie.
-function startPathCheck(index){
-  if(pathLessonState(index)!=='current')return false;
-  const run=PATH_API.buildCheck(index,PATH,Math.random);
-  if(!run)return false;
-  pathRun={...run,pos:0,results:[],mistakes:0,locked:false};
-  screen='path';session=null;render();window.scrollTo?.(0,0);return true;
-}
-function startPathPractice(){
-  const run=PATH_API.buildPractice(PATH,Math.random,10);
-  if(!run)return false;
-  pathRun={...run,pos:0,results:[],mistakes:0,locked:false};
-  screen='path';session=null;render();window.scrollTo?.(0,0);return true;
+function startPathCheck(index){return pathLessonState(index)!=='current'?false:startPathRun(PATH_API.buildCheck(index,PATH,Math.random))}
+function startPathPractice(){return startPathRun(PATH_API.buildPractice(PATH,Math.random,10))}
+// Auffrischung: die heute fälligen Buchstaben aus dem Wiederholungsplan.
+function startPathReview(){return startPathRun(PATH_API.buildReview(PATH,Math.random,Date.now()))}
+// Ersetzt einen Schritt, der Ton oder eine Zeichenfläche braucht, durch
+// denselben Abruf ohne diese Voraussetzung.
+function pathUseFallback(step,rerender=true){
+  const run=pathRun,at=run?run.steps.indexOf(step):-1;
+  if(at<0||!step.fallback)return step;
+  const next={...step.fallback};
+  if(run.steps.some((other,i)=>i!==at&&other.id===next.id))next.id=`${next.id}:alt`;
+  run.steps[at]=next;
+  if(rerender&&at===run.pos)renderPathStep();
+  return next;
 }
 
 function pathHighlight(word,letter){
@@ -80,7 +91,7 @@ function pathHighlight(word,letter){
   return [...String(word)].map(ch=>ch.toLocaleLowerCase('uk')===lower?`<mark>${esc(ch)}</mark>`:esc(ch)).join('');
 }
 function pathOptionsMarkup(step){
-  const letters=step.type==='letter',words=step.type==='find';
+  const letters=step.type==='letter'||step.type==='listen',words=step.type==='find';
   return `<div class="answers path-answers${letters?' letter-answers':''}${words?' path-word-answers':''}">${step.options.map((option,i)=>`<button class="answer" data-path-ans="${i}"${letters||words?' lang="uk"':''}><span class="kbd">${i+1}</span>${letters?`<strong>${esc(option)}</strong>`:esc(option)}</button>`).join('')}</div>`;
 }
 function pathStepMarkup(step){
@@ -93,6 +104,10 @@ function pathStepMarkup(step){
 ${step.example?`<div class="path-example"><span lang="uk">${pathHighlight(step.example.w,step.letter)}</span><small>${esc(step.example.de)}</small></div>`:''}
 <div class="actions path-actions">${hasAudio?'<button class="btn" id="pathListen" type="button">🔊 Anhören</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
   }
+  if(step.type==='guess')return `<div class="eyebrow center">Rate mal · zählt nicht</div><div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
+  if(step.type==='trace'||step.type==='write')return pathTraceMarkup(step);
+  if(step.type==='listen')return `<div class="eyebrow center">Hören</div><div class="prompt">${esc(step.prompt)}</div><div class="actions path-actions"><button class="btn primary xl" id="pathPlay" type="button">🔊 Abspielen</button></div>${pathOptionsMarkup(step)}<button class="path-skip" id="pathNoSound" type="button">Ohne Ton antworten</button>`;
+  if(step.type==='type')return `<div class="path-word" lang="uk">${esc(step.display)}</div><div class="prompt">${esc(step.prompt)}</div><form class="path-type" id="pathTypeForm" autocomplete="off"><input id="pathTypeInput" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="40" aria-label="Lesung in lateinischen Buchstaben" placeholder="lateinische Buchstaben"><button class="btn primary" id="pathTypeSubmit" type="submit">Prüfen</button></form>`;
   if(step.type==='sound')return `<div class="big-letter path-big" lang="uk">${esc(step.letter)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
   if(step.type==='letter')return `<div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
   if(step.type==='read'||step.type==='say')return `<div class="path-word" lang="uk">${esc(step.display)}</div><div class="prompt">${esc(step.prompt)}</div>${pathOptionsMarkup(step)}`;
@@ -110,8 +125,10 @@ function pathBreakdownMarkup(step){
 function renderPathStep(){
   const run=pathRun;
   if(!run){screen='home';return render()}
-  const step=run.steps[run.pos];
+  let step=run.steps[run.pos];
   if(!step)return finishPathRun();
+  // Hören braucht Ton: ohne Aufnahme oder bei ausgeschaltetem Ton derselbe Abruf ohne.
+  if(step.type==='listen'&&(!PATH.sound||!pathLetterAudioSource(step.letter)))step=pathUseFallback(step,false);
   run.locked=false;
   const percent=Math.round(run.pos/run.steps.length*100);
   shell(`<div class="lesson path-lesson"><div class="lesson-head"><button class="btn" id="pathQuit" type="button" aria-label="Lektion beenden">✕</button><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-label="Fortschritt in dieser Lektion"><i style="width:${percent}%"></i></div><button class="btn small" id="pathSound" type="button" aria-pressed="${PATH.sound?'true':'false'}" aria-label="${PATH.sound?'Automatischen Ton ausschalten':'Automatischen Ton einschalten'}">${PATH.sound?'🔊':'🔇'}</button></div>
@@ -132,6 +149,43 @@ function wirePathStep(step){
     return;
   }
   if(step.type==='build')return wirePathBuild(step);
+  if(step.type==='trace'||step.type==='write')return wirePathTrace(step,{
+    done:score=>{
+      const feedback=document.getElementById('pathFeedback');
+      if(step.type==='write'){feedback.innerHTML='<p>Vergleiche mit der grauen Vorlage: Stimmt die Form?</p>';return}
+      feedback.innerHTML=`<strong class="good-text">${pathTraceVerdict(score)?'Sauber nachgezogen.':'Gut – die Form hast du jetzt in der Hand.'}</strong><div class="actions path-actions"><button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
+      const next=document.getElementById('pathNext');
+      next.onclick=()=>{pathRun.results.push({step,good:true,ungraded:true});advancePath()};
+      next.focus?.({preventScroll:true});
+    },
+    self:good=>answerPathStep(step,good?'self-good':'self-bad',null),
+    skip:()=>{if(step.type==='write')pathUseFallback(step);else advancePath()}
+  });
+  if(step.type==='type'){
+    const form=document.getElementById('pathTypeForm'),input=document.getElementById('pathTypeInput');
+    form.onsubmit=event=>{event.preventDefault();if(pathRun.locked||!input.value.trim())return;input.disabled=true;document.getElementById('pathTypeSubmit').disabled=true;answerPathStep(step,input.value,null)};
+    input.focus?.({preventScroll:true});
+    return;
+  }
+  if(step.type==='listen'){
+    const src=pathLetterAudioSource(step.letter),options=[...app.querySelectorAll('[data-path-ans]')],playButton=document.getElementById('pathPlay');
+    const current=()=>!!pathRun&&pathRun.steps[pathRun.pos]===step;
+    const meta=window.UKRAINIAN_LETTER_AUDIO_META?.[step.letter];if(meta)markHumanAudioButton(playButton,meta);
+    // Geantwortet wird erst, wenn der Laut wirklich zu hören war.
+    options.forEach(option=>option.disabled=!step.heard);
+    // Kommt nach einem Versuch weder Ton noch Fehlermeldung (hängendes Netz),
+    // geht es nach fünf Sekunden ohne Ton weiter. Es zählt nur der letzte Versuch.
+    let attempt=0;
+    const giveUp=mine=>{if(mine===attempt&&current()&&!step.heard&&!pathRun.locked)pathUseFallback(step)};
+    const play=()=>{
+      const mine=++attempt;let blocked=false;
+      pathPlay(src,{playing:()=>{step.heard=true;if(current()&&!pathRun.locked)options.forEach(option=>option.disabled=false)},error:()=>giveUp(mine),blocked:()=>{blocked=true}});
+      setTimeout(()=>{if(!blocked)giveUp(mine)},5000);
+    };
+    playButton.onclick=play;
+    document.getElementById('pathNoSound').onclick=()=>pathUseFallback(step);
+    if(!step.played){step.played=true;play()}
+  }
   app.querySelectorAll('[data-path-ans]').forEach(button=>button.onclick=()=>answerPathStep(step,step.options[Number(button.dataset.pathAns)],button));
 }
 
@@ -165,15 +219,16 @@ function answerPathStep(step,value,button){
   const run=pathRun;
   if(!run||run.locked)return;
   run.locked=true;
-  const good=value===step.correct;
-  run.results.push({step,good});
-  recordPathEvidence(step,good,value);
-  if(!good){
-    run.mistakes++;
-    // Fehler kommen wieder – später und in anderer Form.
-    // Im Kurztest nicht: der misst nur, er übt nicht.
-    const retry=run.kind==='check'?null:PATH_API.retryStep(step,run,Math.random);
-    if(retry)run.steps.splice(Math.min(run.steps.length,run.pos+4),0,retry);
+  const good=PATH_API.isCorrect(step,value),graded=!step.ungraded;
+  run.results.push({step,good,ungraded:!graded});
+  if(graded){
+    recordPathEvidence(step,good,value);
+    if(!good){
+      run.mistakes++;
+      // Fehler kommen wieder – später und in anderer Form. Im Kurztest nicht: der misst nur.
+      const retry=run.kind==='check'?null:PATH_API.retryStep(step,run,Math.random);
+      if(retry)run.steps.splice(Math.min(run.steps.length,run.pos+4),0,retry);
+    }
   }
   app.querySelectorAll('[data-path-ans]').forEach(option=>{
     option.disabled=true;
@@ -181,20 +236,25 @@ function answerPathStep(step,value,button){
     if(optionValue===step.correct)option.classList.add('correct');
     else if(option===button)option.classList.add('wrong');
   });
-  app.querySelectorAll('[data-path-tile],[data-path-slot]').forEach(element=>element.disabled=true);
+  app.querySelectorAll('[data-path-tile],[data-path-slot],#pathPlay,#pathNoSound,#pathSelfGood,#pathSelfBad').forEach(element=>element.disabled=true);
   if(step.type==='build')app.querySelector('#pathSlots')?.classList.add(good?'correct':'wrong');
+  if(step.type==='type')document.getElementById('pathTypeInput')?.classList.add(good?'correct':'wrong');
   const feedback=document.getElementById('pathFeedback'),wordStep=!!step.word;
-  const quick=good&&!wordStep;
-  if(quick){
+  if(good&&graded&&!wordStep){
     feedback.innerHTML='<strong class="good-text">Richtig!</strong>';
     pathTimer=setTimeout(advancePath,650);
     return;
   }
   const audio=wordStep?pathWordAudioSource(step.word):'';
-  const head=good?'<strong class="good-text">Richtig!</strong>':'<strong class="bad-text">Noch nicht ganz.</strong>';
-  const body=wordStep
-    ?`<div class="path-solution"><span lang="uk">${esc(step.word)}</span> = ${esc(step.meaning)}</div>${pathBreakdownMarkup(step)}`
-    :`<p>${esc(step.explain||'')}</p>`;
+  let head=good?'<strong class="good-text">Richtig!</strong>':'<strong class="bad-text">Noch nicht ganz.</strong>',body;
+  if(step.type==='guess'){
+    // Ein korrigierter Irrtum bleibt besonders gut haften – deshalb erst raten.
+    head=good?'<strong class="good-text">Stark – du lässt dich nicht täuschen.</strong>':'<strong class="bad-text">Genau die Falle.</strong>';
+    body=`<p><span lang="uk">${esc(step.letter)}</span> klingt wie „${esc(step.correct)}“ – nicht wie „${esc(step.trap)}“. ${esc(step.hint)}</p>`;
+  }else if(wordStep){
+    const typed=step.type==='type'?`<p>${good?'Gelesen':`Du hast „${esc(String(value).trim())}“ getippt – gelesen`} wird es etwa „${esc(step.correct)}“.</p>`:'';
+    body=`<div class="path-solution"><span lang="uk">${esc(step.word)}</span> = ${esc(step.meaning)}</div>${typed}${pathBreakdownMarkup(step)}`;
+  }else body=`<p>${esc(step.explain||'')}</p>`;
   feedback.innerHTML=`${head}${body}<div class="actions path-actions">${audio?'<button class="btn" id="pathListenWord" type="button">🔊 Original</button>':''}<button class="btn primary xl" id="pathNext" type="button">Weiter</button></div>`;
   const listen=document.getElementById('pathListenWord');
   if(listen){const meta=window.UKRAINIAN_WORD_AUDIO_META?.[alphabetWordNorm(step.word)];if(meta)markHumanAudioButton(listen,meta);listen.onclick=()=>pathPlay(audio)}
@@ -227,31 +287,46 @@ function finishPathRun(){
   screen='pathDone';render();window.scrollTo?.(0,0);
 }
 
+function pathScheduleText(summary){
+  if(summary.due>0)return `Heute fällig: ${summary.due}`;
+  if(summary.nextInDays===null)return '';
+  return `Nächste Auffrischung ${summary.nextInDays===1?'morgen':`in ${summary.nextInDays} Tagen`}`;
+}
+
 function renderPathDone(){
   const run=pathRun;
   if(!run||!run.finished){screen='home';return render()}
   stopAlphabetAudio();
-  const answered=run.results.filter(result=>result.step.type!=='teach'&&!result.step.retry);
+  const now=Date.now(),answered=run.results.filter(result=>!result.ungraded&&result.step.type!=='teach'&&!result.step.retry);
   const firstTry=answered.filter(result=>result.good).length;
   const words=C.uniq(run.results.filter(result=>result.step.word).map(result=>result.step.word)).map(text=>PATH_API.WORDS.find(word=>word.w===text));
-  const known=PATH_API.knownLetters(PATH).length,next=PATH_API.nextLessonIndex(PATH);
-  const check=run.kind==='check',failed=check&&!run.passed;
-  const lesson=run.kind!=='practice'&&!failed?PATH_API.LESSONS[run.index]:null;
+  const known=PATH_API.knownLetters(PATH).length,next=PATH_API.nextLessonIndex(PATH),summary=PATH_API.srsSummary(PATH,now);
+  const check=run.kind==='check',failed=check&&!run.passed,review=run.kind==='review',practice=run.kind==='practice';
+  const lesson=!practice&&!review&&!failed?PATH_API.LESSONS[run.index]:null;
   const finale=next<0&&!!lesson&&run.index===PATH_API.LESSONS.length-1;
-  const title=run.kind==='practice'?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
-  const lead=run.kind==='practice'
-    ?(run.review?`${words.length} Wörter wiederholt – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`${words.length} neue Wörter gelesen – alle mit Buchstaben, die du schon kennst.`)
-    :failed
-      ?`${answered.length-firstTry} Fehler – einer wäre erlaubt gewesen. Die Lektion dauert fünf Minuten und klärt genau diese Zeichen.`
-      :finale
-        ?'Alle 33 Buchstaben sind eingeführt. Ab jetzt hältst du sie mit kurzen Lesetrainings frisch.'
-        :`${check?'Kurztest bestanden. ':''}Du kennst jetzt ${known} von 33 Buchstaben.`;
+  const title=review?'Auffrischung geschafft':practice?(run.review?'Wiederholung geschafft':'Lesetraining geschafft'):failed?'Noch nicht ganz':finale?'Du kannst Ukrainisch lesen!':check?`Lektion ${run.index+1} übersprungen`:`Lektion ${run.index+1} geschafft`;
+  const lead=review
+    ?`${answered.length} ${answered.length===1?'Buchstabe':'Buchstaben'} aus dem Gedächtnis geholt, ${firstTry} auf Anhieb. Was saß, kommt mit größerem Abstand wieder; was nicht saß, schon morgen.`
+    :practice
+      ?(run.review?`${words.length} Wörter wiederholt – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`${words.length} neue Wörter gelesen – alle mit Buchstaben, die du schon kennst.`)
+      :failed
+        ?`${answered.length-firstTry} Fehler – einer wäre erlaubt gewesen. Die Lektion klärt genau diese Zeichen.`
+        :finale
+          ?'Alle 33 Buchstaben sind eingeführt. Ab jetzt halten kurze Auffrischungen sie wach.'
+          :`${check?'Kurztest bestanden. ':''}Du kennst jetzt ${known} von 33 Buchstaben.`;
+  // Verteilt lernen: Die neuen Buchstaben sind morgen fällig – und zwei Lektionen
+  // an einem Tag sind viel Neues auf einmal.
+  const today=PATH_API.day(now),lessonsToday=Object.values(PATH.done).filter(row=>PATH_API.day(row.at)===today).length;
+  const spacing=lesson
+    ?`<p class="muted path-meta" id="pathSpacing">Morgen sind diese Buchstaben zur Auffrischung fällig – zwei Minuten, die mehr bringen als heute noch einmal zu üben.${lessonsToday>=2&&next>=0?' Das war heute schon die zweite Lektion: Mit einem Tag Abstand bleibt mehr hängen.':''}</p>`
+    :review&&pathScheduleText(summary)?`<p class="muted path-meta" id="pathSpacing">${esc(pathScheduleText(summary))}.</p>`:'';
   const primary=next>=0
     ?`<button class="btn primary xl" id="pathContinue" type="button">${failed?`Lektion ${next+1} starten`:`Weiter: Lektion ${next+1}`}</button>`
     :`<button class="btn primary xl" id="pathPracticeAgain" type="button">${PATH_API.freshWords(PATH).length<PATH_API.FRESH_MINIMUM?'Wiederholung':'Lesetraining'}</button>`;
-  shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
+  shell(`<div class="lesson path-lesson"><section class="card path-done" data-path-result="${failed?'failed':'passed'}" data-path-kind="${esc(run.kind)}"><div class="path-done-badge" aria-hidden="true">${finale?'🏆':failed?'📘':check?'⚡':review?'🧠':'🎉'}</div><h1>${esc(title)}</h1><p class="muted">${esc(lead)}</p>
 ${lesson?`<div class="path-new-letters" lang="uk" aria-label="Neue Buchstaben">${lesson.letters.map(letter=>`<span><b>${esc(letter)}</b><small lang="de">${esc(PATH_API.LETTER_INFO[letter].say)}</small></span>`).join('')}</div>`:''}
-<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>Wörter gelesen</span><b>${words.length}</b></div><div><span>Buchstaben</span><b>${known} / 33</b></div></div>
+<div class="path-result-grid"><div><span>auf Anhieb richtig</span><b>${firstTry} von ${answered.length}</b></div><div><span>Wörter gelesen</span><b>${words.length}</b></div><div><span>${review?'gefestigt':'Buchstaben'}</span><b>${review?summary.secure:known} / 33</b></div></div>
+${spacing}
 ${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${words.map(word=>`<li><span lang="uk">${esc(word.w)}</span><small>${esc(word.de)}</small></li>`).join('')}</ul>`:''}
 <div class="actions path-actions">${primary}<button class="btn" id="pathHome" type="button">Zur Übersicht</button></div></section></div>`,{navVisible:false});
   document.getElementById('pathHome').onclick=()=>{pathRun=null;screen='home';render()};
@@ -260,23 +335,44 @@ ${words.length?`<h2>Das hast du gerade gelesen</h2><ul class="path-word-list">${
   (document.getElementById('pathContinue')||document.getElementById('pathPracticeAgain'))?.focus?.({preventScroll:true});
 }
 
+// Die Methoden hinter dem Pfad – sichtbar gemacht, mit Quelle. Belegt ist ihre
+// Wirkung allgemein, nicht die dieser App im Besonderen; das steht auch so da.
+const PATH_SCIENCE=[
+  ['Abrufen statt wiedererkennen','Du tippst die Lesung selbst, statt nur auszuwählen. Was man aus dem Gedächtnis holt, hält deutlich länger als das, was man nur wiedererkennt oder erneut liest.','Roediger & Karpicke 2006; Kang, McDermott & Roediger 2007'],
+  ['Verteilt wiederholen','Jeder Buchstabe kommt nach 1, 3, 7, 14, 30 und 60 Tagen wieder. Ein Fehler setzt ihn auf morgen zurück. Verteilte Abrufe schlagen gehäuftes Üben am selben Tag.','Cepeda et al. 2006; Rawson & Dunlosky 2011'],
+  ['Mit der Hand schreiben','Neue Zeichen fährst du mit dem Finger nach und schreibst sie später aus dem Gedächtnis. Wer Zeichen schreibt, erkennt sie sicherer als wer sie nur ansieht oder tippt.','Longcamp et al. 2005, 2008; Wiley & Rapp 2021'],
+  ['Erst raten, dann lernen','Bei den „falschen Freunden“ rätst du zuerst. Ein Irrtum, der sofort korrigiert wird, bleibt besonders gut haften.','Richland, Kornell & Kao 2009; Butterfield & Metcalfe 2001'],
+  ['Ähnliches nebeneinander','Verwechselbare Buchstaben werden direkt hintereinander abgefragt, damit der Unterschied sichtbar wird.','Kornell & Bjork 2008; Carvalho & Goldstone 2014'],
+  ['Sofort erklären, was falsch war','Nach jedem Fehler siehst du die Lösung mit Begründung – und derselbe Inhalt kommt in anderer Form noch einmal.','Pashler et al. 2005']
+];
+function pathScienceMarkup(){
+  return `<details class="card path-science" id="pathScience"><summary><span>So lernst du hier – und warum</span><small>Sechs Methoden aus der Lernforschung</small></summary><ol>${PATH_SCIENCE.map(([title,text,source])=>`<li><b>${esc(title)}</b><p>${esc(text)}</p><cite>${esc(source)}</cite></li>`).join('')}</ol><p class="muted path-meta">Belegt ist die Wirkung dieser Methoden allgemein – nicht die dieser App im Besonderen. Die vollständigen Quellen stehen im README des Projekts.</p></details>`;
+}
+
 function pathHomeMarkup(){
-  const done=PATH_API.doneCount(PATH),next=PATH_API.nextLessonIndex(PATH),known=PATH_API.knownLetters(PATH).length,read=PATH_API.wordsRead(PATH);
-  const lesson=next>=0?PATH_API.LESSONS[next]:null;
+  const now=Date.now(),done=PATH_API.doneCount(PATH),next=PATH_API.nextLessonIndex(PATH),known=PATH_API.knownLetters(PATH).length,read=PATH_API.wordsRead(PATH);
+  const lesson=next>=0?PATH_API.LESSONS[next]:null,summary=PATH_API.srsSummary(PATH,now),due=PATH_API.dueLetters(PATH,now);
   // Ehrlich beschriften: „Lesetraining“ heißt neue Wörter. Sind sie aufgebraucht,
   // heißt der Knopf „Wiederholung“ – und sagt, wo es Neues gibt.
   const fresh=PATH_API.freshWords(PATH).length,review=fresh<PATH_API.FRESH_MINIMUM;
   const practiceLabel=review?'Wiederholung':`Lesetraining · ${fresh} neue Wörter`;
-  const hero=lesson
-    ?`<section class="card hero path-hero"><div class="eyebrow">Dein Lernpfad · ${done} von ${PATH_API.LESSONS.length} Lektionen</div><h1>${next===0?'Ukrainisch lesen lernen':esc(lesson.title)}</h1><p>${next===0?'Acht kurze Lektionen. Du startest mit sechs Buchstaben, die du schon kennst – und liest nach fünf Minuten deine ersten Wörter.':esc(lesson.tagline)}</p><div class="path-preview" lang="uk" aria-label="Buchstaben dieser Lektion">${lesson.letters.map(letter=>`<span>${esc(letter)}</span>`).join('')}</div><div class="actions"><button class="btn primary xl" id="pathStart" type="button">${next===0?'LOS GEHT’S':`LEKTION ${next+1} STARTEN`}</button>${done?`<button class="btn" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${practiceLabel}</button>`:''}</div><p class="muted path-meta">≈ 5 Minuten · ${known} von 33 Buchstaben${read.length?` · ${read.length} Wörter gelesen`:''}${done&&review?' · neue Wörter gibt es in der nächsten Lektion':''}</p><button class="path-skip" id="pathCheck" type="button">Kenne ich schon – Kurztest statt Lektion</button></section>`
-    :`<section class="card hero path-hero"><div class="eyebrow">Lernpfad abgeschlossen</div><h1>Du kannst Ukrainisch lesen.</h1><p>${review?`Du hast alle ${PATH_API.WORDS.length} Wörter gelesen. Die Wiederholung holt die ältesten zurück – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`Halte es frisch: Jedes Lesetraining bringt Wörter, die du noch nie gelesen hast. ${fresh} warten noch.`}</p><div class="actions"><button class="btn primary xl" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${review?'WIEDERHOLUNG STARTEN':'LESETRAINING STARTEN'}</button></div><p class="muted path-meta">33 von 33 Buchstaben · ${read.length} von ${PATH_API.WORDS.length} Wörtern gelesen</p></section>`;
+  const practiceButton=done?`<button class="btn" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${practiceLabel}</button>`:'';
+  const status=[`${known} von 33 Buchstaben`,summary.tracked?`${summary.secure} gefestigt`:'',read.length?`${read.length} Wörter gelesen`:'',!due.length?pathScheduleText(summary):''].filter(Boolean).join(' · ');
+  let hero;
+  if(due.length){
+    // Auffrischen kommt vor Neuem: Was heute abgerufen wird, hält länger.
+    const shown=due.slice(0,PATH_API.REVIEW_LIMIT);
+    hero=`<section class="card hero path-hero" data-path-hero="review"><div class="eyebrow">Heute fällig · ${due.length} ${due.length===1?'Buchstabe':'Buchstaben'}</div><h1>Erst auffrischen, dann Neues</h1><p>Etwa zwei Minuten. Was du heute aus dem Gedächtnis holst, hält deutlich länger – deshalb kommt die Auffrischung vor der nächsten Lektion.</p><div class="path-preview" lang="uk" aria-label="Fällige Buchstaben">${shown.map(letter=>`<span>${esc(letter)}</span>`).join('')}</div><div class="actions"><button class="btn primary xl" id="pathReview" type="button">AUFFRISCHEN</button>${lesson?`<button class="btn" id="pathStart" type="button">Lektion ${next+1}</button>`:''}${practiceButton}</div><p class="muted path-meta">${esc(status)}</p></section>`;
+  }else if(lesson){
+    hero=`<section class="card hero path-hero" data-path-hero="lesson"><div class="eyebrow">Dein Lernpfad · ${done} von ${PATH_API.LESSONS.length} Lektionen</div><h1>${next===0?'Ukrainisch lesen lernen':esc(lesson.title)}</h1><p>${next===0?'Acht kurze Lektionen. Du startest mit sechs Buchstaben, die du schon kennst – und liest nach fünf Minuten deine ersten Wörter.':esc(lesson.tagline)}</p><div class="path-preview" lang="uk" aria-label="Buchstaben dieser Lektion">${lesson.letters.map(letter=>`<span>${esc(letter)}</span>`).join('')}</div><div class="actions"><button class="btn primary xl" id="pathStart" type="button">${next===0?'LOS GEHT’S':`LEKTION ${next+1} STARTEN`}</button>${practiceButton}</div><p class="muted path-meta">5–8 Minuten · ${esc(status)}${done&&review?' · neue Wörter gibt es in der nächsten Lektion':''}</p><button class="path-skip" id="pathCheck" type="button">Kenne ich schon – Kurztest statt Lektion</button></section>`;
+  }else{
+    hero=`<section class="card hero path-hero" data-path-hero="complete"><div class="eyebrow">Lernpfad abgeschlossen</div><h1>Du kannst Ukrainisch lesen.</h1><p>${review?`Du hast alle ${PATH_API.WORDS.length} Wörter gelesen. Die Wiederholung holt die ältesten zurück – jedes in einer anderen Aufgabenform als beim letzten Mal.`:`Halte es frisch: Jedes Lesetraining bringt Wörter, die du noch nie gelesen hast. ${fresh} warten noch.`}</p><div class="actions"><button class="btn primary xl" id="pathPractice" type="button" data-path-practice="${review?'review':'fresh'}">${review?'WIEDERHOLUNG STARTEN':'LESETRAINING STARTEN'}</button></div><p class="muted path-meta">${esc(status)} · ${read.length} von ${PATH_API.WORDS.length} Wörtern</p></section>`;
+  }
   const list=`<section class="card"><div class="section-title"><h2>Der Weg</h2><small>33 Buchstaben in 8 Lektionen</small></div><ol class="path-list">${PATH_API.LESSONS.map((row,index)=>{const state=pathLessonState(index);return `<li><button class="path-row ${state}" data-path-lesson="${index}" type="button" ${state==='locked'?'disabled':''} aria-label="Lektion ${index+1}: ${esc(row.title)}${state==='done'?', abgeschlossen – nochmal üben':state==='locked'?', noch gesperrt':', jetzt starten'}"><span class="path-badge" aria-hidden="true">${state==='done'?'✓':state==='locked'?'🔒':index+1}</span><span class="path-row-text"><b>${esc(row.title)}</b><small lang="uk">${row.letters.join(' ')}</small></span><span class="path-row-action">${state==='done'?'Nochmal':state==='current'?'Start':''}</span></button></li>`}).join('')}</ol></section>`;
   const recent=read.slice().sort((a,b)=>(PATH.words[b.w]?.last||0)-(PATH.words[a.w]?.last||0)).slice(0,12);
   const trophy=read.length?`<section class="card"><div class="section-title"><h2>Das kannst du schon lesen</h2><small>${read.length} Wörter</small></div><div class="path-chips">${recent.map(word=>`<span><b lang="uk">${esc(word.w)}</b><small>${esc(word.de)}</small></span>`).join('')}</div>${read.length>recent.length?`<p class="muted path-meta">und ${read.length-recent.length} weitere</p>`:''}</section>`:'';
-  return hero+list+trophy;
+  return hero+list+trophy+pathScienceMarkup();
 }
-
-if(PATH_API)installLearningPath();
 
 function installLearningPath(){
   const renderHomePathBase=renderHome;
@@ -298,6 +394,7 @@ function installLearningPath(){
     [...holder.children].forEach(node=>fragment.appendChild(node));
     fragment.appendChild(details);
     topbarEl.after(fragment);
+    document.getElementById('pathReview')?.addEventListener('click',()=>startPathReview());
     document.getElementById('pathStart')?.addEventListener('click',()=>startPathLesson(PATH_API.nextLessonIndex(PATH)));
     document.getElementById('pathPractice')?.addEventListener('click',()=>startPathPractice());
     document.getElementById('pathCheck')?.addEventListener('click',()=>startPathCheck(PATH_API.nextLessonIndex(PATH)));
@@ -316,6 +413,8 @@ function installLearningPath(){
   document.addEventListener('keydown',event=>{
     if(screen!=='path'||!pathRun||event.metaKey||event.ctrlKey||event.altKey)return;
     if(event.key==='Enter'){const next=document.getElementById('pathNext');if(next&&document.activeElement!==next){event.preventDefault();next.click()}return}
+    // Im Tippfeld sind Ziffern Text, keine Antwortnummern.
+    if(event.target?.tagName==='INPUT')return;
     const number=Number(event.key);
     if(!Number.isInteger(number)||number<1)return;
     const option=app.querySelectorAll('[data-path-ans]')[number-1];
@@ -327,9 +426,15 @@ function installLearningPath(){
     startLesson:startPathLesson,
     startPractice:startPathPractice,
     startCheck:startPathCheck,
+    startReview:startPathReview,
     // Nur im Debugmodus: der aktuelle Schritt samt Lösung, für E2E-Tests.
     currentStep:()=>DEBUG_LEARNING&&pathRun?structuredClone(pathRun.steps[pathRun.pos]||null):null,
     runLength:()=>pathRun?pathRun.steps.length:0,
-    freshWords:()=>PATH_API.freshWords(PATH).length
+    freshWords:()=>PATH_API.freshWords(PATH).length,
+    dueLetters:()=>PATH_API.dueLetters(PATH,Date.now())
   });
 }
+
+// Dieses Bundle wird nach dem App-Bundle geladen, das die Startseite bereits
+// gezeichnet hat: einhängen und einmal neu zeichnen.
+if(PATH_API){installLearningPath();if(screen==='home')render()}

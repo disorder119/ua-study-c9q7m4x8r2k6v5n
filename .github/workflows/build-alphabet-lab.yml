@@ -41,7 +41,7 @@ jobs:
       - name: Generierte Artefakte committen
         shell: bash
         run: |
-          files=(alphabet-core.bundle.js alphabet-app.bundle.js alphabet-lab.html alphabet-lab-sw.js alphabet-build.json)
+          files=(alphabet-core.bundle.js alphabet-app.bundle.js alphabet-path.bundle.js alphabet-lab.html alphabet-lab-sw.js alphabet-build.json)
           if git diff --quiet -- "${files[@]}"; then
             echo 'Alphabet-Lab-Artefakte bereits aktuell.'
             exit 0

@@ -104,6 +104,7 @@ let forced=0;
 for(let seed=1;seed<=8;seed++){
   const rng=rngFor(seed*2654435761);
   const session=C.createAdaptiveSession(stateA,{targetMainCount:30,title:'a',preset:'a',scope:'standard',feedback:'learning'});
+  session.sessionId=`solvability-forced-${seed}`;
   for(const family of Object.keys(C.QUESTION_FAMILIES)){
     if(RETIRED.includes(family))continue;
     const skill=C.QUESTION_FAMILIES[family].skill;
@@ -135,6 +136,11 @@ for(const persona of personas){
     let state=C.freshState(),now=NOW;
     for(let s=0;s<6;s++){
       const session=C.createAdaptiveSession(state,{targetMainCount:30,title:'p',preset:'p',scope:'standard',feedback:'learning'});
+      // Die Engine zieht Sitzungs-IDs aus Uhrzeit und Math.random, und die
+      // Ja/Nein-Verteilung hängt an der Sitzungs-ID. Ohne feste ID wäre dieser
+      // Test bei jedem Lauf eine neue Stichprobe – und damit gelegentlich rot,
+      // ohne dass sich am Code etwas geändert hat.
+      session.sessionId=`solvability-${persona.name}-${seed}-${s}`;
       for(let i=0;i<30;i++){
         now+=45000;
         const task=C.selectNextMainQuestion(state,session,rng,now);

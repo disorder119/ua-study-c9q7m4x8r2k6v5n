@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
-import {computeOutputs,verifyOutputs,writeOutputs,digest,stripCommentLines,CORE_SOURCES,APP_SOURCES,SOURCE_ONLY} from '../scripts/build-alphabet-lab.mjs';
+import {computeOutputs,verifyOutputs,writeOutputs,digest,stripCommentLines,CORE_SOURCES,APP_SOURCES,PATH_SOURCES,SOURCE_ONLY} from '../scripts/build-alphabet-lab.mjs';
 
 const root=path.resolve(new URL('..',import.meta.url).pathname);
 const a=computeOutputs(root),b=computeOutputs(root);
@@ -12,8 +12,19 @@ for(const file of Object.keys(a.files))assert.equal(digest(a.files[file]),digest
 assert.equal(verifyOutputs(root,{log:false}).ok,true,'checked-in generated artifacts must be current');
 
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'alphabet-v61-build-'));
-for(const file of ['alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js','alphabet-path-data.js','scripts/build-alphabet-lab.mjs'])assert(SOURCE_ONLY.includes(file),`${file} must be part of the build ID seed`);
-const buildInputs=[...CORE_SOURCES,...APP_SOURCES,...SOURCE_ONLY];
+for(const file of ['alphabet-lab.template.html','alphabet-lab-sw.template.js','alphabet-lab.webmanifest','ukrainischkurs-native-audio.js','scripts/build-alphabet-lab.mjs'])assert(SOURCE_ONLY.includes(file),`${file} must be part of the build ID seed`);
+for(const file of ['alphabet-path-data.js','alphabet-core-v7-path.js','alphabet-core-v7-review.js','alphabet-app-v7-trace.js','alphabet-app-v7-path.js'])assert(PATH_SOURCES.includes(file),`${file} must be part of the learning-path bundle`);
+// Keine Quelle in zwei Bundles: sonst gäbe es doppelte Deklarationen im Browser.
+{const all=[...CORE_SOURCES,...APP_SOURCES,...PATH_SOURCES];assert.equal(new Set(all).size,all.length,'a source file must belong to exactly one bundle')}
+const buildInputs=[...CORE_SOURCES,...APP_SOURCES,...PATH_SOURCES,...SOURCE_ONLY];
+// Jede Quelländerung am Lernpfad muss die Build-ID ändern.
+{
+  const probe=fs.mkdtempSync(path.join(os.tmpdir(),'alphabet-v7-seed-'));
+  for(const file of buildInputs){const target=path.join(probe,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target)}
+  const before=computeOutputs(probe).buildId;
+  fs.appendFileSync(path.join(probe,'alphabet-path-data.js'),'\n// geändert\n');
+  assert.notEqual(computeOutputs(probe).buildId,before,'a change to the learning-path data must change the build ID');
+}
 for(const file of buildInputs){const target=path.join(tmp,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,file),target)}
 writeOutputs(tmp,{log:false});
 assert.equal(verifyOutputs(tmp,{log:false}).ok,true,'fresh build must verify');
@@ -22,7 +33,7 @@ assert.equal(verifyOutputs(tmp,{log:false}).ok,false,'build --check equivalent m
 writeOutputs(tmp,{log:false});fs.appendFileSync(path.join(tmp,'alphabet-lab.html'),'\n<!-- stale -->\n');
 assert.equal(verifyOutputs(tmp,{log:false}).ok,false,'build --check equivalent must reject stale HTML');
 const meta=JSON.parse(a.files['alphabet-build.json']);
-assert.equal(meta.appVersion,'6.1.0');assert.equal(meta.schemaVersion,6);assert.equal(meta.buildId,a.buildId);assert.equal(meta.bundles.core.sha256,digest(a.files['alphabet-core.bundle.js']));assert.equal(meta.bundles.app.sha256,digest(a.files['alphabet-app.bundle.js']));
+assert.equal(meta.appVersion,'6.1.0');assert.equal(meta.schemaVersion,6);assert.equal(meta.buildId,a.buildId);assert.equal(meta.bundles.core.sha256,digest(a.files['alphabet-core.bundle.js']));assert.equal(meta.bundles.app.sha256,digest(a.files['alphabet-app.bundle.js']));assert.equal(meta.bundles.path.sha256,digest(a.files['alphabet-path.bundle.js']));
 assert(a.files['alphabet-lab.html'].includes(`alphabet-core.bundle.js?v=${a.buildId}`));assert(a.files['alphabet-lab.html'].includes(`alphabet-app.bundle.js?v=${a.buildId}`));assert(a.files['alphabet-lab-sw.js'].includes(a.buildId));
 
 // Kommentarzeilen werden nicht ausgeliefert – aber nur dort, wo es sicher ist.
@@ -40,7 +51,7 @@ assert.equal(stripCommentLines('/* Block\n// bleibt, ist Teil des Blocks\n*/\na=
 // (höchstens ohne Einrückung), und weggelassen wurde nichts außer reinen
 // Kommentar- und Leerzeilen.
 let dropped=0;
-for(const [bundle,sources] of [['alphabet-core.bundle.js',CORE_SOURCES],['alphabet-app.bundle.js',APP_SOURCES]]){
+for(const [bundle,sources] of [['alphabet-core.bundle.js',CORE_SOURCES],['alphabet-app.bundle.js',APP_SOURCES],['alphabet-path.bundle.js',PATH_SOURCES]]){
   const shipped=a.files[bundle].split('\n');let cursor=0;
   for(const file of sources){
     const at=shipped.indexOf(`/* source: ${file} */`,cursor);assert(at>=0,`${bundle}: ${file} fehlt oder steht in falscher Reihenfolge`);cursor=at+1;
@@ -53,8 +64,10 @@ for(const [bundle,sources] of [['alphabet-core.bundle.js',CORE_SOURCES],['alphab
   assert.doesNotThrow(()=>new vm.Script(a.files[bundle],{filename:bundle}),`${bundle} muss gültiges JavaScript bleiben`);
 }
 assert(dropped>100,`Kommentarzeilen müssen tatsächlich entfernt werden, entfernt wurden ${dropped}`);
-// Die Lernpfad-Daten sind eine eigene, versionierte und offline verfügbare Datei.
-assert(a.files['alphabet-lab.html'].includes(`alphabet-path-data.js?v=${a.buildId}`),'HTML must load the versioned learning-path data');
-assert(a.files['alphabet-lab.html'].indexOf('alphabet-path-data.js')<a.files['alphabet-lab.html'].indexOf('alphabet-core.bundle.js'),'learning-path data must load before the core bundle');
-assert(a.files['alphabet-lab-sw.js'].includes('./alphabet-path-data.js'),'service worker must precache the learning-path data');
+// Der Lernpfad ist ein eigenes, versioniertes und offline verfügbares Bundle,
+// das NACH dem App-Bundle lädt (es hängt sich in dessen Startseite ein).
+assert(a.files['alphabet-lab.html'].includes(`alphabet-path.bundle.js?v=${a.buildId}`),'HTML must load the versioned learning-path bundle');
+assert(a.files['alphabet-lab.html'].indexOf('alphabet-path.bundle.js')>a.files['alphabet-lab.html'].indexOf('alphabet-app.bundle.js'),'learning-path bundle must load after the app bundle');
+assert(a.files['alphabet-lab-sw.js'].includes('./alphabet-path.bundle.js'),'service worker must precache the learning-path bundle');
+assert(!a.files['alphabet-core.bundle.js'].includes('PATH_WORD_ROWS')&&!a.files['alphabet-app.bundle.js'].includes('pathRun'),'learning-path code must not leak into the core or app bundle');
 console.log('Alphabet Lab V6.1 deterministic build: OK',a.buildId);

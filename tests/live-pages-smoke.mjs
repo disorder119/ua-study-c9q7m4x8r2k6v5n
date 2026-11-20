@@ -15,8 +15,11 @@ for(let i=0;i<36;i++){
   await sleep(10000);
 }
 if(!published)throw new Error(`Expected Pages build not published: ${expected.buildId}`);
-for(const file of ['alphabet-lab.html','alphabet-path-data.js','alphabet-core.bundle.js','alphabet-app.bundle.js','alphabet-lab.webmanifest']){
-  const r=await get(`${file}?v=${expected.buildId}`);if(!r.ok)throw new Error(`${file} HTTP ${r.status}`);const type=r.headers.get('content-type')||'';if(file.endsWith('.js')&&/html/i.test(type))throw new Error(`${file} served as HTML`)
+for(const file of ['alphabet-lab.html','alphabet-core.bundle.js','alphabet-app.bundle.js','alphabet-path.bundle.js','alphabet-lab.webmanifest']){
+  const r=await get(`${file}?v=${expected.buildId}`);if(!r.ok)throw new Error(`${file} HTTP ${r.status}`);const type=r.headers.get('content-type')||'';if(file.endsWith('.js')&&/html/i.test(type))throw new Error(`${file} served as HTML`);
+  // Antwort vollständig lesen: Ein ungelesener Körper lässt die Verbindung hängen,
+  // und ein leeres Bundle wäre ebenfalls ein Fehler.
+  const bytes=(await r.arrayBuffer()).byteLength;if(!bytes)throw new Error(`${file} is empty`)
 }
 const manifestResponse=await get(`alphabet-lab.webmanifest?v=${expected.buildId}&probe=${Date.now()}`);
 if(!manifestResponse.ok)throw new Error(`manifest HTTP ${manifestResponse.status}`);
